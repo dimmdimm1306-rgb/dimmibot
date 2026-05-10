@@ -1,0 +1,14 @@
+{
+  "baseUrl": "https://openrouter.ai/api/v1",
+  "models": [
+    "liquid/lfm-2.5-1.2b-instruct:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "poolside/laguna-xs.2:free"
+  ],
+  "model": "liquid/lfm-2.5-1.2b-instruct:free",
+  "apiKeyRequired": true,
+  "version": "8",
+  "lastTested": "2026-05-10",
+  "notes": "Verified working free models on OpenRouter"
+}
