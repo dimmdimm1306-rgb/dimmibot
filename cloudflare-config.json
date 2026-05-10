@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://sao-phases-consultants-arising.trycloudflare.com/v1",
+  "baseUrl": "https://saver-actions-empire-cocktail.trycloudflare.com/v1",
   "models": [
     "openrouter/owl-alpha",
     "openai/gpt-oss-120b:free",
