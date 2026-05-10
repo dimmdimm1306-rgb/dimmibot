@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://ceo-lotus-races-review.trycloudflare.com/v1",
+  "baseUrl": "https://formal-prisoner-worth-lambda.trycloudflare.com/v1",
   "models": [
     "deepseek/deepseek-v4-flash",
     "openrouter/owl-alpha",
@@ -9,5 +9,5 @@
   ],
   "model": "deepseek/deepseek-v4-flash",
   "apiKeyRequired": false,
-  "version": "3"
+  "version": "4"
 }
