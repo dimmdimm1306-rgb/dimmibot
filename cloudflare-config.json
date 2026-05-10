@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://calling-promoted-delicious-coupons.trycloudflare.com/v1",
+  "baseUrl": "https://greene-leaf-provides-leaves.trycloudflare.com/v1",
   "models": [
     "deepseek/deepseek-v4-flash",
     "openrouter/owl-alpha",
@@ -9,5 +9,5 @@
   ],
   "model": "deepseek/deepseek-v4-flash",
   "apiKeyRequired": false,
-  "version": "5"
+  "version": "6"
 }
