@@ -4,6 +4,7 @@
     "deepseek/deepseek-v4-flash",
     "openrouter/owl-alpha",
     "openai/gpt-oss-120b:free",
+    "openai/gpt-oss-20b:free",
     "openai/gpt-oss-20b:free"
   ],
   "model": "openrouter/owl-alpha",
