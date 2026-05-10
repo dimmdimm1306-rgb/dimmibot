@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using StokBarangMAUI.Models;
 
 namespace StokBarangMAUI.Services
 {
@@ -385,7 +386,8 @@ namespace StokBarangMAUI.Services
                         sb.AppendLine($"   📍 {w.Name} ({w.SegmentName}):");
                         foreach (var item in w.Items.Take(5))
                         {
-                            sb.AppendLine($"      • {item.NamaBarang}: {item.SisaReal} {item.Satuan}");
+                            var unit = MaterialUnit.Get(item.NamaBarang);
+                            sb.AppendLine($"      • {item.NamaBarang}: {item.SisaReal} {unit}");
                         }
                     }
                 }
@@ -436,12 +438,12 @@ namespace StokBarangMAUI.Services
                 if (lowerMsg == "refresh data" || lowerMsg == "reload data" || lowerMsg == "update data" || lowerMsg == "muat ulang data")
                 {
                     _cachedContext = "";
-                    var context = await BuildContextAsync();
-                    if (string.IsNullOrEmpty(context))
+                    var refreshedContext = await BuildContextAsync();
+                    if (string.IsNullOrEmpty(refreshedContext))
                     {
                         return "⚠️ Tidak bisa memuat data. Pastikan kamu sudah buka project dan data sudah ter-sync dari Google Sheets.";
                     }
-                    return $"✅ Data berhasil di-refresh! Sekarang aku punya data terbaru dari project.\n\n📊 Info: {context.Length} karakter data ter-load.";
+                    return $"✅ Data berhasil di-refresh! Sekarang aku punya data terbaru dari project.\n\n📊 Info: {refreshedContext.Length} karakter data ter-load.";
                 }
 
                 // Get current user email from AuthService
