@@ -4,10 +4,9 @@
     "deepseek/deepseek-v4-flash",
     "openrouter/owl-alpha",
     "openai/gpt-oss-120b:free",
-    "openai/gpt-oss-20b:free",
-    "claude-haiku-4-5-20251001"
+    "openai/gpt-oss-20b:free"
   ],
   "model": "deepseek/deepseek-v4-flash",
   "apiKeyRequired": false,
-  "version": "6"
+  "version": "7"
 }
