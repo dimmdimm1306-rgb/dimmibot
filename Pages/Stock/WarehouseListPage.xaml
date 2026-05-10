@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.Stock.WarehouseListPage"
+             Title="Master Gudang"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,*">
+        <Button Grid.Row="0" Text="+ Tambah Gudang" Clicked="OnTambah"
+                BackgroundColor="#1E40AF" TextColor="White"
+                FontSize="14" FontAttributes="Bold"
+                CornerRadius="8" Margin="12,10"/>
+
+        <CollectionView Grid.Row="1" x:Name="WhList" SelectionMode="None" Margin="12,0,12,12">
+            <CollectionView.EmptyView>
+                <Label Text="Belum ada gudang." FontSize="14"
+                       TextColor="{DynamicResource TextMuted}"
+                       HorizontalOptions="Center" Margin="0,40"/>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{DynamicResource CardBg}"
+                            Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                            StrokeShape="RoundRectangle 10" Margin="0,0,0,8">
+                        <Grid Padding="14,12" ColumnDefinitions="*,Auto,Auto">
+                            <VerticalStackLayout Grid.Column="0" Spacing="3">
+                                <Label Text="{Binding Name}" FontSize="15"
+                                       FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+                                <Label Text="{Binding Location}" FontSize="12"
+                                       TextColor="{DynamicResource TextMuted}"/>
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1" Text="Edit" Clicked="OnEdit"
+                                    BackgroundColor="#1E3A6E" TextColor="#60A5FA"
+                                    FontSize="12" CornerRadius="6"
+                                    WidthRequest="60" HeightRequest="36"
+                                    CommandParameter="{Binding .}"/>
+                            <Button Grid.Column="2" Text="Hapus" Clicked="OnHapus"
+                                    BackgroundColor="#450A0A" TextColor="#F87171"
+                                    FontSize="12" CornerRadius="6" Margin="6,0,0,0"
+                                    WidthRequest="60" HeightRequest="36"
+                                    CommandParameter="{Binding .}"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

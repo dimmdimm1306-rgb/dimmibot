@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:StokBarangMAUI.Controls"
+             x:Class="StokBarangMAUI.Pages.MainPage"
+             Title="Stok Barang"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="🤖 Bot" Clicked="OnBotClicked" />
+        <ToolbarItem Text="+ Tambah" Clicked="OnTambahClicked" />
+    </ContentPage.ToolbarItems>
+
+    <!-- Outer Grid untuk floating button overlay -->
+    <Grid>
+
+    <Grid RowDefinitions="Auto,*" Padding="16">
+
+        <Label Grid.Row="0" Text="Daftar Barang"
+               FontSize="22" FontAttributes="Bold"
+               TextColor="{DynamicResource TextPrimary}"
+               Margin="0,8,0,12" />
+
+        <CollectionView Grid.Row="1" x:Name="BarangList"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <Label Text="Belum ada barang. Ketuk tombol + Tambah."
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       TextColor="{DynamicResource TextMuted}"
+                       Margin="0,40,0,0"/>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,4" Padding="12"
+                            StrokeShape="RoundRectangle 8"
+                            Stroke="{DynamicResource BorderClr}"
+                            BackgroundColor="{DynamicResource CardBg}">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="{Binding NamaBarang}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="16" FontAttributes="Bold" />
+
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Text="{Binding KodeBarang, StringFormat='Kode: {0}'}"
+                                   FontSize="13" TextColor="{DynamicResource TextMuted}" />
+
+                            <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                    Padding="10,4"
+                                    StrokeShape="RoundRectangle 12"
+                                    BackgroundColor="{Binding Stok, Converter={StaticResource StokColorConverter}}"
+                                    Stroke="Transparent"
+                                    VerticalOptions="Center">
+                                <Label Text="{Binding Stok, StringFormat='Stok: {0}'}"
+                                       TextColor="White" FontAttributes="Bold" FontSize="13"/>
+                            </Border>
+
+                            <HorizontalStackLayout Grid.Row="2" Grid.ColumnSpan="2"
+                                                   Margin="0,8,0,0" Spacing="8">
+                                <Button Text="+ Stok"
+                                        BackgroundColor="#16A34A" TextColor="White"
+                                        FontSize="12" Padding="10,4" CornerRadius="6"
+                                        CommandParameter="{Binding Id}"
+                                        Clicked="OnTambahStokClicked"/>
+                                <Button Text="- Stok"
+                                        BackgroundColor="#F59E0B" TextColor="White"
+                                        FontSize="12" Padding="10,4" CornerRadius="6"
+                                        CommandParameter="{Binding Id}"
+                                        Clicked="OnKurangiStokClicked"/>
+                                <Button Text="Edit"
+                                        BackgroundColor="#3B82F6" TextColor="White"
+                                        FontSize="12" Padding="10,4" CornerRadius="6"
+                                        CommandParameter="{Binding Id}"
+                                        Clicked="OnEditClicked"/>
+                                <Button Text="Hapus"
+                                        BackgroundColor="#EF4444" TextColor="White"
+                                        FontSize="12" Padding="10,4" CornerRadius="6"
+                                        CommandParameter="{Binding Id}"
+                                        Clicked="OnHapusClicked"/>
+                            </HorizontalStackLayout>
+
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+
+    <!-- Floating AI Button -->
+    <controls:FloatingAiButton />
+
+    </Grid>
+</ContentPage>

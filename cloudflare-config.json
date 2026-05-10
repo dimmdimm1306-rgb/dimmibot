@@ -1,15 +1,22 @@
 {
   "baseUrl": "https://sao-phases-consultants-arising.trycloudflare.com/v1",
   "models": [
+    "gpt-4o-mini",
+    "gpt-4o",
     "liquid/lfm-2.5-1.2b-instruct:free",
     "nvidia/nemotron-nano-9b-v2:free",
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "poolside/laguna-xs.2:free"
+    "meta-llama/llama-3.2-3b-instruct:free"
   ],
-  "model": "liquid/lfm-2.5-1.2b-instruct:free",
+  "model": "gpt-4o-mini",
   "apiKeyRequired": false,
-  "version": "9",
-  "lastTested": "2026-05-10T12:06:24Z",
-  "notes": "Using local OpenClaw server via Cloudflare tunnel",
-  "tunnelUrl": "https://sao-phases-consultants-arising.trycloudflare.com"
+  "version": "11",
+  "lastTested": "2026-05-10T13:29:32Z",
+  "notes": "Added OpenAI GPT-4o-mini (most cost-effective). Using local OpenClaw server via Cloudflare tunnel",
+  "tunnelUrl": "https://sao-phases-consultants-arising.trycloudflare.com",
+  "premiumModels": ["gpt-4o-mini", "gpt-4o"],
+  "freeModels": ["liquid/lfm-2.5-1.2b-instruct:free", "nvidia/nemotron-nano-9b-v2:free"],
+  "pricing": {
+    "gpt-4o-mini": "$0.15/1M input, $0.60/1M output",
+    "gpt-4o": "$2.50/1M input, $10/1M output"
+  }
 }

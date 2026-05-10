@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.DriveFolderPickerPage"
+             Title="Pilih Folder Drive"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- Header -->
+        <Grid Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+              Padding="14" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+            <Border Grid.Column="0" BackgroundColor="#1E3A6E"
+                    StrokeShape="RoundRectangle 10" Padding="12,8">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnClose"/>
+                </Border.GestureRecognizers>
+                <Label Text="←" FontSize="20" FontAttributes="Bold" TextColor="White"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Border>
+            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                <Label Text="📁  PILIH FOLDER DRIVE" TextColor="#93C5FD" FontSize="10" FontAttributes="Bold"/>
+                <Label Text="Subfolder Surat Jalan" TextColor="White" FontSize="14" FontAttributes="Bold"/>
+            </VerticalStackLayout>
+            <ActivityIndicator Grid.Column="2" x:Name="Loader" IsRunning="True" IsVisible="False"
+                               Color="#3B82F6" HeightRequest="20"/>
+        </Grid>
+
+        <!-- Search -->
+        <Border Grid.Row="1" Margin="12,8" BackgroundColor="{DynamicResource CardBg}"
+                StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}" Padding="10,2">
+            <Grid ColumnDefinitions="Auto,*">
+                <Label Grid.Column="0" Text="🔍" FontSize="14" VerticalOptions="Center" Opacity="0.6"/>
+                <Entry Grid.Column="1" x:Name="EntSearch" Placeholder="Cari folder..."
+                       PlaceholderColor="{DynamicResource TextMuted}"
+                       TextColor="{DynamicResource TextPrimary}"
+                       BackgroundColor="Transparent" FontSize="13" HeightRequest="40"
+                       TextChanged="OnSearchChanged"/>
+            </Grid>
+        </Border>
+
+        <!-- Folder list -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout x:Name="FoldersPanel" Padding="12,4,12,16" Spacing="6">
+                <Label x:Name="LblEmpty" Text="Memuat..." FontSize="11"
+                       HorizontalOptions="Center" Margin="0,40,0,0"
+                       TextColor="{DynamicResource TextMuted}" IsVisible="False"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

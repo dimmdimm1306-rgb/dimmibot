@@ -1,0 +1,63 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:StokBarangMAUI"
+             xmlns:converters="clr-namespace:StokBarangMAUI.Converters"
+             x:Class="StokBarangMAUI.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <converters:StokColorConverter x:Key="StokColorConverter" />
+
+            <!-- Theme-aware semantic colors (defaults = dark; overwritten by ThemeService) -->
+            <Color x:Key="PageBg">#001224</Color>
+            <Color x:Key="CardBg">#001e40</Color>
+            <Color x:Key="CardBg2">#001530</Color>
+            <Color x:Key="TextPrimary">#d5e3ff</Color>
+            <Color x:Key="TextSecond">#a7c8ff</Color>
+            <Color x:Key="TextMuted">#799dd6</Color>
+            <Color x:Key="BorderClr">#1f477b</Color>
+            <Color x:Key="DividerClr">#001e40</Color>
+            <Color x:Key="SearchBg">#001e40</Color>
+            <Color x:Key="HeaderBg">#001224</Color>
+            <Color x:Key="SubHeaderBg">#001224</Color>
+
+            <!-- Accent colors -->
+            <Color x:Key="AccentBlueBg">#1E3A6E</Color>
+            <Color x:Key="AccentBlueBorder">#2563EB</Color>
+            <Color x:Key="AccentBlue">#1D4ED8</Color>
+            <Color x:Key="AccentGreenBg">#064E3B</Color>
+            <Color x:Key="AccentGreenBorder">#059669</Color>
+            <Color x:Key="AccentRedBg">#7F1D1D</Color>
+            <Color x:Key="AccentRedBorder">#DC2626</Color>
+
+            <!-- Stat card text -->
+            <Color x:Key="StatBlueText">#93C5FD</Color>
+            <Color x:Key="StatGreenText">#6EE7B7</Color>
+            <Color x:Key="StatRedText">#FCA5A5</Color>
+            <Color x:Key="StatBlueLabel">#60A5FA</Color>
+            <Color x:Key="StatGreenLabel">#34D399</Color>
+            <Color x:Key="StatRedLabel">#F87171</Color>
+
+            <!-- Drawer / menu -->
+            <Color x:Key="DrawerBg">#0D1117</Color>
+            <Color x:Key="DrawerHeaderBg">#161B22</Color>
+            <Color x:Key="DrawerItemBg">#161B22</Color>
+            <Color x:Key="DrawerItemBorder">#21262D</Color>
+            <Color x:Key="DrawerBottomBg">#161B22</Color>
+
+            <!-- Console / Bot -->
+            <Color x:Key="ConsoleBg">#0F172A</Color>
+            <Color x:Key="ConsoleBorder">#1E293B</Color>
+            <Color x:Key="ConsoleText">#94A3B8</Color>
+
+            <!-- Header button tints -->
+            <Color x:Key="HeaderBtnBg">#1E293B</Color>
+            <Color x:Key="HeaderBtnBorder">#334155</Color>
+            <Color x:Key="HeaderSubtitle">#93C5FD</Color>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

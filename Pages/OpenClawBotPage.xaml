@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.OpenClawBotPage"
+             Title="OPENCLAW Bot"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="14,14,14,12" Spacing="0">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource AccentBlueBg}"
+                        StrokeShape="RoundRectangle 10" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1.5"
+                        Padding="12,8" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackClicked"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="←" FontSize="24" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                    <Label Text="🐾 OPENCLAW Bot" TextColor="White"
+                           FontSize="18" FontAttributes="Bold"/>
+                    <Label x:Name="StatusLabel" Text="⭕ Bot tidak aktif" TextColor="{DynamicResource TextSecond}"
+                           FontSize="12"/>
+                </VerticalStackLayout>
+
+                <Border Grid.Column="2" BackgroundColor="{DynamicResource HeaderBtnBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource HeaderBtnBorder}" StrokeThickness="1"
+                        Padding="11,9" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnRefreshStatus"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="🔄" FontSize="15" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+
+                <Border Grid.Column="3" BackgroundColor="{DynamicResource HeaderBtnBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource HeaderBtnBorder}" StrokeThickness="1"
+                        Padding="11,9" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnThemeToggle"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="LblTheme" Text="☀" FontSize="15" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- Stats Cards -->
+        <Grid Grid.Row="1" Padding="14,8" ColumnDefinitions="*,*,*" ColumnSpacing="8">
+            <!-- Status Card -->
+            <Border Grid.Column="0" BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 10"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                    Padding="10,8">
+                <VerticalStackLayout Spacing="2">
+                    <Label x:Name="StatusIcon" Text="⭕" FontSize="20" HorizontalOptions="Center"/>
+                    <Label Text="Status" TextColor="{DynamicResource TextMuted}"
+                           FontSize="10" HorizontalOptions="Center"/>
+                    <Label x:Name="StatusText" Text="Offline" TextColor="{DynamicResource TextPrimary}"
+                           FontSize="11" FontAttributes="Bold" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Uptime Card -->
+            <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 10"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                    Padding="10,8">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="⏱️" FontSize="20" HorizontalOptions="Center"/>
+                    <Label Text="Uptime" TextColor="{DynamicResource TextMuted}"
+                           FontSize="10" HorizontalOptions="Center"/>
+                    <Label x:Name="UptimeText" Text="00:00:00" TextColor="{DynamicResource TextPrimary}"
+                           FontSize="11" FontAttributes="Bold" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Messages Card -->
+            <Border Grid.Column="2" BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 10"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                    Padding="10,8">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="💬" FontSize="20" HorizontalOptions="Center"/>
+                    <Label Text="Messages" TextColor="{DynamicResource TextMuted}"
+                           FontSize="10" HorizontalOptions="Center"/>
+                    <Label x:Name="MessagesText" Text="0" TextColor="{DynamicResource TextPrimary}"
+                           FontSize="11" FontAttributes="Bold" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Console Output -->
+        <ScrollView Grid.Row="2" Padding="14,8">
+            <VerticalStackLayout Spacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="📋 Console Log" TextColor="{DynamicResource TextPrimary}"
+                           FontSize="14" FontAttributes="Bold" VerticalOptions="Center"/>
+                    
+                    <Border Grid.Column="1" BackgroundColor="#DC2626"
+                            StrokeShape="RoundRectangle 8" Padding="8,4">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnClearConsole"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="🗑️ Clear" TextColor="White" FontSize="11" FontAttributes="Bold"/>
+                    </Border>
+
+                    <Border Grid.Column="2" BackgroundColor="#2563EB"
+                            StrokeShape="RoundRectangle 8" Padding="8,4">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnShowHelp"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="❓ Help" TextColor="White" FontSize="11" FontAttributes="Bold"/>
+                    </Border>
+                </Grid>
+                
+                <Border BackgroundColor="{DynamicResource ConsoleBg}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource ConsoleBorder}" StrokeThickness="1"
+                        Padding="12"
+                        MinimumHeightRequest="350">
+                    <ScrollView x:Name="ConsoleScrollView">
+                        <Label x:Name="ConsoleOutput"
+                               Text="[System] Belum ada log. Tekan tombol Start untuk memulai bot."
+                               TextColor="{DynamicResource ConsoleText}"
+                               FontSize="11"
+                               FontFamily="Courier New"
+                               LineBreakMode="WordWrap"/>
+                    </ScrollView>
+                </Border>
+
+                <!-- Quick Info -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 10"
+                        Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                        Padding="10">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <Label Grid.Column="0" Text="💡" FontSize="20" VerticalOptions="Start"/>
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Tips:" TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="12" FontAttributes="Bold"/>
+                            <Label Text="• Bot akan scan QR WhatsApp saat pertama kali start" 
+                                   TextColor="{DynamicResource TextSecond}" FontSize="11"/>
+                            <Label Text="• Setelah tersambung, bot berjalan otomatis di background" 
+                                   TextColor="{DynamicResource TextSecond}" FontSize="11"/>
+                            <Label Text="• Kirim pesan ke bot untuk input data atau cek progress" 
+                                   TextColor="{DynamicResource TextSecond}" FontSize="11"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Control Buttons -->
+        <Grid Grid.Row="3" BackgroundColor="{DynamicResource HeaderBg}"
+              Padding="14" RowDefinitions="Auto,Auto" ColumnDefinitions="*,*,*" 
+              ColumnSpacing="8" RowSpacing="8">
+            
+            <!-- Start Button -->
+            <Border Grid.Row="0" Grid.Column="0" x:Name="StartButton"
+                    BackgroundColor="#16A34A"
+                    StrokeShape="RoundRectangle 12" Padding="0,12">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnStartBot"/>
+                </Border.GestureRecognizers>
+                <Label Text="▶ Start" TextColor="White"
+                       FontSize="13" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Border>
+
+            <!-- Stop Button -->
+            <Border Grid.Row="0" Grid.Column="1" x:Name="StopButton"
+                    BackgroundColor="#DC2626"
+                    StrokeShape="RoundRectangle 12" Padding="0,12">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnStopBot"/>
+                </Border.GestureRecognizers>
+                <Label Text="■ Stop" TextColor="White"
+                       FontSize="13" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Border>
+
+            <!-- Restart Button -->
+            <Border Grid.Row="0" Grid.Column="2" x:Name="RestartButton"
+                    BackgroundColor="#F59E0B"
+                    StrokeShape="RoundRectangle 12" Padding="0,12">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRestartBot"/>
+                </Border.GestureRecognizers>
+                <Label Text="🔄 Restart" TextColor="White"
+                       FontSize="13" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Border>
+
+            <!-- Config Button -->
+            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                    BackgroundColor="#6366F1"
+                    StrokeShape="RoundRectangle 12" Padding="0,12">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnOpenConfig"/>
+                </Border.GestureRecognizers>
+                <Label Text="⚙️ Konfigurasi" TextColor="White"
+                       FontSize="13" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Border>
+
+            <!-- Logs Button -->
+            <Border Grid.Row="1" Grid.Column="2"
+                    BackgroundColor="#8B5CF6"
+                    StrokeShape="RoundRectangle 12" Padding="0,12">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnViewLogs"/>
+                </Border.GestureRecognizers>
+                <Label Text="📄 Logs" TextColor="White"
+                       FontSize="13" FontAttributes="Bold"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+            </Border>
+        </Grid>
+
+    </Grid>
+</ContentPage>

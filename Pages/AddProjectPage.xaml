@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.AddProjectPage"
+             Title="Konfigurasi Project"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,16" Spacing="18">
+
+            <!-- ── Identity ── -->
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeShape="RoundRectangle 16"
+                    Stroke="{DynamicResource BorderClr}" Padding="16,14">
+                <VerticalStackLayout Spacing="14">
+                    <HorizontalStackLayout Spacing="8">
+                        <BoxView Color="#3B82F6" WidthRequest="4" HeightRequest="18"
+                                 CornerRadius="2" VerticalOptions="Center"/>
+                        <Label Text="Identitas Project" FontSize="13" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextPrimary}" VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Nama Project *" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntName" Placeholder="contoh: FTTH JAWA TENGAH"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Deskripsi" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntDesc" Placeholder="contoh: Program Percepatan FTTH Regional..."
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="Icon (emoji)" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntIcon" Placeholder="📡" MaxLength="4"
+                                   BackgroundColor="{DynamicResource CardBg2}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="Warna (hex)" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntColor" Placeholder="#1D4ED8"
+                                   BackgroundColor="{DynamicResource CardBg2}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <HorizontalStackLayout Spacing="8" x:Name="ColorPresetsPanel"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Spreadsheet Utama ── -->
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeShape="RoundRectangle 16"
+                    Stroke="{DynamicResource BorderClr}" Padding="16,14">
+                <VerticalStackLayout Spacing="14">
+                    <HorizontalStackLayout Spacing="8">
+                        <BoxView Color="#22C55E" WidthRequest="4" HeightRequest="18"
+                                 CornerRadius="2" VerticalOptions="Center"/>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Spreadsheet Utama" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}"/>
+                            <Label Text="Surat Jalan · Progress Harian · Stok"
+                                   FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Spreadsheet ID *" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntSpreadsheetId" Placeholder="13XJL_oUh1qyfTfq..."
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="GID Surat Jalan" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntGidSJ" Placeholder="1213940465" Keyboard="Numeric"
+                                   BackgroundColor="{DynamicResource CardBg2}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="GID Progress Harian" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntGidProg" Placeholder="1637178585" Keyboard="Numeric"
+                                   BackgroundColor="{DynamicResource CardBg2}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="GID Stok (MRF)" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntGidStok" Placeholder="1736939395" Keyboard="Numeric"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="GID Aktual Stok (Diterima &amp; Implementasi per Gudang)" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntGidAktualStok" Placeholder="1692657123" Keyboard="Numeric"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Spreadsheet Resume ── -->
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeShape="RoundRectangle 16"
+                    Stroke="{DynamicResource BorderClr}" Padding="16,14">
+                <VerticalStackLayout Spacing="14">
+                    <HorizontalStackLayout Spacing="8">
+                        <BoxView Color="#A855F7" WidthRequest="4" HeightRequest="18"
+                                 CornerRadius="2" VerticalOptions="Center"/>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Spreadsheet Resume" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}"/>
+                            <Label Text="Ringkasan progress per segment"
+                                   FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Resume Spreadsheet ID *" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntResumeId" Placeholder="1eyRssjlL_UCrs8t..."
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="GID Sheet RESUME" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntGidResume" Placeholder="1316342418" Keyboard="Numeric"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Segment dinamis ── -->
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeShape="RoundRectangle 16"
+                    Stroke="{DynamicResource BorderClr}" Padding="16,14">
+                <VerticalStackLayout Spacing="14">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                            <HorizontalStackLayout Spacing="8">
+                                <BoxView Color="#F97316" WidthRequest="4" HeightRequest="18"
+                                         CornerRadius="2" VerticalOptions="Center"/>
+                                <Label Text="Detail Per Segment" FontSize="13" FontAttributes="Bold"
+                                       TextColor="{DynamicResource TextPrimary}" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                            <Label Text="Nama RUTE + GID sheet detail (dari URL ...#gid=GID)"
+                                   FontSize="10" TextColor="{DynamicResource TextMuted}" Margin="12,0,0,0"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="1" BackgroundColor="#064E3B"
+                                StrokeShape="RoundRectangle 12" Stroke="#059669" StrokeThickness="1"
+                                Padding="14,9" VerticalOptions="Start">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAddSegment"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="＋ Segment" FontSize="11" FontAttributes="Bold" TextColor="#34D399"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Dynamic segment blocks injected here -->
+                    <VerticalStackLayout x:Name="SegmentsPanel" Spacing="10"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Sinkron Nama Project ── -->
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeShape="RoundRectangle 16"
+                    Stroke="{DynamicResource BorderClr}" Padding="16,14">
+                <VerticalStackLayout Spacing="12">
+                    <HorizontalStackLayout Spacing="8">
+                        <BoxView Color="#F59E0B" WidthRequest="4" HeightRequest="18"
+                                 CornerRadius="2" VerticalOptions="Center"/>
+                        <VerticalStackLayout Spacing="1">
+                            <Label Text="Sinkronisasi Nama Project" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}"/>
+                            <Label Text="Opsional: nama project dibaca dari sheet ini (sinkron antar HP)"
+                                   FontSize="10" TextColor="{DynamicResource TextMuted}" LineBreakMode="WordWrap"/>
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                    <Border BackgroundColor="#451A03" StrokeShape="RoundRectangle 8"
+                            Stroke="#92400E" StrokeThickness="1" Padding="10,8">
+                        <Label Text="📝  Buat tab sheet baru di Spreadsheet Utama, beri nama bebas.&#x0a;Isi A1 = Nama Project, A2 = Deskripsi (opsional).&#x0a;Semua HP yang buka project ini akan otomatis sync nama."
+                               FontSize="10" TextColor="#FDE68A" LineBreakMode="WordWrap"/>
+                    </Border>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="GID Sheet Config (opsional)" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntGidConfig" Placeholder="(kosongkan jika tidak pakai)" Keyboard="Numeric"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+                    <!-- Config Sync: admin upload JSON ke Drive, semua HP auto-update -->
+                    <Border BackgroundColor="#0c1a0c" StrokeShape="RoundRectangle 10"
+                            Stroke="#166534" StrokeThickness="1" Padding="12,10">
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="🔄  SYNC CONFIG OTOMATIS" FontSize="11" FontAttributes="Bold" TextColor="#4ADE80"/>
+                            <Label Text="Admin upload file JSON config ke Google Drive (set publik) → paste link di bawah → semua HP auto-update saat buka app." FontSize="10" TextColor="#86EFAC" LineBreakMode="WordWrap"/>
+                            <VerticalStackLayout Spacing="4">
+                                <Label Text="URL file config (Google Drive / link langsung)" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                                <Entry x:Name="EntConfigSyncUrl" Placeholder="https://drive.google.com/file/d/..."
+                                       BackgroundColor="{DynamicResource CardBg2}"
+                                       TextColor="{DynamicResource TextPrimary}"
+                                       PlaceholderColor="{DynamicResource TextMuted}"
+                                       Keyboard="Url"/>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </Border>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="GID Sheet Master Barang (untuk dropdown form Input)"
+                               FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntGidMasterBarang" Placeholder="GID sheet daftar barang (kolom A)" Keyboard="Numeric"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+                    <BoxView HeightRequest="1" Color="{DynamicResource BorderClr}" Margin="0,8,0,0"/>
+                    <Label Text="☁️  Untuk Upload via OAuth (tab Input)" FontSize="11" FontAttributes="Bold"
+                           TextColor="{DynamicResource TextPrimary}"/>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0" Spacing="5">
+                            <Label Text="Nama tab Surat Jalan" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntSheetNameSJ" Placeholder="Surat Jalan"
+                                   BackgroundColor="{DynamicResource CardBg2}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="5">
+                            <Label Text="Nama tab Progress" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntSheetNameProg" Placeholder="Progress"
+                                   BackgroundColor="{DynamicResource CardBg2}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   PlaceholderColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Drive Folder ID untuk foto SJ (opsional)" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntDriveFolderId" Placeholder="(kosong = root My Drive)"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ── Export JSON button (untuk admin) ── -->
+            <Border BackgroundColor="#15803D" StrokeShape="RoundRectangle 16"
+                    Stroke="#16A34A" StrokeThickness="1" Padding="0,14" Margin="0,4,0,8">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnExportJson"/>
+                </Border.GestureRecognizers>
+                <Label Text="📤  Export JSON Config (untuk sync)" FontSize="13" FontAttributes="Bold"
+                       TextColor="White" HorizontalOptions="Center"/>
+            </Border>
+
+            <!-- ── Save button ── -->
+            <Border BackgroundColor="#1D4ED8" StrokeShape="RoundRectangle 16"
+                    Stroke="Transparent" Padding="0,16" Margin="0,4,0,28">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSave"/>
+                </Border.GestureRecognizers>
+                <Label Text="💾  Simpan Project" FontSize="15" FontAttributes="Bold"
+                       TextColor="White" HorizontalOptions="Center"/>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

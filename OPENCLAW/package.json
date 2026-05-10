@@ -1,0 +1,24 @@
+{
+  "name": "wa-arsip-agent",
+  "version": "1.0.0",
+  "description": "WhatsApp bot untuk arsip barang ke Google Sheets dan Google Drive.",
+  "main": "src/index.js",
+  "scripts": {
+    "setup": "npm install && node src/check-config.js",
+    "check": "node src/check-config.js",
+    "test-data": "node src/test-data-fetch.js",
+    "start": "node src/index.js",
+    "api": "node src/api-server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.1",
+    "@whiskeysockets/baileys": "^6.7.18",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "googleapis": "^144.0.0",
+    "node-fetch": "^2.7.0",
+    "openai": "^6.37.0",
+    "pino": "^9.5.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

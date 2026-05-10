@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.GudangDetailPage"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- ── Row 0: Segment header ── -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="16,14" Spacing="4">
+            <Label Text="📍  WILAYAH SEGMENT" TextColor="{DynamicResource TextMuted}"
+                   FontSize="10" FontAttributes="Bold"/>
+            <Label x:Name="LblWarehouseName" TextColor="{DynamicResource TextPrimary}"
+                   FontSize="20" FontAttributes="Bold"/>
+            <Label x:Name="LblSegmentName" TextColor="{DynamicResource TextMuted}"
+                   FontSize="12" LineBreakMode="WordWrap"/>
+        </VerticalStackLayout>
+
+        <!-- ── Row 1: Filter chips ── -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal"
+                    BackgroundColor="{DynamicResource SubHeaderBg}"
+                    HorizontalScrollBarVisibility="Never"
+                    Padding="12,8,12,0">
+            <HorizontalStackLayout x:Name="FilterChips" Spacing="8" Padding="0,0,0,8"/>
+        </ScrollView>
+
+        <!-- ── Row 2: item count label ── -->
+        <Label Grid.Row="2" x:Name="LblItemCount"
+               BackgroundColor="{DynamicResource SubHeaderBg}"
+               TextColor="{DynamicResource TextMuted}"
+               FontSize="11" Padding="16,2,16,8"/>
+
+        <!-- ── Row 3: Item list ── -->
+        <CollectionView Grid.Row="3" x:Name="ItemList" SelectionMode="None"
+                        BackgroundColor="{DynamicResource PageBg}">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" Spacing="12" Margin="0,40">
+                    <Label Text="📦" FontSize="40" HorizontalOptions="Center"/>
+                    <Label Text="Tidak ada data untuk gudang ini"
+                           TextColor="{DynamicResource TextMuted}"
+                           FontSize="13" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="12,5">
+                        <Border BackgroundColor="{DynamicResource CardBg}"
+                                StrokeShape="RoundRectangle 14"
+                                Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                            <Border.Shadow>
+                                <Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.12"/>
+                            </Border.Shadow>
+
+                            <Grid ColumnDefinitions="5,*">
+                                <BoxView Grid.Column="0" Color="{Binding SisaRealColor}"
+                                         CornerRadius="14,0,0,14"/>
+
+                                <Grid Grid.Column="1" Padding="12,12" RowDefinitions="Auto,Auto,Auto,Auto"
+                                      RowSpacing="8">
+
+                                    <!-- Nama + SisaReal badge -->
+                                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <Label Grid.Column="0" Text="{Binding NamaBarang}"
+                                               FontSize="14" FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextPrimary}"
+                                               VerticalOptions="Center"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Border Grid.Column="1" BackgroundColor="{Binding SisaRealBgColor}"
+                                                StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                                                Padding="8,4" VerticalOptions="Center">
+                                            <Label Text="{Binding SisaRealText}" FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding SisaRealColor}"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- SisaReal desc -->
+                                    <Label Grid.Row="1" Text="{Binding SisaRealDesc}" FontSize="10"
+                                           TextColor="{Binding SisaRealColor}" Margin="0,-4,0,0"/>
+
+                                    <!-- Implementasi % bar -->
+                                    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                        <Label Grid.Column="0" Text="Imp" FontSize="9" FontAttributes="Bold"
+                                               TextColor="#22C55E" VerticalOptions="Center"/>
+                                        <ProgressBar Grid.Column="1" Progress="{Binding ImpPct}"
+                                                     ProgressColor="#22C55E" BackgroundColor="#064E3B"
+                                                     HeightRequest="6" VerticalOptions="Center"/>
+                                        <Label Grid.Column="2" Text="{Binding ImpPctText}" FontSize="10"
+                                               FontAttributes="Bold" TextColor="#22C55E"
+                                               VerticalOptions="Center" MinimumWidthRequest="40"/>
+                                    </Grid>
+
+                                    <!-- 3 number chips: Diterima / Implementasi / Sisa Real -->
+                                    <Grid Grid.Row="3" ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                                        <Border Grid.Column="0" BackgroundColor="{DynamicResource CardBg2}"
+                                                StrokeShape="RoundRectangle 8"
+                                                Stroke="{DynamicResource BorderClr}" Padding="8,6">
+                                            <VerticalStackLayout Spacing="1">
+                                                <Label Text="{Binding Diterima, StringFormat='{0:N0}'}"
+                                                       FontSize="13" FontAttributes="Bold"
+                                                       TextColor="#3B82F6" HorizontalOptions="Center"/>
+                                                <Label Text="Diterima" FontSize="8"
+                                                       TextColor="{DynamicResource TextMuted}"
+                                                       HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                        </Border>
+                                        <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg2}"
+                                                StrokeShape="RoundRectangle 8"
+                                                Stroke="{DynamicResource BorderClr}" Padding="8,6">
+                                            <VerticalStackLayout Spacing="1">
+                                                <Label Text="{Binding Implementasi, StringFormat='{0:N0}'}"
+                                                       FontSize="13" FontAttributes="Bold"
+                                                       TextColor="#22C55E" HorizontalOptions="Center"/>
+                                                <Label Text="Implementasi" FontSize="8"
+                                                       TextColor="{DynamicResource TextMuted}"
+                                                       HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                        </Border>
+                                        <Border Grid.Column="2" BackgroundColor="{Binding SisaRealBgColor}"
+                                                StrokeShape="RoundRectangle 8"
+                                                Stroke="{Binding SisaRealColor}" StrokeThickness="1" Padding="8,6">
+                                            <VerticalStackLayout Spacing="1">
+                                                <Label Text="{Binding SisaRealText}"
+                                                       FontSize="13" FontAttributes="Bold"
+                                                       TextColor="{Binding SisaRealColor}" HorizontalOptions="Center"/>
+                                                <Label Text="Sisa Real" FontSize="8"
+                                                       TextColor="{DynamicResource TextMuted}"
+                                                       HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </Grid>
+
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

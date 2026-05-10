@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.ApprovalListPage"
+             BackgroundColor="{DynamicResource PageBg}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Header ── -->
+        <Grid Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" Padding="18,50,18,18"
+              ColumnDefinitions="Auto,*,Auto">
+            <Label Grid.Column="0" Text="←" FontSize="24" TextColor="{DynamicResource TextPrimary}"
+                   VerticalOptions="Center">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBack"/>
+                </Label.GestureRecognizers>
+            </Label>
+            <VerticalStackLayout Grid.Column="1" Margin="16,0,0,0">
+                <Label Text="⚠️ Pending Approval" TextColor="{DynamicResource TextMuted}" FontSize="12"/>
+                <Label x:Name="LblHeader" Text="Menunggu Konfirmasi" TextColor="{DynamicResource TextPrimary}"
+                       FontSize="20" FontAttributes="Bold"/>
+            </VerticalStackLayout>
+            <Border Grid.Column="2" x:Name="BtnRefresh"
+                    BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}"
+                    Padding="12,9" VerticalOptions="Center">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRefresh"/>
+                </Border.GestureRecognizers>
+                <Label Text="🔄" FontSize="16"/>
+            </Border>
+        </Grid>
+
+        <!-- ── Content ── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16,12" Spacing="12">
+                
+                <!-- Loading indicator -->
+                <ActivityIndicator x:Name="Loader" IsRunning="False" IsVisible="False"
+                                   Color="{DynamicResource Primary}" Margin="0,20"/>
+
+                <!-- Empty state -->
+                <VerticalStackLayout x:Name="EmptyState" IsVisible="False"
+                                     HorizontalOptions="Center" Margin="0,60" Spacing="12">
+                    <Label Text="✅" FontSize="48" HorizontalOptions="Center"/>
+                    <Label Text="Tidak ada yang menunggu approval" TextColor="{DynamicResource TextMuted}"
+                           FontSize="15" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+
+                <!-- List of pending approvals -->
+                <VerticalStackLayout x:Name="ApprovalList" Spacing="12">
+                    <!-- Populated in code-behind -->
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

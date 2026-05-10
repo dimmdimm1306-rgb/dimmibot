@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.Stock.TransactionFormPage"
+             Title="Input Transaksi"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="14">
+
+            <!-- Tipe Transaksi -->
+            <Label Text="Tipe Transaksi" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Border x:Name="BtnMasuk" BackgroundColor="#16A34A" StrokeThickness="0" StrokeShape="RoundRectangle 8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTypeMasuk"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="MASUK" FontSize="14" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" Padding="0,10"/>
+                </Border>
+                <Border x:Name="BtnKeluar" Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
+                        Stroke="{DynamicResource BorderClr}" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTypeKeluar"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="KELUAR" FontSize="14" FontAttributes="Bold" TextColor="{DynamicResource TextMuted}"
+                           HorizontalOptions="Center" Padding="0,10"/>
+                </Border>
+                <Border x:Name="BtnTransfer" Grid.Column="2" BackgroundColor="{DynamicResource CardBg}"
+                        Stroke="{DynamicResource BorderClr}" StrokeThickness="1" StrokeShape="RoundRectangle 8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnTypeTransfer"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="TRANSFER" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextMuted}"
+                           HorizontalOptions="Center" Padding="0,10"/>
+                </Border>
+            </Grid>
+
+            <!-- Gudang Asal -->
+            <Label Text="Gudang Asal" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Picker x:Name="PickerGudang" Title="Pilih gudang..." FontSize="14" Margin="8,0"
+                        TextColor="{DynamicResource TextPrimary}" TitleColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <!-- Gudang Tujuan (hanya TRANSFER) -->
+            <Label x:Name="LblGudangTujuan" Text="Gudang Tujuan" FontSize="13"
+                   FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}" IsVisible="False"/>
+            <Border x:Name="BorderGudangTujuan" BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8" IsVisible="False">
+                <Picker x:Name="PickerGudangTujuan" Title="Pilih gudang tujuan..." FontSize="14" Margin="8,0"
+                        TextColor="{DynamicResource TextPrimary}" TitleColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <!-- Material -->
+            <Label Text="Material" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Picker x:Name="PickerMaterial" Title="Pilih material..." FontSize="14"
+                        Margin="8,0" SelectedIndexChanged="OnMaterialChanged"
+                        TextColor="{DynamicResource TextPrimary}" TitleColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <!-- Stok tersedia (KELUAR/TRANSFER) -->
+            <Border x:Name="BorderStokInfo" BackgroundColor="#1E3A6E" Stroke="#2563EB"
+                    StrokeThickness="1" StrokeShape="RoundRectangle 8" IsVisible="False">
+                <Label x:Name="LblStokTersedia" Padding="12,8" FontSize="13" TextColor="#60A5FA"/>
+            </Border>
+
+            <!-- Qty -->
+            <Label Text="Jumlah (Qty)" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Entry x:Name="EntryQty" Placeholder="0" Keyboard="Numeric"
+                       FontSize="16" Margin="8,4"
+                       TextColor="{DynamicResource TextPrimary}"
+                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <!-- Proyek -->
+            <Label Text="Nama Proyek (opsional)" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Entry x:Name="EntryProyek" Placeholder="Contoh: Proyek FTTH Brebes A"
+                       FontSize="14" Margin="8,4"
+                       TextColor="{DynamicResource TextPrimary}"
+                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <!-- Catatan -->
+            <Label Text="Catatan (opsional)" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Editor x:Name="EditorNotes" Placeholder="Tambah catatan..." AutoSize="TextChanges"
+                        FontSize="14" Margin="8,4" MinimumHeightRequest="60"
+                        TextColor="{DynamicResource TextPrimary}"
+                        PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <!-- Simpan -->
+            <Button Text="Simpan Transaksi" Clicked="OnSimpan"
+                    BackgroundColor="#1E40AF" TextColor="White"
+                    FontSize="16" FontAttributes="Bold"
+                    CornerRadius="10" HeightRequest="50"
+                    Margin="0,8,0,0"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

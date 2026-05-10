@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.SuratJalanPage"
+             Title="Surat Jalan"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- ── Header ── -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="14,14,14,12" Spacing="12">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                <!-- Hamburger -->
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource AccentBlueBg}"
+                        StrokeShape="RoundRectangle 10" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1.5"
+                        Padding="12,8" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHamburger"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="≡" FontSize="24" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                    <Label Text="📋 Surat Jalan Material" TextColor="White"
+                           FontSize="18" FontAttributes="Bold"/>
+                    <Label Text="Riwayat keluar-masuk material" TextColor="{DynamicResource HeaderSubtitle}"
+                           FontSize="12"/>
+                </VerticalStackLayout>
+                <!-- Theme + AI Bot + Refresh -->
+                <HorizontalStackLayout Grid.Column="2" Spacing="8" VerticalOptions="Center">
+                    <Border BackgroundColor="{DynamicResource HeaderBtnBg}"
+                            StrokeShape="RoundRectangle 12" Stroke="{DynamicResource HeaderBtnBorder}" StrokeThickness="1"
+                            Padding="11,9" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnThemeToggle"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblTheme" Text="☀" FontSize="15" TextColor="White"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    <Border BackgroundColor="#6366F1"
+                            StrokeShape="RoundRectangle 12" Stroke="#818CF8" StrokeThickness="1"
+                            Padding="6" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnAiBotClicked"/>
+                        </Border.GestureRecognizers>
+                        <Image Source="claw_cat.png" WidthRequest="26" HeightRequest="26"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    <Border BackgroundColor="{DynamicResource AccentBlue}"
+                            StrokeShape="RoundRectangle 12" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1"
+                            Padding="11,9" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnUpdateTapped"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="↻" FontSize="16" FontAttributes="Bold"
+                               TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                </HorizontalStackLayout>
+            </Grid>
+
+            <!-- 3 stat cards -->
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource AccentBlueBg}" StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1" Padding="10,10">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                        <Label x:Name="TotalLabel" Text="0" TextColor="{DynamicResource StatBlueText}" FontSize="22"
+                               FontAttributes="Bold" HorizontalOptions="Center"/>
+                        <Label Text="Total SJ" TextColor="{DynamicResource StatBlueLabel}" FontSize="10" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+                <Border Grid.Column="1" BackgroundColor="{DynamicResource AccentGreenBg}" StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource AccentGreenBorder}" StrokeThickness="1" Padding="10,10">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                        <Label x:Name="MasukLabel" Text="0" TextColor="{DynamicResource StatGreenText}" FontSize="22"
+                               FontAttributes="Bold" HorizontalOptions="Center"/>
+                        <Label Text="Masuk" TextColor="{DynamicResource StatGreenLabel}" FontSize="10" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+                <Border Grid.Column="2" BackgroundColor="{DynamicResource AccentRedBg}" StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource AccentRedBorder}" StrokeThickness="1" Padding="10,10">
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="2">
+                        <Label x:Name="KeluarLabel" Text="0" TextColor="{DynamicResource StatRedText}" FontSize="22"
+                               FontAttributes="Bold" HorizontalOptions="Center"/>
+                        <Label Text="Keluar" TextColor="{DynamicResource StatRedLabel}" FontSize="10" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- ── Search + Filter ── -->
+        <VerticalStackLayout Grid.Row="1" BackgroundColor="{DynamicResource SubHeaderBg}"
+                             Padding="14,10,14,12" Spacing="10">
+            <Border BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 14"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1.5">
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.10"/>
+                </Border.Shadow>
+                <Grid ColumnDefinitions="Auto,*,Auto" Padding="12,0" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="🔍" FontSize="16"
+                           VerticalOptions="Center" Opacity="0.6"/>
+                    <Entry Grid.Column="1" x:Name="SearchEntry"
+                           Placeholder="Cari barang, segment, penerima..."
+                           PlaceholderColor="{DynamicResource TextMuted}"
+                           TextColor="{DynamicResource TextPrimary}"
+                           BackgroundColor="Transparent" FontSize="13" HeightRequest="44"
+                           TextChanged="OnSearchChanged"/>
+                    <Border Grid.Column="2" x:Name="BtnClear"
+                            BackgroundColor="{DynamicResource CardBg2}"
+                            StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                            Padding="6,4" VerticalOptions="Center" IsVisible="False">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnClearSearch"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="✕" FontSize="11" TextColor="{DynamicResource TextMuted}"
+                               FontAttributes="Bold"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <ScrollView Grid.Column="0" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout Spacing="8" x:Name="FilterChips"/>
+                </ScrollView>
+                <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 20" Stroke="{DynamicResource BorderClr}"
+                        Padding="12,8" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSortToggle"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="LblSort" Text="↓ Terbaru" FontSize="11" FontAttributes="Bold"
+                           TextColor="{DynamicResource TextPrimary}"/>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+
+        <ActivityIndicator x:Name="Loader" Grid.Row="2"
+                           IsRunning="False" IsVisible="False"
+                           Color="#2563EB" HeightRequest="36"/>
+
+        <!-- ── List ── -->
+        <CollectionView x:Name="List" Grid.Row="3" SelectionMode="None"
+                        BackgroundColor="{DynamicResource PageBg}">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" Spacing="12" Margin="0,60">
+                    <Label Text="📭" FontSize="48" HorizontalOptions="Center"/>
+                    <Label Text="Tidak ada data surat jalan" TextColor="{DynamicResource TextMuted}"
+                           FontSize="15" HorizontalOptions="Center"/>
+                    <Label Text="Tekan Refresh untuk memuat data"
+                           TextColor="{DynamicResource TextMuted}" FontSize="13"
+                           HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="14,5">
+                        <Border BackgroundColor="{DynamicResource CardBg}"
+                                StrokeShape="RoundRectangle 16"
+                                Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                            <Border.Shadow>
+                                <Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.08"/>
+                            </Border.Shadow>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnItemTapped"/>
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="5,*">
+                                <BoxView Grid.Column="0" Color="{Binding BadgeColor}"
+                                         CornerRadius="16,0,0,16"/>
+                                <VerticalStackLayout Grid.Column="1" Padding="14,12" Spacing="8">
+
+                                    <!-- Segment + Jenis badge -->
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <Label Text="{Binding Segment}" FontSize="13"
+                                               TextColor="{DynamicResource TextSecond}"
+                                               LineBreakMode="TailTruncation" VerticalOptions="Center"/>
+                                        <Border Grid.Column="1" Padding="10,5"
+                                                StrokeShape="RoundRectangle 20"
+                                                BackgroundColor="{Binding BadgeColor}"
+                                                Stroke="Transparent" VerticalOptions="Center">
+                                            <Label Text="{Binding JenisPendek}" TextColor="White"
+                                                   FontSize="10" FontAttributes="Bold"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Items (grouped rows) -->
+                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}"
+                                                         Spacing="6">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                    <Label Text="{Binding NamaBarang}"
+                                                           FontAttributes="Bold" FontSize="14"
+                                                           TextColor="{DynamicResource TextPrimary}"
+                                                           LineBreakMode="TailTruncation"
+                                                           VerticalOptions="Center"/>
+                                                    <Border Grid.Column="1"
+                                                            BackgroundColor="{DynamicResource CardBg2}"
+                                                            StrokeShape="RoundRectangle 8" Stroke="#2563EB"
+                                                            StrokeThickness="1" Padding="10,5">
+                                                        <Label Text="{Binding QtyText}"
+                                                               FontSize="12" FontAttributes="Bold"
+                                                               TextColor="#3B82F6"/>
+                                                    </Border>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </VerticalStackLayout>
+
+                                    <!-- Link badge -->
+                                    <Border IsVisible="{Binding HasLink}"
+                                            BackgroundColor="{DynamicResource AccentBlueBg}"
+                                            StrokeShape="RoundRectangle 6" Stroke="{DynamicResource AccentBlueBorder}"
+                                            StrokeThickness="1" Padding="8,3" HorizontalOptions="Start">
+                                        <Label Text="📎 Lihat Surat Jalan" FontSize="10"
+                                               FontAttributes="Bold" TextColor="#60A5FA"/>
+                                    </Border>
+
+                                    <!-- Tanggal + NoSJ -->
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <Border Grid.Column="0" BackgroundColor="{DynamicResource CardBg2}"
+                                                StrokeShape="RoundRectangle 6" Stroke="Transparent"
+                                                Padding="8,4">
+                                            <Label Text="{Binding Tanggal}" FontSize="11"
+                                                   TextColor="{DynamicResource TextMuted}"/>
+                                        </Border>
+                                        <Label Grid.Column="1"
+                                               Text="{Binding NoSJ, StringFormat='No: {0}'}"
+                                               FontSize="11" TextColor="{DynamicResource TextMuted}"
+                                               VerticalOptions="Center" IsVisible="{Binding HasNoSJ}"/>
+                                    </Grid>
+
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+</ContentPage>

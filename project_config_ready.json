@@ -1,0 +1,37 @@
+{
+  "Id": "ftth-jawatengah-2024",
+  "Name": "Project",
+  "Description": "",
+  "Icon": "📡",
+  "Color": "#1D4ED8",
+  "SpreadsheetId": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
+  "GidStok": "1736939395",
+  "GidAktualStok": "1692657123",
+  "GidSuratJalan": "1213940465",
+  "GidProgress": "1637178585",
+  "ResumeSpreadsheetId": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+  "GidResume": "1316342418",
+  "DriveFolderIdSuratJalan": "1LCfHKCK5hm_f4iqyOXuUo5o4xtBgmMAE",
+  "DriveFolderIdAbsensi": "",
+  "GidConfig": "",
+  "GidMasterBarang": "",
+  "SheetNameSuratJalan": "Surat Jalan",
+  "SheetNameProgress": "Progress",
+  "SheetNameAbsensi": "Absensi",
+  "SegmentGids": {
+    "1": "1111450998",
+    "2": "1943599466",
+    "3": "1686621433",
+    "4": "842756326",
+    "5": "1472813414",
+    "6": "251176161"
+  },
+  "SegmentNames": {
+    "1": "CIREBON - BREBES - TEGAL - PEKALONGAN - INDRAMAYU - SEMARANG",
+    "2": "TASIKMALAYA - BANJAR",
+    "3": "BANYUMAS - CILACAP - KEBUMEN - PURWOREJO",
+    "4": "SUKOHARJO - KLATEN - SURAKARTA - WONOGIRI",
+    "5": "SRAGEN - KARANG ANYAR",
+    "6": "GROBOGAN - BLORA"
+  }
+}

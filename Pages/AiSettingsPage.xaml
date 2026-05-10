@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.AiSettingsPage"
+             Title="AI Settings"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" Padding="14,14,14,12">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource AccentBlueBg}"
+                        StrokeShape="RoundRectangle 10" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1.5"
+                        Padding="12,8" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackClicked"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="←" FontSize="24" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                    <Label Text="⚙️ AI Settings" TextColor="White"
+                           FontSize="18" FontAttributes="Bold"/>
+                    <Label Text="Konfigurasi AI Assistant" TextColor="{DynamicResource HeaderSubtitle}"
+                           FontSize="11"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
+
+        <!-- Content -->
+        <ScrollView Grid.Row="1" Padding="14">
+            <VerticalStackLayout Spacing="16">
+
+                <!-- Info Card -->
+                <Border BackgroundColor="#3B82F6"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="ℹ️ Tentang AI Assistant" TextColor="White"
+                               FontSize="14" FontAttributes="Bold"/>
+                        <Label Text="AI Assistant menggunakan OpenRouter API dengan model gratis. Daftar di openrouter.ai untuk mendapatkan API key gratis."
+                               TextColor="White"
+                               FontSize="12"
+                               LineBreakMode="WordWrap"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- API Key Section -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource BorderClr}"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="🔑 OpenRouter API Key" TextColor="{DynamicResource TextPrimary}"
+                               FontSize="14" FontAttributes="Bold"/>
+                        
+                        <Border BackgroundColor="{DynamicResource PageBg}"
+                                StrokeShape="RoundRectangle 8"
+                                Stroke="{DynamicResource BorderClr}"
+                                Padding="12,8">
+                            <Entry x:Name="ApiKeyEntry"
+                                   Placeholder="sk-or-v1-..."
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="13"
+                                   IsPassword="True"/>
+                        </Border>
+
+                        <HorizontalStackLayout Spacing="8">
+                            <Border BackgroundColor="#10B981"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="12,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSaveApiKey"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="💾 Simpan" TextColor="White" FontSize="12" FontAttributes="Bold"/>
+                            </Border>
+
+                            <Border BackgroundColor="#6366F1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="12,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnShowApiKey"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="👁️ Show/Hide" TextColor="White" FontSize="12" FontAttributes="Bold"/>
+                            </Border>
+
+                            <Border BackgroundColor="#F59E0B"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="12,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnGetApiKey"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="🌐 Get API Key" TextColor="White" FontSize="12" FontAttributes="Bold"/>
+                            </Border>
+                        </HorizontalStackLayout>
+
+                        <Label Text="💡 Optional: Kosongkan jika pakai OpenClaw API Server (laptop jadi server)"
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="11"
+                               LineBreakMode="WordWrap"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Base URL (Provider) -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource BorderClr}"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="🌐 API Base URL" TextColor="{DynamicResource TextPrimary}"
+                               FontSize="14" FontAttributes="Bold"/>
+                        
+                        <Border BackgroundColor="{DynamicResource PageBg}"
+                                StrokeShape="RoundRectangle 8"
+                                Stroke="{DynamicResource BorderClr}"
+                                Padding="12,8">
+                            <Entry x:Name="BaseUrlEntry"
+                                   Placeholder="https://openrouter.ai/api/v1"
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="12"/>
+                        </Border>
+
+                        <Label Text="💡 Default: OpenRouter. Bisa ganti ke Groq, Ollama, atau provider lain yang OpenAI-compatible"
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="11"
+                               LineBreakMode="WordWrap"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Model Name -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource BorderClr}"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="🤖 Model Name" TextColor="{DynamicResource TextPrimary}"
+                               FontSize="14" FontAttributes="Bold"/>
+                        
+                        <Border BackgroundColor="{DynamicResource PageBg}"
+                                StrokeShape="RoundRectangle 8"
+                                Stroke="{DynamicResource BorderClr}"
+                                Padding="12,8">
+                            <Entry x:Name="ModelEntry"
+                                   Placeholder="meta-llama/llama-3.2-3b-instruct:free"
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="12"/>
+                        </Border>
+
+                        <Label Text="ℹ️ Contoh: llama-3.2-3b-instruct:free (OpenRouter), llama3 (Ollama), gpt-4 (OpenAI)"
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="11"
+                               LineBreakMode="WordWrap"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Test Section -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource BorderClr}"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="🧪 Test AI" TextColor="{DynamicResource TextPrimary}"
+                               FontSize="14" FontAttributes="Bold"/>
+                        
+                        <Border BackgroundColor="#6366F1"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="14,12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnTestAi"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="▶ Test Koneksi AI" TextColor="White"
+                                   FontSize="13" FontAttributes="Bold"
+                                   HorizontalOptions="Center"/>
+                        </Border>
+
+                        <Label x:Name="TestResultLabel"
+                               Text=""
+                               TextColor="{DynamicResource TextSecond}"
+                               FontSize="12"
+                               LineBreakMode="WordWrap"
+                               IsVisible="False"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- How to Get API Key -->
+                <Border BackgroundColor="#10B981"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="📖 Cara Mendapatkan API Key" TextColor="White"
+                               FontSize="14" FontAttributes="Bold"/>
+                        <Label Text="1. Buka openrouter.ai" TextColor="White" FontSize="12"/>
+                        <Label Text="2. Klik 'Sign Up' atau 'Login'" TextColor="White" FontSize="12"/>
+                        <Label Text="3. Masuk ke 'Keys' di dashboard" TextColor="White" FontSize="12"/>
+                        <Label Text="4. Klik 'Create Key'" TextColor="White" FontSize="12"/>
+                        <Label Text="5. Copy API key dan paste di atas" TextColor="White" FontSize="12"/>
+                        <Label Text="6. Klik 'Simpan'" TextColor="White" FontSize="12"/>
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

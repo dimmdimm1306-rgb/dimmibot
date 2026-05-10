@@ -1,0 +1,4 @@
+D:\!FTTH\Program\UPLOAD DOKUMEN\StokBarangMAUI\bin\Release\net9.0-android\publish\com.companyname.stokbarangmaui-Signed.aab
+D:\!FTTH\Program\UPLOAD DOKUMEN\StokBarangMAUI\bin\Release\net9.0-android\publish\com.companyname.stokbarangmaui.aab
+D:\!FTTH\Program\UPLOAD DOKUMEN\StokBarangMAUI\bin\Release\net9.0-android\publish\com.companyname.stokbarangmaui-Signed.apk
+D:\!FTTH\Program\UPLOAD DOKUMEN\StokBarangMAUI\bin\Release\net9.0-android\publish\_Microsoft.Android.Resource.Designer.dll

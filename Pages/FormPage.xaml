@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.FormPage"
+             Title="Form Barang">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+
+            <Label Text="Kode Barang" FontAttributes="Bold" />
+            <Entry x:Name="KodeEntry" Placeholder="Masukkan kode barang" />
+
+            <Label Text="Nama Barang" FontAttributes="Bold" />
+            <Entry x:Name="NamaEntry" Placeholder="Masukkan nama barang" />
+
+            <Label Text="Stok Awal" FontAttributes="Bold" />
+            <Entry x:Name="StokEntry" Placeholder="0" Keyboard="Numeric" />
+
+            <Button Text="Simpan"
+                    BackgroundColor="#007bff" TextColor="White"
+                    CornerRadius="8" Padding="0,12"
+                    Margin="0,8,0,0"
+                    Clicked="OnSimpanClicked"/>
+
+            <Button Text="Batal"
+                    BackgroundColor="#6c757d" TextColor="White"
+                    CornerRadius="8" Padding="0,12"
+                    Clicked="OnBatalClicked"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

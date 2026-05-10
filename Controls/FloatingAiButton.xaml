@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Controls.FloatingAiButton"
+             InputTransparent="True">
+    
+    <!-- Floating AI Button di pojok kanan bawah dengan margin -->
+    <Grid InputTransparent="True">
+        <Border HorizontalOptions="End" 
+                VerticalOptions="End"
+                Margin="0,0,20,80"
+                WidthRequest="60" 
+                HeightRequest="60"
+                BackgroundColor="#6366F1"
+                StrokeShape="RoundRectangle 30"
+                Stroke="White"
+                StrokeThickness="2"
+                Shadow="{Shadow Brush=Black, Offset='0,4', Radius=8, Opacity=0.3}"
+                InputTransparent="False">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnAiButtonTapped"/>
+            </Border.GestureRecognizers>
+            
+            <Grid>
+                <Image Source="claw_cat.png" 
+                       WidthRequest="36"
+                       HeightRequest="36"
+                       HorizontalOptions="Center" 
+                       VerticalOptions="Center"
+                       InputTransparent="True"/>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

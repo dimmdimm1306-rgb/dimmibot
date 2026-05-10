@@ -1,0 +1,10 @@
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi, saya Claw bot untuk project FTTH. Perkenalkan diri kamu dalam 2 kalimat singkat."
+    }
+  ],
+  "max_tokens": 100
+}

@@ -554,7 +554,12 @@ namespace StokBarangMAUI.Services
         {
             return new List<string>
             {
-                // ✅ VERIFIED WORKING (tested 2026-05-10)
+                // ✅ OPENAI MODELS (Recommended - Best value)
+                "gpt-4o-mini",
+                "gpt-4o",
+                "gpt-4-turbo",
+                
+                // ✅ VERIFIED WORKING FREE (tested 2026-05-10)
                 "liquid/lfm-2.5-1.2b-instruct:free",
                 "nvidia/nemotron-nano-9b-v2:free",
                 "meta-llama/llama-3.2-3b-instruct:free",

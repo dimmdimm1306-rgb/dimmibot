@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="456" height="456" viewBox="0 0 456 456" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Accent ring -->
+  <circle cx="228" cy="190" r="142" fill="none" stroke="#3B82F6" stroke-width="4" opacity="0.5"/>
+  <circle cx="228" cy="190" r="118" fill="none" stroke="#1E3A6E" stroke-width="2" opacity="0.8"/>
+
+  <!-- MP monogram — M -->
+  <path d="M 90 272 L 90 128 L 114 128 L 156 200 L 198 128 L 222 128 L 222 272 L 196 272 L 196 182 L 156 246 L 116 182 L 116 272 Z"
+        fill="white"/>
+
+  <!-- MP monogram — P -->
+  <path d="M 236 272 L 236 128 L 294 128 C 330 128 354 148 354 182 C 354 216 330 236 294 236 L 262 236 L 262 272 Z
+           M 262 150 L 262 214 L 290 214 C 312 214 326 202 326 182 C 326 162 312 150 290 150 Z"
+        fill="white"/>
+
+  <!-- Accent dot -->
+  <circle cx="72" cy="272" r="11" fill="#3B82F6"/>
+
+  <!-- Top accent line -->
+  <rect x="148" y="92" width="160" height="4" rx="2" fill="#3B82F6" opacity="0.8"/>
+
+  <!-- Divider -->
+  <rect x="178" y="300" width="100" height="2" rx="1" fill="#334155"/>
+
+  <!-- App name -->
+  <text x="228" y="334"
+        text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="15"
+        font-weight="bold"
+        letter-spacing="5"
+        fill="#94A3B8">MANAJEMEN PROYEK</text>
+
+  <!-- DIMMI brand -->
+  <text x="228" y="370"
+        text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="28"
+        font-weight="bold"
+        letter-spacing="10"
+        fill="#3B82F6">DIMMI</text>
+
+  <!-- Tagline -->
+  <text x="228" y="398"
+        text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="10"
+        letter-spacing="2"
+        fill="#475569">Project Monitor</text>
+
+</svg>

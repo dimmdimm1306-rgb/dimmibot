@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.DrivePreviewPage"
+             BackgroundColor="{DynamicResource PageBg}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ── -->
+        <Grid Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+              Padding="14,14,14,12" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                <Label x:Name="LblTitle" Text="Surat Jalan"
+                       TextColor="{DynamicResource TextPrimary}"
+                       FontSize="15" FontAttributes="Bold"
+                       LineBreakMode="TailTruncation"/>
+                <Label x:Name="LblSubtitle" Text="Preview"
+                       TextColor="{DynamicResource TextMuted}" FontSize="11"/>
+            </VerticalStackLayout>
+            <Border Grid.Column="1" BackgroundColor="#450A0A"
+                    StrokeShape="RoundRectangle 10" Stroke="#DC2626" StrokeThickness="1"
+                    Padding="14,9" VerticalOptions="Center">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnClose"/>
+                </Border.GestureRecognizers>
+                <Label Text="✕ Tutup" FontSize="12" FontAttributes="Bold" TextColor="#FCA5A5"/>
+            </Border>
+        </Grid>
+
+        <!-- ── Content: Image or WebView ── -->
+        <Grid Grid.Row="1">
+
+            <!-- Loading overlay -->
+            <VerticalStackLayout x:Name="LoaderOverlay" IsVisible="True"
+                                 VerticalOptions="Center" HorizontalOptions="Center" Spacing="16">
+                <ActivityIndicator IsRunning="True" Color="#3B82F6" HeightRequest="48"/>
+                <Label Text="Memuat gambar..." TextColor="{DynamicResource TextMuted}"
+                       FontSize="13" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+
+            <!-- Direct Image (Google Drive uc?export=view) -->
+            <ScrollView x:Name="ImageScroll" IsVisible="False">
+                <Image x:Name="DocImage"
+                       Aspect="AspectFit"
+                       BackgroundColor="{DynamicResource PageBg}"
+                       Margin="0"/>
+            </ScrollView>
+
+            <!-- WebView fallback (shown if image fails or non-image file) -->
+            <WebView x:Name="PreviewWeb" IsVisible="False"
+                     BackgroundColor="{DynamicResource PageBg}"
+                     Navigating="OnNavigating"
+                     Navigated="OnNavigated"/>
+
+        </Grid>
+
+        <!-- ── Footer ── -->
+        <Grid Grid.Row="2" BackgroundColor="{DynamicResource HeaderBg}" Padding="14,10"
+              ColumnDefinitions="*,*" ColumnSpacing="10">
+            <Border Grid.Column="0" BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 10" Stroke="{DynamicResource BorderClr}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSwitchToWebView"/>
+                </Border.GestureRecognizers>
+                <Label Text="🌐 Tampilkan di WebView" FontSize="11" FontAttributes="Bold"
+                       TextColor="{DynamicResource TextMuted}"
+                       HorizontalOptions="Center" Padding="0,10"/>
+            </Border>
+            <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 10" Stroke="{DynamicResource BorderClr}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnOpenBrowser"/>
+                </Border.GestureRecognizers>
+                <Label Text="↗ Buka Browser" FontSize="11" FontAttributes="Bold"
+                       TextColor="{DynamicResource TextMuted}"
+                       HorizontalOptions="Center" Padding="0,10"/>
+            </Border>
+        </Grid>
+
+    </Grid>
+</ContentPage>

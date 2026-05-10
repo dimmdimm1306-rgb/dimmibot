@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.StokGudangPage"
+             Title="Stok Gudang"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- ── Row 0: Header ── -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="14,14" Spacing="4">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                <!-- Hamburger -->
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource AccentBlueBg}"
+                        StrokeShape="RoundRectangle 10" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1.5"
+                        Padding="12,8" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHamburger"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="≡" FontSize="24" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="🏭  STOK GUDANG" TextColor="{DynamicResource HeaderSubtitle}"
+                           FontSize="10" FontAttributes="Bold"/>
+                    <Label Text="Pilih Gudang / Wilayah" TextColor="White"
+                           FontSize="20" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+                <!-- Theme + AI Bot + Refresh -->
+                <HorizontalStackLayout Grid.Column="2" Spacing="8" VerticalOptions="Center">
+                    <Border BackgroundColor="{DynamicResource HeaderBtnBg}"
+                            StrokeShape="RoundRectangle 12" Stroke="{DynamicResource HeaderBtnBorder}" StrokeThickness="1"
+                            Padding="11,9" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnThemeToggle"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblTheme" Text="☀" FontSize="15" TextColor="White"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    <Border BackgroundColor="#6366F1"
+                            StrokeShape="RoundRectangle 12" Stroke="#818CF8" StrokeThickness="1"
+                            Padding="6" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnAiBotClicked"/>
+                        </Border.GestureRecognizers>
+                        <Image Source="claw_cat.png" WidthRequest="26" HeightRequest="26"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    <Border BackgroundColor="#1D4ED8"
+                            StrokeShape="RoundRectangle 12" Stroke="#3B82F6" StrokeThickness="1"
+                            Padding="11,9" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnUpdateTapped"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="↻" FontSize="16" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                </HorizontalStackLayout>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- ── Row 1: Loader ── -->
+        <ActivityIndicator x:Name="Loader" Grid.Row="1"
+                           IsRunning="False" IsVisible="False"
+                           Color="#3B82F6" HeightRequest="32"/>
+
+        <!-- ── Row 2: Mode toggle (Per Gudang / Combine) ── -->
+        <Grid Grid.Row="2" BackgroundColor="{DynamicResource SubHeaderBg}" Padding="14,4,14,8">
+            <Border BackgroundColor="{DynamicResource CardBg2}"
+                    StrokeShape="RoundRectangle 14" Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                <Grid ColumnDefinitions="*,*">
+                    <Border x:Name="ModeGudangBtn" Grid.Column="0" BackgroundColor="#1D4ED8"
+                            StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="12,10" Margin="3">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSwitchMode" CommandParameter="gudang"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblModeGudang" Text="📋 Per Gudang" FontSize="12" FontAttributes="Bold"
+                               TextColor="White" HorizontalOptions="Center"/>
+                    </Border>
+                    <Border x:Name="ModeCombineBtn" Grid.Column="1" BackgroundColor="Transparent"
+                            StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="12,10" Margin="3">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSwitchMode" CommandParameter="combine"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblModeCombine" Text="🔀 Combine" FontSize="12" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextMuted}" HorizontalOptions="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ── Row 3: Warehouse list ── -->
+        <CollectionView x:Name="WarehouseList" Grid.Row="3" SelectionMode="None"
+                        BackgroundColor="{DynamicResource PageBg}">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" Spacing="14" Margin="0,60">
+                    <Label Text="🏭" FontSize="52" HorizontalOptions="Center"/>
+                    <Label Text="Tekan 🔄 Update untuk memuat data"
+                           TextColor="{DynamicResource TextMuted}"
+                           FontSize="13" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="12,5">
+                            <Border BackgroundColor="{DynamicResource CardBg}"
+                                    StrokeShape="RoundRectangle 16"
+                                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnWarehouseTapped"/>
+                                </Border.GestureRecognizers>
+                                <Border.Shadow>
+                                    <Shadow Brush="#000000" Offset="0,3" Radius="10" Opacity="0.15"/>
+                                </Border.Shadow>
+
+                                <Grid ColumnDefinitions="5,*">
+                                    <!-- Accent strip -->
+                                    <BoxView Grid.Column="0" Color="{Binding TotalGapColor}"
+                                             CornerRadius="16,0,0,16"/>
+
+                                    <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto"
+                                          Padding="14,14" RowSpacing="8">
+
+                                        <!-- Warehouse name + GAP badge -->
+                                        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                <Label Text="{Binding Name}" FontSize="16"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource TextPrimary}"/>
+                                                <Label Text="{Binding SegmentName}" FontSize="10"
+                                                       TextColor="{DynamicResource TextMuted}"
+                                                       LineBreakMode="TailTruncation"/>
+                                            </VerticalStackLayout>
+                                            <Border Grid.Column="1" BackgroundColor="{Binding KabelGapBgColor}"
+                                                    StrokeShape="RoundRectangle 10" Stroke="Transparent"
+                                                    Padding="10,5" VerticalOptions="Center">
+                                                <Label Text="{Binding KabelGapText}" FontSize="11"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{Binding KabelGapColor}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <BoxView Grid.Row="1" HeightRequest="1"
+                                                 Color="{DynamicResource BorderClr}"/>
+
+                                        <!-- Implementation % bars -->
+                                        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="5">
+                                                <!-- Kabel -->
+                                                <Grid ColumnDefinitions="36,*,Auto" ColumnSpacing="6">
+                                                    <Label Grid.Column="0" Text="Kabel" FontSize="9"
+                                                           TextColor="#3B82F6" FontAttributes="Bold"
+                                                           VerticalOptions="Center"/>
+                                                    <ProgressBar Grid.Column="1" Progress="{Binding KabelImpPct}"
+                                                                 ProgressColor="#3B82F6" BackgroundColor="#1E3A6E"
+                                                                 HeightRequest="6" VerticalOptions="Center"/>
+                                                    <Label Grid.Column="2" Text="{Binding KabelImpPctText}"
+                                                           FontSize="10" FontAttributes="Bold" TextColor="#3B82F6"
+                                                           VerticalOptions="Center" MinimumWidthRequest="40"/>
+                                                </Grid>
+                                                <!-- Total semua material -->
+                                                <Grid ColumnDefinitions="36,*,Auto" ColumnSpacing="6">
+                                                    <Label Grid.Column="0" Text="Total" FontSize="9"
+                                                           TextColor="#22C55E" FontAttributes="Bold"
+                                                           VerticalOptions="Center"/>
+                                                    <ProgressBar Grid.Column="1" Progress="{Binding TotalImpPct}"
+                                                                 ProgressColor="#22C55E" BackgroundColor="#064E3B"
+                                                                 HeightRequest="6" VerticalOptions="Center"/>
+                                                    <Label Grid.Column="2" Text="{Binding TotalImpPctText}"
+                                                           FontSize="10" FontAttributes="Bold" TextColor="#22C55E"
+                                                           VerticalOptions="Center" MinimumWidthRequest="40"/>
+                                                </Grid>
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1" Text="›" FontSize="22"
+                                                   TextColor="{DynamicResource TextMuted}"
+                                                   VerticalOptions="Center" Margin="4,0,0,0"/>
+                                        </Grid>
+
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- ── Row 3 (alt): Combine view ── -->
+        <Grid x:Name="CombineView" Grid.Row="3" IsVisible="False"
+              RowDefinitions="Auto,Auto,Auto,*"
+              BackgroundColor="{DynamicResource PageBg}">
+
+            <!-- Material picker -->
+            <Border Grid.Row="0" Margin="12,8,12,4"
+                    BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 14"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1.5">
+                <Grid ColumnDefinitions="Auto,*,Auto" Padding="12,4" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="🔎" FontSize="15" VerticalOptions="Center"/>
+                    <Picker Grid.Column="1" x:Name="MaterialPicker"
+                            Title="Pilih item / nama barang..."
+                            TitleColor="{DynamicResource TextMuted}"
+                            TextColor="{DynamicResource TextPrimary}"
+                            BackgroundColor="Transparent"
+                            FontSize="13" FontAttributes="Bold"
+                            SelectedIndexChanged="OnMaterialPicked"/>
+                    <Border Grid.Column="2" x:Name="BtnResetCombine"
+                            BackgroundColor="{DynamicResource CardBg2}"
+                            StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                            Padding="8,5" VerticalOptions="Center" IsVisible="False">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnResetCombine"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="Reset" FontSize="10" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextSecond}"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Combined summary -->
+            <Border Grid.Row="1" x:Name="CombinedCard" Margin="12,4,12,4"
+                    BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 16"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                    IsVisible="False">
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Offset="0,3" Radius="10" Opacity="0.15"/>
+                </Border.Shadow>
+                <VerticalStackLayout Padding="14,12" Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <HorizontalStackLayout Grid.Column="0" Spacing="8">
+                            <BoxView Color="#F59E0B" WidthRequest="4" HeightRequest="18"
+                                     CornerRadius="2" VerticalOptions="Center"/>
+                            <Label Text="Gabungan Terpilih" FontSize="13" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                        <Border Grid.Column="1" BackgroundColor="#1E3A6E"
+                                StrokeShape="RoundRectangle 10" Stroke="#2563EB" StrokeThickness="1"
+                                Padding="10,5">
+                            <Label x:Name="LblCombineCount" Text="0 gudang"
+                                   FontSize="10" FontAttributes="Bold" TextColor="#93C5FD"/>
+                        </Border>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2" HorizontalOptions="Center">
+                            <Label x:Name="LblSumDiterima" Text="0" FontSize="16" FontAttributes="Bold"
+                                   TextColor="#3B82F6" HorizontalOptions="Center"/>
+                            <Label Text="Diterima" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
+                            <Label x:Name="LblSumKeluar" Text="0" FontSize="16" FontAttributes="Bold"
+                                   TextColor="#F59E0B" HorizontalOptions="Center"/>
+                            <Label Text="Keluar" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="Center">
+                            <Label x:Name="LblSumImp" Text="0" FontSize="16" FontAttributes="Bold"
+                                   TextColor="#A855F7" HorizontalOptions="Center"/>
+                            <Label Text="Implementasi" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="3" Spacing="2" HorizontalOptions="Center">
+                            <Label x:Name="LblSumSisa" Text="0" FontSize="16" FontAttributes="Bold"
+                                   TextColor="#22C55E" HorizontalOptions="Center"/>
+                            <Label Text="Sisa Real" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Section header -->
+            <Grid Grid.Row="2" BackgroundColor="{DynamicResource SubHeaderBg}"
+                  Padding="14,8,14,8" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10"
+                  IsVisible="False" x:Name="CombineHeader">
+                <BoxView Grid.Column="0" Color="#3B82F6" WidthRequest="4" HeightRequest="18"
+                         CornerRadius="2" VerticalOptions="Center"/>
+                <Label Grid.Column="1" Text="Pilih gudang untuk digabung"
+                       FontSize="12" FontAttributes="Bold"
+                       TextColor="{DynamicResource TextPrimary}" VerticalOptions="Center"/>
+                <Border Grid.Column="2" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 10" Stroke="{DynamicResource BorderClr}"
+                        Padding="10,4">
+                    <Label x:Name="LblWarehouseCount" Text="0" FontSize="11"
+                           TextColor="{DynamicResource TextMuted}"/>
+                </Border>
+            </Grid>
+
+            <CollectionView Grid.Row="3" x:Name="CombineList" SelectionMode="None"
+                            BackgroundColor="{DynamicResource PageBg}">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="12" Margin="0,60">
+                        <Label Text="🔀" FontSize="48" HorizontalOptions="Center"/>
+                        <Label x:Name="LblCombineEmpty" Text="Pilih item dulu untuk melihat gudang yang punya stok"
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="13" HorizontalOptions="Center"
+                               LineBreakMode="WordWrap" Margin="40,0"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="12,5">
+                            <Border BackgroundColor="{Binding RowBg}"
+                                    StrokeShape="RoundRectangle 14"
+                                    Stroke="{Binding StrokeClr}" StrokeThickness="1.5">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnCombineRowTapped"/>
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" Padding="14,12" ColumnSpacing="12">
+                                    <!-- Checkbox -->
+                                    <Border Grid.Column="0" BackgroundColor="{Binding CheckBg}"
+                                            StrokeShape="RoundRectangle 8"
+                                            Stroke="{Binding CheckStroke}" StrokeThickness="2"
+                                            WidthRequest="28" HeightRequest="28"
+                                            VerticalOptions="Center">
+                                        <Label Text="{Binding CheckMark}" FontSize="16" FontAttributes="Bold"
+                                               TextColor="White"
+                                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                                    </Border>
+
+                                    <!-- Warehouse name + stock -->
+                                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="3">
+                                        <Label Text="{Binding WarehouseName}" FontSize="13" FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextPrimary}"
+                                               LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding SegmentName}" FontSize="9"
+                                               TextColor="{DynamicResource TextMuted}"
+                                               LineBreakMode="TailTruncation"/>
+                                        <HorizontalStackLayout Spacing="6">
+                                            <Label Text="{Binding DiterimaText}" FontSize="10"
+                                                   FontAttributes="Bold" TextColor="#3B82F6"/>
+                                            <Label Text="·" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                                            <Label Text="{Binding KeluarText}" FontSize="10"
+                                                   FontAttributes="Bold" TextColor="#F59E0B"/>
+                                            <Label Text="·" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                                            <Label Text="{Binding ImpText}" FontSize="10"
+                                                   FontAttributes="Bold" TextColor="#A855F7"/>
+                                        </HorizontalStackLayout>
+                                    </VerticalStackLayout>
+
+                                    <!-- Sisa Real badge -->
+                                    <VerticalStackLayout Grid.Column="2" VerticalOptions="Center"
+                                                         HorizontalOptions="End" Spacing="2">
+                                        <Border BackgroundColor="{Binding SisaBg}"
+                                                StrokeShape="RoundRectangle 10" Stroke="Transparent"
+                                                Padding="10,5">
+                                            <Label Text="{Binding SisaText}" FontSize="13" FontAttributes="Bold"
+                                                   TextColor="{Binding SisaColor}"/>
+                                        </Border>
+                                        <Label Text="sisa" FontSize="8"
+                                               TextColor="{DynamicResource TextMuted}"
+                                               HorizontalOptions="Center"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+
+    </Grid>
+</ContentPage>

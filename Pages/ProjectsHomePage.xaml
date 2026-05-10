@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.ProjectsHomePage"
+             BackgroundColor="{DynamicResource PageBg}"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Header ── -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="18,50,18,18" Spacing="4">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <VerticalStackLayout>
+                    <Label Text="📊 Project Monitor" TextColor="{DynamicResource TextMuted}" FontSize="12"/>
+                    <Label Text="Pilih Project" TextColor="{DynamicResource TextPrimary}"
+                           FontSize="24" FontAttributes="Bold"/>
+                </VerticalStackLayout>
+                
+                <!-- Google Sign In Button -->
+                <Border Grid.Column="1" x:Name="BtnGoogleSignIn"
+                        BackgroundColor="#4285F4"
+                        StrokeShape="RoundRectangle 12" Stroke="Transparent"
+                        Padding="12,9" VerticalOptions="Center" Margin="0,0,8,0"
+                        IsVisible="False">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnGoogleSignIn"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="🔐 Sign In" FontSize="12" TextColor="White" FontAttributes="Bold"/>
+                </Border>
+                
+                <!-- User Email Display (when signed in) -->
+                <Border Grid.Column="1" x:Name="BtnUserProfile"
+                        BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}"
+                        Padding="12,9" VerticalOptions="Center" Margin="0,0,8,0"
+                        IsVisible="False">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnUserProfileTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="LblUserEmail" Text="" FontSize="11" TextColor="{DynamicResource TextPrimary}"/>
+                </Border>
+                
+                <!-- Theme toggle -->
+                <Border Grid.Column="2" x:Name="BtnTheme"
+                        BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}"
+                        Padding="12,9" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnThemeToggle"/>
+                    </Border.GestureRecognizers>
+                    <Label x:Name="LblTheme" Text="☀" FontSize="16"/>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- ── Toolbar: "Tambah Project" ── -->
+        <Grid Grid.Row="1" x:Name="ToolbarAdd" BackgroundColor="{DynamicResource SubHeaderBg}"
+              Padding="18,12">
+            <Border BackgroundColor="#1D4ED8"
+                    StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="16,10">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnAddProject"/>
+                </Border.GestureRecognizers>
+                <Label Text="＋ Tambah Project Baru" FontSize="13" FontAttributes="Bold"
+                       TextColor="White" HorizontalOptions="Center"/>
+            </Border>
+        </Grid>
+
+        <!-- ── Project list ── -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout x:Name="ProjectList" Padding="16,12" Spacing="12">
+                <!-- Populated in code-behind -->
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.SpanDetailPage"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem x:Name="TiTheme" Text="☀" Order="Primary" Priority="0" Clicked="OnThemeToggle"/>
+    </ContentPage.ToolbarItems>
+
+    <!-- Rows: header, loader, mode-toggle, chips, search, divider, list -->
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*">
+
+        <!-- ── Row 0: Stats header ── -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="14,14" Spacing="12">
+            <Label x:Name="LblSegTitle" Text="Segment" TextColor="{DynamicResource TextPrimary}"
+                   FontSize="15" FontAttributes="Bold" LineBreakMode="WordWrap"/>
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}" Padding="10,10">
+                    <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                        <Label x:Name="LblTotalSpan" Text="–" FontSize="20" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextPrimary}" HorizontalOptions="Center"/>
+                        <Label Text="Total Span" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+                <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}" Padding="10,10">
+                    <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                        <Label x:Name="LblKabelDone" Text="–" FontSize="20" FontAttributes="Bold"
+                               TextColor="#60A5FA" HorizontalOptions="Center"/>
+                        <Label Text="Kabel Jalan" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+                <Border Grid.Column="2" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12" Stroke="{DynamicResource BorderClr}" Padding="10,10">
+                    <VerticalStackLayout Spacing="2" HorizontalOptions="Center">
+                        <Label x:Name="LblStatusOK" Text="–" FontSize="20" FontAttributes="Bold"
+                               TextColor="#4ADE80" HorizontalOptions="Center"/>
+                        <Label Text="Status OK" FontSize="9" TextColor="{DynamicResource TextMuted}"
+                               HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- ── Row 1: Loader ── -->
+        <ActivityIndicator x:Name="Loader" Grid.Row="1"
+                           IsRunning="False" IsVisible="False"
+                           Color="#3B82F6" HeightRequest="32"/>
+
+        <!-- ── Row 2: Mode toggle tabs ── -->
+        <Grid Grid.Row="2" BackgroundColor="{DynamicResource SubHeaderBg}" Padding="14,8">
+            <Border BackgroundColor="{DynamicResource CardBg2}"
+                    StrokeShape="RoundRectangle 14" Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                <Grid ColumnDefinitions="*,*">
+                    <Border x:Name="ModeSpanBtn" Grid.Column="0" BackgroundColor="#1D4ED8"
+                            StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="12,10" Margin="3">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSwitchMode" CommandParameter="span"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblModeSpan" Text="📋 Span" FontSize="12" FontAttributes="Bold"
+                               TextColor="White" HorizontalOptions="Center"/>
+                    </Border>
+                    <Border x:Name="ModeHarianBtn" Grid.Column="1" BackgroundColor="Transparent"
+                            StrokeShape="RoundRectangle 12" Stroke="Transparent" Padding="12,10" Margin="3">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSwitchMode" CommandParameter="harian"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblModeHarian" Text="📅 Harian" FontSize="12" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextMuted}" HorizontalOptions="Center"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ── Row 3: Filter chips (span mode only) ── -->
+        <ScrollView Grid.Row="3" x:Name="FilterChipsRow" Orientation="Horizontal"
+                    HorizontalScrollBarVisibility="Never"
+                    BackgroundColor="{DynamicResource SubHeaderBg}" Padding="14,0,14,10">
+            <HorizontalStackLayout Spacing="8">
+                <Border x:Name="ChipSemua" BackgroundColor="#1D4ED8"
+                        StrokeShape="RoundRectangle 20" Stroke="Transparent" Padding="16,8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnFilterChip" CommandParameter="semua"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="Semua" FontSize="12" FontAttributes="Bold" TextColor="White"/>
+                </Border>
+                <Border x:Name="ChipOK" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 20" Stroke="{DynamicResource BorderClr}" Padding="16,8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnFilterChip" CommandParameter="ok"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="✓ OK" FontSize="12" FontAttributes="Bold" TextColor="#4ADE80"/>
+                </Border>
+                <Border x:Name="ChipNOK" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 20" Stroke="{DynamicResource BorderClr}" Padding="16,8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnFilterChip" CommandParameter="nok"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="✗ NOK" FontSize="12" FontAttributes="Bold" TextColor="#F87171"/>
+                </Border>
+                <Border x:Name="ChipProgress" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 20" Stroke="{DynamicResource BorderClr}" Padding="16,8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnFilterChip" CommandParameter="progress"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="⬆ Progress" FontSize="12" FontAttributes="Bold" TextColor="#C084FC"/>
+                </Border>
+                <Border x:Name="ChipNoProgress" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 20" Stroke="{DynamicResource BorderClr}" Padding="16,8">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnFilterChip" CommandParameter="noprogress"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="○ Belum" FontSize="12" FontAttributes="Bold" TextColor="#FB923C"/>
+                </Border>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- ── Row 4: Search bar + sort toggle ── -->
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="14,0,14,8" ColumnSpacing="8">
+            <!-- Custom search bar -->
+            <Border Grid.Column="0"
+                    BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 14"
+                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1.5">
+                <Border.Shadow>
+                    <Shadow Brush="#000000" Offset="0,2" Radius="6" Opacity="0.10"/>
+                </Border.Shadow>
+                <Grid ColumnDefinitions="Auto,*,Auto" Padding="10,0" ColumnSpacing="6">
+                    <Label Grid.Column="0" Text="🔍" FontSize="15"
+                           VerticalOptions="Center" Opacity="0.55"/>
+                    <Entry Grid.Column="1"
+                           x:Name="SearchSpan"
+                           Placeholder="Cari span / kabupaten..."
+                           PlaceholderColor="{DynamicResource TextMuted}"
+                           TextColor="{DynamicResource TextPrimary}"
+                           BackgroundColor="Transparent"
+                           FontSize="12"
+                           HeightRequest="42"
+                           TextChanged="OnSearchChanged"/>
+                    <Border Grid.Column="2" x:Name="BtnClearSpan"
+                            BackgroundColor="{DynamicResource CardBg2}"
+                            StrokeShape="RoundRectangle 7" Stroke="Transparent"
+                            Padding="6,4" VerticalOptions="Center"
+                            IsVisible="False">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnClearSpanSearch"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="✕" FontSize="10" TextColor="{DynamicResource TextMuted}"
+                               FontAttributes="Bold"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" x:Name="HarianSortBtn"
+                    BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 20" Stroke="{DynamicResource BorderClr}"
+                    Padding="12,8" VerticalOptions="Center" IsVisible="False">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnHarianSortToggle"/>
+                </Border.GestureRecognizers>
+                <Label x:Name="LblHarianSort" Text="↓ Terbaru" FontSize="11" FontAttributes="Bold"
+                       TextColor="{DynamicResource TextPrimary}"/>
+            </Border>
+        </Grid>
+
+        <!-- ── Row 5: Divider ── -->
+        <BoxView Grid.Row="5" HeightRequest="1" Color="{DynamicResource BorderClr}"
+                 Margin="14,0,14,2"/>
+
+        <!-- ── Row 6: SpanList (Span mode) ── -->
+        <RefreshView Grid.Row="6" x:Name="Refresher" Refreshing="OnRefreshing" RefreshColor="#3B82F6">
+            <CollectionView x:Name="SpanList" SelectionMode="None"
+                            BackgroundColor="{DynamicResource PageBg}">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="12" Margin="0,60">
+                        <Label Text="🔍" FontSize="48" HorizontalOptions="Center"/>
+                        <Label Text="Tidak ada span ditemukan" TextColor="{DynamicResource TextMuted}"
+                               FontSize="14" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="12,7">
+                            <Border BackgroundColor="{DynamicResource CardBg}"
+                                    StrokeShape="RoundRectangle 16"
+                                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                                <Border.Shadow>
+                                    <Shadow Brush="#000000" Offset="0,2" Radius="8" Opacity="0.12"/>
+                                </Border.Shadow>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSpanTapped"/>
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="5,*">
+                                    <BoxView Grid.Column="0" Color="{Binding OverallColor}"
+                                             CornerRadius="16,0,0,16"/>
+                                    <VerticalStackLayout Grid.Column="1" Padding="14,18" Spacing="10">
+
+                                        <!-- Rute + Status badge -->
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                                <Label Text="{Binding Rute}" FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource TextPrimary}"
+                                                       LineBreakMode="WordWrap"/>
+                                                <Label Text="{Binding Kab}" FontSize="10"
+                                                       TextColor="{DynamicResource TextMuted}"/>
+                                            </VerticalStackLayout>
+                                            <Border Grid.Column="1" BackgroundColor="{Binding StatusColor}"
+                                                    StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                                                    Padding="8,4" VerticalOptions="Start">
+                                                <Label Text="{Binding StatusBadge}" FontSize="10"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{Binding StatusTextColor}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Overall progress -->
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                            <Label Grid.Column="0" Text="Overall" FontSize="10"
+                                                   TextColor="{DynamicResource TextSecond}"
+                                                   WidthRequest="50" VerticalOptions="Center"/>
+                                            <ProgressBar Grid.Column="1" Progress="{Binding OverallPct}"
+                                                         ProgressColor="{Binding OverallColor}"
+                                                         BackgroundColor="{DynamicResource BorderClr}"
+                                                         HeightRequest="6" VerticalOptions="Center"/>
+                                            <Label Grid.Column="2" Text="{Binding OverallPctText}"
+                                                   FontSize="10" FontAttributes="Bold"
+                                                   TextColor="{Binding OverallColor}"
+                                                   WidthRequest="36" HorizontalOptions="End"
+                                                   VerticalOptions="Center"/>
+                                        </Grid>
+
+                                        <BoxView HeightRequest="1" Color="{DynamicResource DividerClr}"/>
+
+                                        <!-- Kabel -->
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6">
+                                            <Label Grid.Column="0" Text="🔵" FontSize="11"/>
+                                            <ProgressBar Grid.Column="1" Progress="{Binding KabelPctVal}"
+                                                         ProgressColor="#3B82F6"
+                                                         BackgroundColor="{DynamicResource BorderClr}"
+                                                         HeightRequest="5" VerticalOptions="Center"/>
+                                            <Label Grid.Column="2" Text="{Binding KabelPct}" FontSize="10"
+                                                   FontAttributes="Bold" TextColor="#60A5FA"
+                                                   WidthRequest="38" HorizontalOptions="End"/>
+                                            <Label Grid.Column="3"
+                                                   Text="{Binding KabelProgress, StringFormat='{0:N0}m'}"
+                                                   FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                                   WidthRequest="52" HorizontalOptions="End"/>
+                                        </Grid>
+                                        <!-- T7 -->
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6">
+                                            <Label Grid.Column="0" Text="🟢" FontSize="11"/>
+                                            <ProgressBar Grid.Column="1" Progress="{Binding T7PctVal}"
+                                                         ProgressColor="#22C55E"
+                                                         BackgroundColor="{DynamicResource BorderClr}"
+                                                         HeightRequest="5" VerticalOptions="Center"/>
+                                            <Label Grid.Column="2" Text="{Binding T7Pct}" FontSize="10"
+                                                   FontAttributes="Bold" TextColor="#4ADE80"
+                                                   WidthRequest="38" HorizontalOptions="End"/>
+                                            <Label Grid.Column="3"
+                                                   Text="{Binding T7Progress, StringFormat='{0:N0} btg'}"
+                                                   FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                                   WidthRequest="52" HorizontalOptions="End"/>
+                                        </Grid>
+                                        <!-- T9 -->
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6">
+                                            <Label Grid.Column="0" Text="🟣" FontSize="11"/>
+                                            <ProgressBar Grid.Column="1" Progress="{Binding T9PctVal}"
+                                                         ProgressColor="#A855F7"
+                                                         BackgroundColor="{DynamicResource BorderClr}"
+                                                         HeightRequest="5" VerticalOptions="Center"/>
+                                            <Label Grid.Column="2" Text="{Binding T9Pct}" FontSize="10"
+                                                   FontAttributes="Bold" TextColor="#C084FC"
+                                                   WidthRequest="38" HorizontalOptions="End"/>
+                                            <Label Grid.Column="3"
+                                                   Text="{Binding T9Progress, StringFormat='{0:N0} btg'}"
+                                                   FontSize="9" TextColor="{DynamicResource TextMuted}"
+                                                   WidthRequest="52" HorizontalOptions="End"/>
+                                        </Grid>
+
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- ── Row 6: HarianList (Harian mode, stacked over SpanList) ── -->
+        <RefreshView Grid.Row="6" x:Name="HarianRefresher" IsVisible="False"
+                     Refreshing="OnRefreshing" RefreshColor="#F59E0B">
+            <CollectionView x:Name="HarianList" SelectionMode="None"
+                            BackgroundColor="{DynamicResource PageBg}">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout HorizontalOptions="Center" Spacing="12" Margin="0,60">
+                        <Label Text="📭" FontSize="48" HorizontalOptions="Center"/>
+                        <Label Text="Tidak ada aktivitas ditemukan" TextColor="{DynamicResource TextMuted}"
+                               FontSize="14" HorizontalOptions="Center"/>
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="14,5">
+                            <Border BackgroundColor="{DynamicResource CardBg}"
+                                    StrokeShape="RoundRectangle 16"
+                                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1">
+                                <Border.Shadow>
+                                    <Shadow Brush="#000000" Offset="0,2" Radius="6" Opacity="0.10"/>
+                                </Border.Shadow>
+                                <Grid ColumnDefinitions="5,*">
+                                    <BoxView Grid.Column="0" Color="{Binding StatusColor}"
+                                             CornerRadius="16,0,0,16"/>
+                                    <VerticalStackLayout Grid.Column="1" Padding="12,12" Spacing="8">
+
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <Label Text="{Binding Span}" FontAttributes="Bold" FontSize="13"
+                                                   TextColor="{DynamicResource TextPrimary}"
+                                                   LineBreakMode="TailTruncation" VerticalOptions="Center"/>
+                                            <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg2}"
+                                                    StrokeShape="RoundRectangle 6" Stroke="Transparent"
+                                                    Padding="8,3" VerticalOptions="Center">
+                                                <Label Text="{Binding Tanggal}" FontSize="9"
+                                                       TextColor="{DynamicResource TextMuted}"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <Label Text="{Binding NamaBarang}" FontSize="12"
+                                               TextColor="{DynamicResource TextSecond}"
+                                               LineBreakMode="TailTruncation"/>
+
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                                            <Border Grid.Column="0" BackgroundColor="#1E3A6E"
+                                                    StrokeShape="RoundRectangle 6"
+                                                    Stroke="#2563EB" StrokeThickness="1" Padding="8,3">
+                                                <Label Text="{Binding ProgresDisplay}"
+                                                       FontSize="11" FontAttributes="Bold" TextColor="#60A5FA"/>
+                                            </Border>
+                                            <Label Grid.Column="1" Text="{Binding Keterangan}"
+                                                   FontSize="10" TextColor="{DynamicResource TextMuted}"
+                                                   VerticalOptions="Center" LineBreakMode="TailTruncation"
+                                                   IsVisible="{Binding HasKeterangan}"/>
+                                            <Border Grid.Column="2" BackgroundColor="{Binding StatusColor}"
+                                                    StrokeShape="RoundRectangle 8" Stroke="Transparent"
+                                                    Padding="8,3" VerticalOptions="Center">
+                                                <Label Text="{Binding StatusText}" FontSize="9"
+                                                       FontAttributes="Bold" TextColor="White"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <Label Text="{Binding Homebase, StringFormat='🏠 {0}'}"
+                                               FontSize="10" TextColor="{DynamicResource TextMuted}"
+                                               IsVisible="{Binding HasHomebase}"/>
+
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

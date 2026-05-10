@@ -1,0 +1,10 @@
+{
+  "model": "anthropic/claude-sonnet-4.5",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hi, saya Claw. Perkenalkan diri kamu dalam 2 kalimat."
+    }
+  ],
+  "max_tokens": 100
+}

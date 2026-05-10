@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.InputHubPage"
+             Title="Input"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}"
+                             Padding="14" Spacing="3">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                <Border Grid.Column="0" BackgroundColor="{DynamicResource AccentBlueBg}"
+                        StrokeShape="RoundRectangle 10" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1.5"
+                        Padding="12,8" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnHamburger"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="≡" FontSize="24" FontAttributes="Bold" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="✏️  INPUT DATA" TextColor="{DynamicResource AccentBlueBorder}" FontSize="10" FontAttributes="Bold"/>
+                    <Label x:Name="LblHeader" Text="—" TextColor="White" FontSize="14" FontAttributes="Bold"
+                           LineBreakMode="TailTruncation"/>
+                </VerticalStackLayout>
+                <!-- AI Bot Button -->
+                <Border Grid.Column="2" BackgroundColor="#6366F1"
+                        StrokeShape="RoundRectangle 12" Stroke="#818CF8" StrokeThickness="1"
+                        Padding="6" VerticalOptions="Center">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnAiBotClicked"/>
+                    </Border.GestureRecognizers>
+                    <Image Source="claw_cat.png" WidthRequest="26" HeightRequest="26"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="14">
+
+                <!-- Google sign-in / status -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 14" Stroke="{DynamicResource BorderClr}" Padding="14">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="☁️  Akun Google" FontSize="12" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextPrimary}"/>
+                        <Label x:Name="LblGoogleStatus" Text="Belum login."
+                               FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        <HorizontalStackLayout Spacing="8">
+                            <Border x:Name="BtnGoogleSignIn" BackgroundColor="#0E7490"
+                                    StrokeShape="RoundRectangle 10" Padding="14,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnGoogleSignIn"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="🔑 Sign in Google" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                            </Border>
+                            <Border x:Name="BtnGoogleSignOut" BackgroundColor="#7F1D1D"
+                                    StrokeShape="RoundRectangle 10" Padding="14,8" IsVisible="False">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnGoogleSignOut"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="Sign out" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                            </Border>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Folder picker untuk SJ -->
+                <Border x:Name="FolderCard" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 14" Stroke="{DynamicResource BorderClr}"
+                        Padding="14" IsVisible="False">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Label Grid.Column="0" Text="📁" FontSize="22" VerticalOptions="Center"/>
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                            <Label Text="Folder Drive untuk foto SJ" FontSize="10"
+                                   TextColor="{DynamicResource TextMuted}"/>
+                            <Label x:Name="LblFolder" Text="Belum dipilih" FontSize="12"
+                                   FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"
+                                   LineBreakMode="TailTruncation"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" BackgroundColor="#1D4ED8"
+                                StrokeShape="RoundRectangle 8" Padding="11,6">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPickFolder"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="Pilih" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Surat Jalan card -->
+                <Border x:Name="CardSJ" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 16" Stroke="{DynamicResource BorderClr}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOpenSuratJalan"/>
+                    </Border.GestureRecognizers>
+                    <Grid Padding="16,14" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border Grid.Column="0" BackgroundColor="#1E3A6E"
+                                StrokeShape="RoundRectangle 12" WidthRequest="48" HeightRequest="48"
+                                VerticalOptions="Center">
+                            <Label Text="📦" FontSize="22" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                            <Label Text="Input Surat Jalan" FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}"/>
+                            <Label Text="Foto SJ + multi item barang"
+                                   FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" x:Name="BadgeSJ" BackgroundColor="#3B82F6"
+                                StrokeShape="RoundRectangle 12" Padding="9,4" VerticalOptions="Center"
+                                IsVisible="False">
+                            <Label x:Name="LblBadgeSJ" Text="0" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Progress card -->
+                <Border x:Name="CardPG" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 16" Stroke="{DynamicResource BorderClr}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOpenProgress"/>
+                    </Border.GestureRecognizers>
+                    <Grid Padding="16,14" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border Grid.Column="0" BackgroundColor="#166534"
+                                StrokeShape="RoundRectangle 12" WidthRequest="48" HeightRequest="48"
+                                VerticalOptions="Center">
+                            <Label Text="📡" FontSize="22" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                            <Label Text="Input Progress" FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}"/>
+                            <Label Text="1 span — multi material"
+                                   FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" x:Name="BadgePG" BackgroundColor="#22C55E"
+                                StrokeShape="RoundRectangle 12" Padding="9,4" VerticalOptions="Center"
+                                IsVisible="False">
+                            <Label x:Name="LblBadgePG" Text="0" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Approvals card (Admin only) -->
+                <Border x:Name="BtnApprovals" BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 16" Stroke="#F59E0B" StrokeThickness="2"
+                        IsVisible="False">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnOpenApprovals"/>
+                    </Border.GestureRecognizers>
+                    <Grid Padding="16,14" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Border Grid.Column="0" BackgroundColor="#92400E"
+                                StrokeShape="RoundRectangle 12" WidthRequest="48" HeightRequest="48"
+                                VerticalOptions="Center">
+                            <Label Text="⚠️" FontSize="22" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
+                            <Label Text="Pending Approvals" FontSize="14" FontAttributes="Bold"
+                                   TextColor="{DynamicResource TextPrimary}"/>
+                            <Label Text="Review draft dari user lain"
+                                   FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" x:Name="BadgeApproval" BackgroundColor="#F59E0B"
+                                StrokeShape="RoundRectangle 12" Padding="9,4" VerticalOptions="Center"
+                                IsVisible="False">
+                            <Label x:Name="LblBadgeApproval" Text="0" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="BtnUploadAll" BackgroundColor="#16A34A"
+                        StrokeShape="RoundRectangle 14" Padding="0,14" IsVisible="False">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnUploadAll"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="🚀  Kirim semua draft ke Spreadsheet" FontSize="13" FontAttributes="Bold"
+                           TextColor="White" HorizontalOptions="Center"/>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

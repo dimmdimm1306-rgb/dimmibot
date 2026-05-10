@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.Stock.WarehouseFormPage"
+             Title="Form Gudang"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <VerticalStackLayout Padding="16" Spacing="14">
+
+        <Label Text="Nama Gudang" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+        <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+            <Entry x:Name="EntryName" Placeholder="Contoh: BREBES" FontSize="15"
+                   Margin="8,4" TextColor="{DynamicResource TextPrimary}"
+                   PlaceholderColor="{DynamicResource TextMuted}"/>
+        </Border>
+
+        <Label Text="Lokasi" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+        <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+            <Entry x:Name="EntryLocation" Placeholder="Contoh: Brebes, Jawa Tengah" FontSize="15"
+                   Margin="8,4" TextColor="{DynamicResource TextPrimary}"
+                   PlaceholderColor="{DynamicResource TextMuted}"/>
+        </Border>
+
+        <Button Text="Simpan" Clicked="OnSimpan"
+                BackgroundColor="#1E40AF" TextColor="White"
+                FontSize="16" FontAttributes="Bold"
+                CornerRadius="10" HeightRequest="50" Margin="0,8,0,0"/>
+
+    </VerticalStackLayout>
+</ContentPage>

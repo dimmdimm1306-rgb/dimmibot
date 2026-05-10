@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.Stock.MaterialFormPage"
+             Title="Form Material"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="14">
+
+            <Label Text="Nama Material" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Entry x:Name="EntryName" Placeholder="Contoh: Kabel 24C" FontSize="15"
+                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
+                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <Label Text="Satuan" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Entry x:Name="EntryUnit" Placeholder="pcs / meter / btg / roll" FontSize="15"
+                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
+                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <Label Text="Kategori" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Entry x:Name="EntryCategory" Placeholder="Kabel / Aksesori / Tiang" FontSize="15"
+                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
+                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <Label Text="Stok Minimum (peringatan)" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
+                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
+                <Entry x:Name="EntryMinStock" Placeholder="0" Keyboard="Numeric" FontSize="15"
+                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
+                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            </Border>
+
+            <Button Text="Simpan" Clicked="OnSimpan"
+                    BackgroundColor="#1E40AF" TextColor="White"
+                    FontSize="16" FontAttributes="Bold"
+                    CornerRadius="10" HeightRequest="50" Margin="0,8,0,0"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

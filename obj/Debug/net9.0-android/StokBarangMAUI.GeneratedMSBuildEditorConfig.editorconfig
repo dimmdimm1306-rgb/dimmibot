@@ -1,0 +1,273 @@
+is_global = true
+build_property.EnableAotAnalyzer = 
+build_property.EnableSingleFileAnalyzer = true
+build_property.EnableTrimAnalyzer = false
+build_property.IncludeAllContentForSelfExtract = 
+build_property.TargetFramework = net9.0-android
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v9.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = false
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = StokBarangMAUI
+build_property.ProjectDir = D:\!FTTH\Program\UPLOAD DOKUMEN\StokBarangMAUI\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/App.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.App.xaml
+build_metadata.AdditionalFiles.TargetPath = App.xaml
+build_metadata.AdditionalFiles.RelativePath = App.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/AppShell.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.AppShell.xaml
+build_metadata.AdditionalFiles.TargetPath = AppShell.xaml
+build_metadata.AdditionalFiles.RelativePath = AppShell.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Controls/FloatingAiButton.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Controls.FloatingAiButton.xaml
+build_metadata.AdditionalFiles.TargetPath = Controls\FloatingAiButton.xaml
+build_metadata.AdditionalFiles.RelativePath = Controls\FloatingAiButton.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/AbsensiFeedPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.AbsensiFeedPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\AbsensiFeedPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\AbsensiFeedPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/AbsensiInputPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.AbsensiInputPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\AbsensiInputPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\AbsensiInputPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/AddProjectPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.AddProjectPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\AddProjectPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\AddProjectPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/AiChatPopup.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.AiChatPopup.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\AiChatPopup.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\AiChatPopup.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/AiSettingsPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.AiSettingsPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\AiSettingsPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\AiSettingsPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/ApprovalListPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.ApprovalListPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\ApprovalListPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\ApprovalListPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/ChartPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.ChartPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\ChartPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\ChartPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/DailyDetailPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.DailyDetailPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\DailyDetailPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\DailyDetailPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/DrawerMenuPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.DrawerMenuPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\DrawerMenuPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\DrawerMenuPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/DriveFolderPickerPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.DriveFolderPickerPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\DriveFolderPickerPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\DriveFolderPickerPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/DrivePreviewPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.DrivePreviewPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\DrivePreviewPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\DrivePreviewPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/FormPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.FormPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\FormPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\FormPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/FullscreenPhotoPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.FullscreenPhotoPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\FullscreenPhotoPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\FullscreenPhotoPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/GudangDetailPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.GudangDetailPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\GudangDetailPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\GudangDetailPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/InputHubPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.InputHubPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\InputHubPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\InputHubPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/LoginPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.LoginPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\LoginPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\LoginPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/MainPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.MainPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\MainPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\MainPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/OpenClawBotPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.OpenClawBotPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\OpenClawBotPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\OpenClawBotPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/ProgressInputPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.ProgressInputPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\ProgressInputPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\ProgressInputPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/ProgressPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.ProgressPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\ProgressPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\ProgressPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/ProjectsHomePage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.ProjectsHomePage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\ProjectsHomePage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\ProjectsHomePage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/RootTabbedPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.RootTabbedPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\RootTabbedPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\RootTabbedPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/SpanDetailPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.SpanDetailPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\SpanDetailPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\SpanDetailPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/DashboardPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.DashboardPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\DashboardPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\DashboardPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/HistoryPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.HistoryPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\HistoryPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\HistoryPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/MaterialFormPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.MaterialFormPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\MaterialFormPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\MaterialFormPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/MaterialListPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.MaterialListPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\MaterialListPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\MaterialListPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/ReportPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.ReportPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\ReportPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\ReportPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/StockMenuPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.StockMenuPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\StockMenuPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\StockMenuPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/TransactionFormPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.TransactionFormPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\TransactionFormPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\TransactionFormPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/WarehouseFormPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.WarehouseFormPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\WarehouseFormPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\WarehouseFormPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/Stock/WarehouseListPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.Stock.WarehouseListPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\Stock\WarehouseListPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\Stock\WarehouseListPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/StokAktualPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.StokAktualPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\StokAktualPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\StokAktualPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/StokGudangPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.StokGudangPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\StokGudangPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\StokGudangPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/SuratJalanDetailPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.SuratJalanDetailPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\SuratJalanDetailPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\SuratJalanDetailPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/SuratJalanInputPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.SuratJalanInputPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\SuratJalanInputPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\SuratJalanInputPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Pages/SuratJalanPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Pages.SuratJalanPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Pages\SuratJalanPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Pages\SuratJalanPage.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Resources/Styles/Colors.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Resources.Styles.Colors.xaml
+build_metadata.AdditionalFiles.TargetPath = Resources\Styles\Colors.xaml
+build_metadata.AdditionalFiles.RelativePath = Resources\Styles\Colors.xaml
+
+[D:/\!FTTH/Program/UPLOAD DOKUMEN/StokBarangMAUI/Resources/Styles/Styles.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = StokBarangMAUI.Resources.Styles.Styles.xaml
+build_metadata.AdditionalFiles.TargetPath = Resources\Styles\Styles.xaml
+build_metadata.AdditionalFiles.RelativePath = Resources\Styles\Styles.xaml

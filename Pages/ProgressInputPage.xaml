@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.ProgressInputPage"
+             Title="Input Progress"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="14">
+
+            <!-- Metadata -->
+            <Border BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 14" Stroke="{DynamicResource BorderClr}" Padding="14">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="📡  Detail Progress" FontSize="12" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextPrimary}" VerticalOptions="Center"/>
+                        <ActivityIndicator Grid.Column="1" x:Name="LoaderDD" IsVisible="False"
+                                           IsRunning="True" Color="#3B82F6" HeightRequest="14"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0" Spacing="3">
+                            <Label Text="Tanggal" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                            <DatePicker x:Name="DpTanggal" Format="d MMM yyyy"
+                                        TextColor="{DynamicResource TextPrimary}"
+                                        BackgroundColor="{DynamicResource CardBg2}"/>
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="3">
+                            <Label Text="Homebase" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                            <Entry x:Name="EntHomebase" Placeholder="contoh: GROBOGAN"
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   BackgroundColor="{DynamicResource CardBg2}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                    <VerticalStackLayout Spacing="3">
+                        <Label Text="Segment / RUTE" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                        <Picker x:Name="PkSegment" Title="Pilih segment..."
+                                TextColor="{DynamicResource TextPrimary}"
+                                BackgroundColor="{DynamicResource CardBg2}"
+                                SelectedIndexChanged="OnSegmentChanged"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="3">
+                        <Label Text="Span (ketik untuk cari, mis: 144 atau Panunggalan)" FontSize="10"
+                               TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntSpan" Placeholder="Pilih segment dulu, lalu ketik nama span..."
+                               PlaceholderColor="{DynamicResource TextMuted}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               BackgroundColor="{DynamicResource CardBg2}"
+                               TextChanged="OnSpanTextChanged"/>
+                        <Border x:Name="SpanSuggestionsCard" IsVisible="False"
+                                BackgroundColor="{DynamicResource CardBg2}"
+                                StrokeShape="RoundRectangle 10" Stroke="#3B82F6" StrokeThickness="1"
+                                Margin="0,4,0,0" MaximumHeightRequest="220">
+                            <ScrollView>
+                                <VerticalStackLayout x:Name="SpanSuggestionsPanel" Padding="4" Spacing="2"/>
+                            </ScrollView>
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Spacing="3">
+                        <Label Text="Kabupaten (opsional, auto-fill saat span dipilih)" FontSize="10" TextColor="{DynamicResource TextMuted}"/>
+                        <Entry x:Name="EntKabupaten"
+                               PlaceholderColor="{DynamicResource TextMuted}"
+                               TextColor="{DynamicResource TextPrimary}"
+                               BackgroundColor="{DynamicResource CardBg2}"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Items list -->
+            <Border BackgroundColor="{DynamicResource CardBg}"
+                    StrokeShape="RoundRectangle 14" Stroke="{DynamicResource BorderClr}" Padding="14">
+                <VerticalStackLayout Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="🛠  Material Dikerjakan"
+                               FontSize="12" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"
+                               VerticalOptions="Center"/>
+                        <Border Grid.Column="1" BackgroundColor="#166534"
+                                StrokeShape="RoundRectangle 10" Padding="11,6">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnAddItem"/>
+                            </Border.GestureRecognizers>
+                            <Label Text="+ Material" FontSize="10" FontAttributes="Bold" TextColor="White"/>
+                        </Border>
+                    </Grid>
+                    <VerticalStackLayout x:Name="ItemsPanel" Spacing="8"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="#1D4ED8" StrokeShape="RoundRectangle 14" Padding="0,14">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSave"/>
+                </Border.GestureRecognizers>
+                <Label Text="💾  Simpan Draft (Offline)" FontSize="13" FontAttributes="Bold"
+                       TextColor="White" HorizontalOptions="Center"/>
+            </Border>
+
+            <BoxView HeightRequest="1" Color="{DynamicResource BorderClr}" Margin="0,8,0,0"/>
+            <Label x:Name="LblDrafts" Text="Belum ada draft tersimpan" FontSize="12" FontAttributes="Bold"
+                   TextColor="{DynamicResource TextMuted}" HorizontalOptions="Center"/>
+            <VerticalStackLayout x:Name="DraftsPanel" Spacing="8"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

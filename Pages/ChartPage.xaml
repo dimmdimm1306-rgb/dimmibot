@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.ChartPage"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" Padding="14,14">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <VerticalStackLayout Grid.Column="0" VerticalOptions="Center" Spacing="2">
+                    <Label Text="📊  GRAFIK PROGRESS" TextColor="#93C5FD"
+                           FontSize="10" FontAttributes="Bold"/>
+                    <Label x:Name="LblTitle" Text="Progress Segment"
+                           TextColor="White" FontSize="16" FontAttributes="Bold"
+                           LineBreakMode="TailTruncation"/>
+                </VerticalStackLayout>
+                <!-- Rotate + Close -->
+                <HorizontalStackLayout Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                    <Border x:Name="BtnRotate" BackgroundColor="#1E3A6E"
+                            StrokeShape="RoundRectangle 12" Stroke="#2563EB" StrokeThickness="1"
+                            Padding="12,10" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnRotate"/>
+                        </Border.GestureRecognizers>
+                        <Label x:Name="LblRotate" Text="⟳ Landscape" FontSize="11" FontAttributes="Bold"
+                               TextColor="White" HorizontalOptions="Center"/>
+                    </Border>
+                    <Border BackgroundColor="#1E293B"
+                            StrokeShape="RoundRectangle 12" Stroke="#334155" StrokeThickness="1"
+                            Padding="12,10" VerticalOptions="Center">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnClose"/>
+                        </Border.GestureRecognizers>
+                        <Label Text="✕" FontSize="14" FontAttributes="Bold"
+                               TextColor="#94A3B8" HorizontalOptions="Center"/>
+                    </Border>
+                </HorizontalStackLayout>
+            </Grid>
+        </Grid>
+
+        <!-- Full chart -->
+        <WebView x:Name="ChartWebView" Grid.Row="1"
+                 BackgroundColor="{DynamicResource PageBg}"/>
+
+    </Grid>
+</ContentPage>

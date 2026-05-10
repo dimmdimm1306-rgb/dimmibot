@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Pages.Stock.ReportPage"
+             Title="Laporan Stok"
+             BackgroundColor="{DynamicResource PageBg}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Filter gudang -->
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" StrokeThickness="0" Padding="12,8">
+            <Picker x:Name="PickerGudang" Title="Semua Gudang"
+                    FontSize="14" SelectedIndexChanged="OnGudangChanged"
+                    TextColor="{DynamicResource TextPrimary}" TitleColor="{DynamicResource TextMuted}"/>
+        </Border>
+
+        <!-- Export buttons -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10" Padding="12,8">
+            <Button Grid.Column="0" Text="📥 Export Stok CSV" Clicked="OnExportStok"
+                    BackgroundColor="#16A34A" TextColor="White"
+                    FontSize="13" FontAttributes="Bold" CornerRadius="8" HeightRequest="44"/>
+            <Button Grid.Column="1" Text="📥 Export Transaksi CSV" Clicked="OnExportTx"
+                    BackgroundColor="#2563EB" TextColor="White"
+                    FontSize="13" FontAttributes="Bold" CornerRadius="8" HeightRequest="44"/>
+        </Grid>
+
+        <!-- Stok table -->
+        <ScrollView Grid.Row="2">
+            <VerticalStackLayout Padding="12,0,12,16" Spacing="8">
+
+                <Label x:Name="LblTitle" Text="Stok Semua Gudang"
+                       FontSize="14" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
+
+                <!-- Header -->
+                <Border BackgroundColor="#1E40AF" StrokeThickness="0" StrokeShape="RoundRectangle 8">
+                    <Grid Padding="12,8" ColumnDefinitions="*,*,70,70,80">
+                        <Label Grid.Column="0" Text="Gudang"   FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                        <Label Grid.Column="1" Text="Material" FontSize="11" FontAttributes="Bold" TextColor="White"/>
+                        <Label Grid.Column="2" Text="Stok"     FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="End"/>
+                        <Label Grid.Column="3" Text="Min"      FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="End"/>
+                        <Label Grid.Column="4" Text="Status"   FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="End"/>
+                    </Grid>
+                </Border>
+
+                <CollectionView x:Name="BalanceList" SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <Label Text="Belum ada data." FontSize="14"
+                               TextColor="{DynamicResource TextMuted}"
+                               HorizontalOptions="Center" Margin="0,20"/>
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="{DynamicResource CardBg}"
+                                    Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8" Margin="0,0,0,4">
+                                <Grid Padding="12,10" ColumnDefinitions="*,*,70,70,80">
+                                    <Label Grid.Column="0" Text="{Binding WarehouseName}"
+                                           FontSize="12" TextColor="{DynamicResource TextPrimary}"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Grid.Column="1" Text="{Binding MaterialName}"
+                                           FontSize="12" TextColor="{DynamicResource TextPrimary}"
+                                           LineBreakMode="TailTruncation"/>
+                                    <Label Grid.Column="2" Text="{Binding Balance, StringFormat='{0:N0}'}"
+                                           FontSize="12" TextColor="{DynamicResource TextPrimary}"
+                                           HorizontalOptions="End"/>
+                                    <Label Grid.Column="3" Text="{Binding MinStock, StringFormat='{0:N0}'}"
+                                           FontSize="12" TextColor="{DynamicResource TextMuted}"
+                                           HorizontalOptions="End"/>
+                                    <Border Grid.Column="4" BackgroundColor="{Binding StatusBg}"
+                                            StrokeThickness="0" StrokeShape="RoundRectangle 4"
+                                            HorizontalOptions="End" Padding="6,2">
+                                        <Label Text="{Binding StatusText}" FontSize="11"
+                                               FontAttributes="Bold" TextColor="{Binding StatusColor}"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>
