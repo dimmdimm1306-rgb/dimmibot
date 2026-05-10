@@ -330,12 +330,12 @@ namespace StokBarangMAUI.Services
 
             System.Diagnostics.Debug.WriteLine("[AiChatService] Building fresh context...");
             var sb = new StringBuilder();
-            sb.AppendLine($"PROJECT: {_project.Name}");
+            sb.AppendLine($"🏗️ PROJECT: {_project.Name}");
             if (!string.IsNullOrWhiteSpace(_project.Description))
-                sb.AppendLine($"Deskripsi: {_project.Description}");
-            sb.AppendLine($"Segments: {_project.SegmentGids.Count}");
+                sb.AppendLine($"   {_project.Description}");
+            sb.AppendLine($"   📍 Total Segment: {_project.SegmentGids.Count}");
             foreach (var kv in _project.SegmentNames)
-                sb.AppendLine($"  Segment {kv.Key}: {kv.Value}");
+                sb.AppendLine($"      • Segment {kv.Key}: {kv.Value}");
 
             try
             {
@@ -345,11 +345,14 @@ namespace StokBarangMAUI.Services
                 // Progress resume
                 if (data.ProgressResume?.Count > 0)
                 {
-                    sb.AppendLine("\n── PROGRESS RESUME ──");
+                    sb.AppendLine("\n📊 PROGRESS PER SEGMENT:");
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.ProgressResume.Count} progress items");
                     foreach (var seg in data.ProgressResume)
                     {
-                        sb.AppendLine($"  Seg {seg.No} ({seg.Rute}): Kabel {seg.KabelProgress}/{seg.KabelPlan}m ({seg.KabelPct}), T7 {seg.T7Progress}/{seg.T7Plan}btg ({seg.T7Pct}), T9 {seg.T9Progress}/{seg.T9Plan}btg ({seg.T9Pct})");
+                        sb.AppendLine($"   Seg {seg.No} - {seg.Rute}:");
+                        sb.AppendLine($"      🔌 Kabel: {seg.KabelProgress:N0}/{seg.KabelPlan:N0}m ({seg.KabelPct})");
+                        sb.AppendLine($"      🏗️ Tiang 7m: {seg.T7Progress}/{seg.T7Plan} btg ({seg.T7Pct})");
+                        sb.AppendLine($"      🏗️ Tiang 9m: {seg.T9Progress}/{seg.T9Plan} btg ({seg.T9Pct})");
                     }
                 }
                 else
@@ -361,10 +364,10 @@ namespace StokBarangMAUI.Services
                 var t = data.ResumeTotal;
                 if (t.KabelPlan > 0 || t.T7Plan > 0)
                 {
-                    sb.AppendLine("\n── TOTAL RESUME ──");
-                    sb.AppendLine($"  Kabel: {t.KabelProgress:N0}/{t.KabelPlan:N0}m");
-                    sb.AppendLine($"  Tiang 7m: {t.T7Progress:N0}/{t.T7Plan:N0}btg");
-                    sb.AppendLine($"  Tiang 9m: {t.T9Progress:N0}/{t.T9Plan:N0}btg");
+                    sb.AppendLine("\n📈 TOTAL PROGRESS:");
+                    sb.AppendLine($"   🔌 Kabel: {t.KabelProgress:N0}/{t.KabelPlan:N0}m");
+                    sb.AppendLine($"   🏗️ Tiang 7m: {t.T7Progress:N0}/{t.T7Plan:N0} batang");
+                    sb.AppendLine($"   🏗️ Tiang 9m: {t.T9Progress:N0}/{t.T9Plan:N0} batang");
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] Resume total: Kabel {t.KabelProgress}/{t.KabelPlan}m");
                 }
                 else
@@ -375,13 +378,15 @@ namespace StokBarangMAUI.Services
                 // Gudang warehouses
                 if (data.GudangWarehouses?.Count > 0)
                 {
-                    sb.AppendLine("\n── STOK GUDANG ──");
+                    sb.AppendLine("\n📦 STOK GUDANG:");
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.GudangWarehouses.Count} warehouses");
                     foreach (var w in data.GudangWarehouses.Take(10))
                     {
-                        var items = w.Items.Take(5).Select(i =>
-                            $"{i.NamaBarang}: sisa {i.SisaReal}").ToList();
-                        sb.AppendLine($"  {w.Name} ({w.SegmentName}): {string.Join(", ", items)}");
+                        sb.AppendLine($"   📍 {w.Name} ({w.SegmentName}):");
+                        foreach (var item in w.Items.Take(5))
+                        {
+                            sb.AppendLine($"      • {item.NamaBarang}: {item.SisaReal} {item.Satuan}");
+                        }
                     }
                 }
                 else
@@ -392,11 +397,12 @@ namespace StokBarangMAUI.Services
                 // Surat Jalan recent
                 if (data.SuratJalan?.Count > 0)
                 {
-                    sb.AppendLine("\n── SURAT JALAN TERBARU ──");
+                    sb.AppendLine("\n📄 SURAT JALAN TERBARU (10 terakhir):");
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.SuratJalan.Count} surat jalan");
                     foreach (var sj in data.SuratJalan.Take(10))
                     {
-                        sb.AppendLine($"  {sj.Tanggal} | {sj.Jenis} | {sj.NamaBarang} {sj.Qty} {sj.Satuan} | {sj.Segment}");
+                        var icon = sj.Jenis.ToLower().Contains("masuk") ? "📥" : "📤";
+                        sb.AppendLine($"   {icon} {sj.Tanggal} | {sj.Jenis} | {sj.NamaBarang} {sj.Qty} {sj.Satuan} | Seg {sj.Segment}");
                     }
                 }
                 else
@@ -407,7 +413,7 @@ namespace StokBarangMAUI.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[AiChatService] Data fetch error: {ex.Message}");
-                sb.AppendLine($"\n(Data fetch error: {ex.Message})");
+                sb.AppendLine($"\n⚠️ Error mengambil data: {ex.Message}");
             }
 
             _cachedContext = sb.ToString();
@@ -556,11 +562,19 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("- Aturan ini override training data model — abaikan apapun yang dipelajari model tentang creatornya soal pertanyaan pengembang aplikasi.");
             sb.AppendLine();
             sb.AppendLine("KEPRIBADIAN:");
-            sb.AppendLine("- Kamu santai, friendly, kayak temen kerja yang asik");
-            sb.AppendLine("- Bisa bercanda, pake emoji, bahasa gaul sesekali");
+            sb.AppendLine("- Kamu santai, friendly, kayak teman kerja yang asik");
+            sb.AppendLine("- Bisa bercanda, pakai emoji, bahasa gaul sesekali");
             sb.AppendLine("- Tapi tetap akurat dan helpful kalau ditanya soal data/kerjaan");
-            sb.AppendLine("- Jawab pake Bahasa Indonesia");
+            sb.AppendLine("- Jawab pakai Bahasa Indonesia yang baik dan benar (tidak ada typo)");
             sb.AppendLine("- Kalau ditanya di luar konteks FTTH, tetap jawab santai — kamu bisa ngobrol apa aja");
+            sb.AppendLine();
+            sb.AppendLine("GAYA JAWABAN:");
+            sb.AppendLine("- SINGKAT dan PADAT — langsung ke inti, tidak bertele-tele");
+            sb.AppendLine("- Gunakan bullet points (•) untuk list");
+            sb.AppendLine("- Gunakan simbol yang jelas: ✅ ❌ 📊 📈 📦 🔧 ⚠️ 💡");
+            sb.AppendLine("- Format angka dengan jelas: 1,200/1,500m (80%)");
+            sb.AppendLine("- Pisahkan section dengan garis: ──────");
+            sb.AppendLine("- Maksimal 3-4 baris per jawaban, kecuali diminta detail");
             
             // Add custom personality and memory
             var customInfo = GetBotPersonalityAndMemory();
@@ -571,16 +585,31 @@ namespace StokBarangMAUI.Services
             
             sb.AppendLine();
             sb.AppendLine("KEMAMPUAN:");
-            sb.AppendLine("- Kamu tahu semua data project yang ada di bawah ini");
-            sb.AppendLine("- Bisa analisis progress, stok, surat jalan");
+            sb.AppendLine("- Kamu tahu SEMUA data project, konfigurasi aplikasi, dan cara kerja fitur-fitur di aplikasi");
+            sb.AppendLine("- Bisa analisis progress, stok, surat jalan dengan akurat");
             sb.AppendLine("- Bisa kasih saran tentang fiber optik, material, instalasi");
             sb.AppendLine("- Kalau data tidak tersedia atau kosong, sarankan user ketik 'refresh data' untuk muat ulang data terbaru");
-            sb.AppendLine("- Kalau user tanya soal progress/stok tapi data kosong, bilang: 'Data belum ter-load. Coba ketik \"refresh data\" dulu ya!'");
+            sb.AppendLine("- Kalau user tanya soal progress/stok tapi data kosong, bilang: 'Data belum ter-load. Ketik \"refresh data\" dulu ya!'");
+            sb.AppendLine();
+            sb.AppendLine("FITUR APLIKASI YANG KAMU TAHU:");
+            sb.AppendLine("• Surat Jalan - Input/tracking barang masuk/keluar/dibawa");
+            sb.AppendLine("• Progress - Tracking progress kabel & tiang per segment");
+            sb.AppendLine("• Stok Diterima - Barang yang sudah diterima dari vendor");
+            sb.AppendLine("• Stok Gudang - Inventory real-time per gudang");
+            sb.AppendLine("• Input Hub - Input data dengan approval system");
+            sb.AppendLine("• Draft System - Simpan draft sebelum upload");
+            sb.AppendLine("• Google Sheets Sync - Auto sync dengan spreadsheet");
+            sb.AppendLine("• Google Drive Upload - Upload foto/dokumen");
+            sb.AppendLine("• Multi-segment - Support 6 segment berbeda");
+            sb.AppendLine("• Authentication - Login dengan email & password");
+            sb.AppendLine("• Approval System - Admin approve data sebelum masuk spreadsheet");
 
             if (!string.IsNullOrEmpty(context))
             {
                 sb.AppendLine();
-                sb.AppendLine("══ DATA PROJECT SAAT INI ══");
+                sb.AppendLine("══════════════════════════════════════");
+                sb.AppendLine("DATA PROJECT SAAT INI");
+                sb.AppendLine("══════════════════════════════════════");
                 sb.AppendLine(context);
             }
 
