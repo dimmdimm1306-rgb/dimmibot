@@ -1,6 +1,13 @@
 {
   "baseUrl": "https://ceo-lotus-races-review.trycloudflare.com/v1",
-  "model": "openrouter/owl-alpha",
+  "models": [
+    "deepseek/deepseek-v4-flash",
+    "openrouter/owl-alpha",
+    "openai/gpt-oss-120b:free",
+    "openai/gpt-oss-20b:free",
+    "claude-haiku-4-5-20251001"
+  ],
+  "model": "deepseek/deepseek-v4-flash",
   "apiKeyRequired": false,
-  "version": "1"
+  "version": "3"
 }
