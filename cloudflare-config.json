@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://sao-phases-consultants-arising.trycloudflare.com/v1",
+  "baseUrl": "https://saver-actions-empire-cocktail.trycloudflare.com/v1",
   "models": [
     "gpt-4o-mini",
     "gpt-4o",
@@ -9,10 +9,10 @@
   ],
   "model": "gpt-4o-mini",
   "apiKeyRequired": false,
-  "version": "12",
-  "lastTested": "2026-05-10T13:49:23Z",
-  "notes": "GPT-4o-mini verified working (1.7s latency). OpenRouter key needs renewal - free models unavailable. Server running on laptop with Cloudflare tunnel.",
-  "tunnelUrl": "https://sao-phases-consultants-arising.trycloudflare.com",
+  "version": "13",
+  "lastTested": "2026-05-10T14:21:07Z",
+  "notes": "Server restarted. New tunnel URL. AI bot improved: shorter answers, better formatting, knows all app features.",
+  "tunnelUrl": "https://saver-actions-empire-cocktail.trycloudflare.com",
   "premiumModels": ["gpt-4o-mini", "gpt-4o"],
   "freeModels": ["liquid/lfm-2.5-1.2b-instruct:free", "nvidia/nemotron-nano-9b-v2:free", "openai/gpt-oss-120b:free"],
   "pricing": {
@@ -20,9 +20,9 @@
     "gpt-4o": "$2.50/1M input, $10/1M output"
   },
   "status": {
-    "gpt-4o-mini": "✓ Working (958ms direct, 1746ms via tunnel)",
-    "openrouter": "✗ API key invalid - needs renewal",
+    "gpt-4o-mini": "✓ Working",
     "server": "Running on port 8080",
-    "tunnel": "Active"
+    "tunnel": "Active - NEW URL",
+    "aiBot": "Improved - shorter answers, better formatting"
   }
 }
