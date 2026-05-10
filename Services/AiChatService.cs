@@ -21,7 +21,7 @@ namespace StokBarangMAUI.Services
         //
         // Ganti URL di bawah dengan raw URL file JSON kamu di GitHub.
         // Kosongkan kalau gak mau auto-fetch dari GitHub.
-        private const string GITHUB_CONFIG_URL = "https://raw.githubusercontent.com/dimmdimm1306-rgb/dimmibot/main/cloudflare-config.json";
+        private const string GITHUB_CONFIG_URL = "https://raw.githubusercontent.com/dimmdimm1306-rgb/dimmibot/master/cloudflare-config.json";
 
         private readonly HttpClient _httpClient;
         private readonly List<AiChatMessage> _conversationHistory = new();
