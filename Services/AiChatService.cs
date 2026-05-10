@@ -316,9 +316,19 @@ namespace StokBarangMAUI.Services
         /// <summary>Build a data snapshot from the current project to inject into system prompt.</summary>
         private async Task<string> BuildContextAsync()
         {
-            if (!string.IsNullOrEmpty(_cachedContext)) return _cachedContext;
-            if (_sheets == null || _project == null) return "";
+            if (!string.IsNullOrEmpty(_cachedContext))
+            {
+                System.Diagnostics.Debug.WriteLine("[AiChatService] Using cached context");
+                return _cachedContext;
+            }
+            
+            if (_sheets == null || _project == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[AiChatService] No sheets or project context available");
+                return "";
+            }
 
+            System.Diagnostics.Debug.WriteLine("[AiChatService] Building fresh context...");
             var sb = new StringBuilder();
             sb.AppendLine($"PROJECT: {_project.Name}");
             if (!string.IsNullOrWhiteSpace(_project.Description))
@@ -329,16 +339,22 @@ namespace StokBarangMAUI.Services
 
             try
             {
+                System.Diagnostics.Debug.WriteLine("[AiChatService] Fetching data from sheets...");
                 var data = await _sheets.FetchAsync(false);
 
                 // Progress resume
                 if (data.ProgressResume?.Count > 0)
                 {
                     sb.AppendLine("\n── PROGRESS RESUME ──");
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.ProgressResume.Count} progress items");
                     foreach (var seg in data.ProgressResume)
                     {
                         sb.AppendLine($"  Seg {seg.No} ({seg.Rute}): Kabel {seg.KabelProgress}/{seg.KabelPlan}m ({seg.KabelPct}), T7 {seg.T7Progress}/{seg.T7Plan}btg ({seg.T7Pct}), T9 {seg.T9Progress}/{seg.T9Plan}btg ({seg.T9Pct})");
                     }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[AiChatService] No progress resume data found");
                 }
 
                 // Resume total
@@ -349,12 +365,18 @@ namespace StokBarangMAUI.Services
                     sb.AppendLine($"  Kabel: {t.KabelProgress:N0}/{t.KabelPlan:N0}m");
                     sb.AppendLine($"  Tiang 7m: {t.T7Progress:N0}/{t.T7Plan:N0}btg");
                     sb.AppendLine($"  Tiang 9m: {t.T9Progress:N0}/{t.T9Plan:N0}btg");
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Resume total: Kabel {t.KabelProgress}/{t.KabelPlan}m");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[AiChatService] No resume total data");
                 }
 
                 // Gudang warehouses
                 if (data.GudangWarehouses?.Count > 0)
                 {
                     sb.AppendLine("\n── STOK GUDANG ──");
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.GudangWarehouses.Count} warehouses");
                     foreach (var w in data.GudangWarehouses.Take(10))
                     {
                         var items = w.Items.Take(5).Select(i =>
@@ -362,23 +384,34 @@ namespace StokBarangMAUI.Services
                         sb.AppendLine($"  {w.Name} ({w.SegmentName}): {string.Join(", ", items)}");
                     }
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[AiChatService] No warehouse data");
+                }
 
                 // Surat Jalan recent
                 if (data.SuratJalan?.Count > 0)
                 {
                     sb.AppendLine("\n── SURAT JALAN TERBARU ──");
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.SuratJalan.Count} surat jalan");
                     foreach (var sj in data.SuratJalan.Take(10))
                     {
                         sb.AppendLine($"  {sj.Tanggal} | {sj.Jenis} | {sj.NamaBarang} {sj.Qty} {sj.Satuan} | {sj.Segment}");
                     }
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[AiChatService] No surat jalan data");
+                }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"[AiChatService] Data fetch error: {ex.Message}");
                 sb.AppendLine($"\n(Data fetch error: {ex.Message})");
             }
 
             _cachedContext = sb.ToString();
+            System.Diagnostics.Debug.WriteLine($"[AiChatService] Context built, length: {_cachedContext.Length} chars");
             return _cachedContext;
         }
 
@@ -392,6 +425,19 @@ namespace StokBarangMAUI.Services
 
             try
             {
+                // Check for data refresh command
+                var lowerMsg = userMessage.ToLower().Trim();
+                if (lowerMsg == "refresh data" || lowerMsg == "reload data" || lowerMsg == "update data" || lowerMsg == "muat ulang data")
+                {
+                    _cachedContext = "";
+                    var context = await BuildContextAsync();
+                    if (string.IsNullOrEmpty(context))
+                    {
+                        return "⚠️ Tidak bisa memuat data. Pastikan kamu sudah buka project dan data sudah ter-sync dari Google Sheets.";
+                    }
+                    return $"✅ Data berhasil di-refresh! Sekarang aku punya data terbaru dari project.\n\n📊 Info: {context.Length} karakter data ter-load.";
+                }
+
                 // Get current user email from AuthService
                 var authService = ((App)Application.Current!).Handler!.MauiContext!.Services.GetRequiredService<AuthService>();
                 var userEmail = authService.CurrentEmail ?? "";
@@ -426,7 +472,9 @@ namespace StokBarangMAUI.Services
 
                 // Build context-aware system prompt
                 var context = await BuildContextAsync();
+                System.Diagnostics.Debug.WriteLine($"[AiChatService] Context length: {context.Length} chars");
                 var systemPrompt = BuildSystemPrompt(context);
+                System.Diagnostics.Debug.WriteLine($"[AiChatService] System prompt length: {systemPrompt.Length} chars");
 
                 // Prepare request
                 var messages = new List<object>
@@ -526,7 +574,8 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("- Kamu tahu semua data project yang ada di bawah ini");
             sb.AppendLine("- Bisa analisis progress, stok, surat jalan");
             sb.AppendLine("- Bisa kasih saran tentang fiber optik, material, instalasi");
-            sb.AppendLine("- Kalau data tidak tersedia, bilang jujur dan sarankan refresh data");
+            sb.AppendLine("- Kalau data tidak tersedia atau kosong, sarankan user ketik 'refresh data' untuk muat ulang data terbaru");
+            sb.AppendLine("- Kalau user tanya soal progress/stok tapi data kosong, bilang: 'Data belum ter-load. Coba ketik \"refresh data\" dulu ya!'");
 
             if (!string.IsNullOrEmpty(context))
             {
