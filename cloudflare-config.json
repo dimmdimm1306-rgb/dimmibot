@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://openrouter.ai/api/v1",
+  "baseUrl": "https://sao-phases-consultants-arising.trycloudflare.com/v1",
   "models": [
     "liquid/lfm-2.5-1.2b-instruct:free",
     "nvidia/nemotron-nano-9b-v2:free",
@@ -7,8 +7,9 @@
     "poolside/laguna-xs.2:free"
   ],
   "model": "liquid/lfm-2.5-1.2b-instruct:free",
-  "apiKeyRequired": true,
-  "version": "8",
-  "lastTested": "2026-05-10",
-  "notes": "Verified working free models on OpenRouter"
+  "apiKeyRequired": false,
+  "version": "9",
+  "lastTested": "2026-05-10T12:06:24Z",
+  "notes": "Using local OpenClaw server via Cloudflare tunnel",
+  "tunnelUrl": "https://sao-phases-consultants-arising.trycloudflare.com"
 }
