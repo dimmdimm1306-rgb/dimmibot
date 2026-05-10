@@ -1,0 +1,6 @@
+{
+  "baseUrl": "https://ceo-lotus-races-review.trycloudflare.com/v1",
+  "model": "openrouter/owl-alpha",
+  "apiKeyRequired": false,
+  "version": "1"
+}
