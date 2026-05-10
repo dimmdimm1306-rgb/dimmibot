@@ -1,5 +1,5 @@
 ﻿{
-    "baseUrl":  "https://mine-puzzles-letting-animals.trycloudflare.com/v1",
+    "baseUrl":  "https://cleared-sig-primarily-washer.trycloudflare.com/v1",
     "models":  [
                    "gpt-4o-mini",
                    "gpt-4o",
@@ -9,10 +9,10 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "16",
-    "lastTested":  "2026-05-10T15:53:55Z",
+    "version":  "17",
+    "lastTested":  "2026-05-10T23:15:17Z",
     "notes":  "Server restarted. New tunnel URL. AI bot improved: shorter answers, better formatting, knows all app features.",
-    "tunnelUrl":  "https://mine-puzzles-letting-animals.trycloudflare.com",
+    "tunnelUrl":  "https://cleared-sig-primarily-washer.trycloudflare.com",
     "premiumModels":  [
                           "gpt-4o-mini",
                           "gpt-4o"
