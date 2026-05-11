@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://saver-actions-empire-cocktail.trycloudflare.com/v1",
+  "baseUrl": "https://blond-intelligent-looksmart-offline.trycloudflare.com/v1",
   "models": [
     "openrouter/owl-alpha",
     "openai/gpt-oss-120b:free",
