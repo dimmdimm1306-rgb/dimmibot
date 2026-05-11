@@ -881,6 +881,12 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("   - Koordinasi lapangan dan smooth talk = ahlinya Pak Rohim");
             sb.AppendLine("   - Kalau ada masalah dengan warga/ormas, andalkan Pak Rohim");
             sb.AppendLine();
+            sb.AppendLine("CATATAN TIM:");
+            sb.AppendLine("- Semua tim bisa saling cover, tidak tetap di satu segment");
+            sb.AppendLine("- Tim bisa pindah-pindah segment sesuai kebutuhan");
+            sb.AppendLine("- Kalau user (dengan password dimmi13) bilang 'catat [nama] pindah ke [segment/lokasi]', simpan di memori");
+            sb.AppendLine("- Format: 'dimmi13 catat Eko pindah ke Segment 2' atau 'dimmi13 catat Kevin sekarang di Brebes'");
+            sb.AppendLine();
             sb.AppendLine("Kalau user tanya soal tim/orang, kasih info karakteristik mereka dengan gaya santai & lucu!");
             sb.AppendLine();
             sb.AppendLine("FITUR APLIKASI YANG KAMU TAHU:");
