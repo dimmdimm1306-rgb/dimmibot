@@ -1,5 +1,5 @@
 ﻿{
-    "baseUrl":  "https://biographies-screensavers-choice-charlie.trycloudflare.com/v1",
+    "baseUrl":  "https://elephant-desperate-amanda-issues.trycloudflare.com/v1",
     "models":  [
                    "gpt-4o-mini",
                    "gpt-4o",
@@ -9,10 +9,10 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "22",
-    "lastTested":  "2026-05-11T00:13:35Z",
+    "version":  "23",
+    "lastTested":  "2026-05-11T00:15:53Z",
     "notes":  "Server restarted. New tunnel URL. AI bot improved: shorter answers, better formatting, knows all app features.",
-    "tunnelUrl":  "https://biographies-screensavers-choice-charlie.trycloudflare.com",
+    "tunnelUrl":  "https://elephant-desperate-amanda-issues.trycloudflare.com",
     "premiumModels":  [
                           "gpt-4o-mini",
                           "gpt-4o"
