@@ -1,5 +1,5 @@
 {
-    "baseUrl":  "https://border-serious-pure-ticket.trycloudflare.com/v1",
+    "baseUrl":  "https://christmas-editor-himself-behaviour.trycloudflare.com/v1",
     "models":  [
                    "gpt-4o-mini",
                    "gpt-4o",
@@ -9,10 +9,10 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "37",
-    "lastTested":  "2026-05-11T17:30:00Z",
+    "version":  "38",
+    "lastTested":  "2026-05-11T22:49:32Z",
     "notes":  "v37: Status intent (belum/0%/selesai) + fix RESUME BY SITE ID multi-row header.",
-    "tunnelUrl":  "https://border-serious-pure-ticket.trycloudflare.com",
+    "tunnelUrl":  "https://christmas-editor-himself-behaviour.trycloudflare.com",
     "premiumModels":  [
                           "gpt-4o-mini",
                           "gpt-4o"
@@ -32,7 +32,7 @@
                },
     "aiInstructions":  "",
     "lastInstructionsUpdate":  "",
-    "gdriveReaderUrl":  "https://temp-incoming-afford-sorts.trycloudflare.com",
+    "gdriveReaderUrl":  "https://reviewed-smallest-reached-capable.trycloudflare.com",
     "gdriveReaderToken":  "6YqN4XhBUtRm9T8S5zdi7Yh0IhEJ6xyUxftFUBB8",
     "gdriveReaderEnabled":  true,
     "gdriveAliases":  [
