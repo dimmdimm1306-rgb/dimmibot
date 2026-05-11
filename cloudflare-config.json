@@ -1,5 +1,5 @@
 ﻿{
-    "baseUrl":  "https://weblog-jessica-attempted-surgical.trycloudflare.com/v1",
+    "baseUrl":  "https://aids-stays-beneficial-sunny.trycloudflare.com/v1",
     "models":  [
                    "gpt-4o-mini",
                    "gpt-4o",
@@ -9,10 +9,10 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "19",
-    "lastTested":  "2026-05-10T23:21:02Z",
+    "version":  "20",
+    "lastTested":  "2026-05-11T00:11:15Z",
     "notes":  "Server restarted. New tunnel URL. AI bot improved: shorter answers, better formatting, knows all app features.",
-    "tunnelUrl":  "https://weblog-jessica-attempted-surgical.trycloudflare.com",
+    "tunnelUrl":  "https://aids-stays-beneficial-sunny.trycloudflare.com",
     "premiumModels":  [
                           "gpt-4o-mini",
                           "gpt-4o"
@@ -31,5 +31,7 @@
                    "server":  "Running on port 8080",
                    "tunnel":  "Active - NEW URL",
                    "aiBot":  "Improved - shorter answers, better formatting"
-               }
+               },
+    "aiInstructions":  "",
+    "lastInstructionsUpdate":  ""
 }
