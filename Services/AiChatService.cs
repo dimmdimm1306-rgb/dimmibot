@@ -38,6 +38,7 @@ namespace StokBarangMAUI.Services
         // Bot memory and personality - protected by authentication
         private string _botPersonality = "";
         private string _botMemory = "";
+        private string _serverInstructions = ""; // dari GitHub via /config, sync semua device
         private const string AdminEmail = "dimmdimm1306@gmail.com";
         private readonly string[] AdminPasswords = { "kevingoblok", "dimmi13" };
         private bool _isAuthenticatedForChanges = false;
@@ -107,6 +108,11 @@ namespace StokBarangMAUI.Services
                 {
                     _selectedModel = primaryModel;
                     Preferences.Set("ai_model", _selectedModel);
+                }
+                if (config.AiInstructions != null)
+                {
+                    _serverInstructions = config.AiInstructions;
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] AI instructions loaded ({_serverInstructions.Length} chars)");
                 }
                 System.Diagnostics.Debug.WriteLine($"[AiChatService] Config updated from {source}: {config.BaseUrl}, model={primaryModel}");
                 return true;
@@ -179,11 +185,11 @@ namespace StokBarangMAUI.Services
         }
 
         /// <summary>Process message and check for authentication commands.</summary>
-        private string ProcessAuthenticationCommand(string message, string userEmail)
+        private async Task<string?> ProcessAuthenticationCommand(string message, string userEmail)
         {
             // Check for password authentication
             var lowerMsg = message.ToLower().Trim();
-            
+
             // Check if message contains password
             foreach (var pwd in AdminPasswords)
             {
@@ -196,7 +202,7 @@ namespace StokBarangMAUI.Services
                         var command = parts[1].Trim();
                         if (AuthenticateWithPassword(pwd))
                         {
-                            return ProcessBotModificationCommand(command);
+                            return await ProcessBotModificationCommand(command);
                         }
                     }
                     else
@@ -213,8 +219,8 @@ namespace StokBarangMAUI.Services
             return null; // No auth command found
         }
 
-        /// <summary>Process bot modification commands (personality, memory).</summary>
-        private string ProcessBotModificationCommand(string command)
+        /// <summary>Process bot modification commands (personality, memory, instructions).</summary>
+        private async Task<string?> ProcessBotModificationCommand(string command)
         {
             var lowerCmd = command.ToLower().Trim();
 
@@ -222,17 +228,40 @@ namespace StokBarangMAUI.Services
             if (lowerCmd == "help" || lowerCmd == "bantuan" || lowerCmd == "?")
             {
                 var memCount = string.IsNullOrEmpty(_botMemory) ? 0 : _botMemory.Split('\n').Count(s => !string.IsNullOrWhiteSpace(s));
+                var srvLen   = _serverInstructions?.Length ?? 0;
                 return "📚 PERINTAH ADMIN (selalu awali dengan password `dimmi13`):\n\n" +
-                       "📝 SIMPAN MEMORI:\n" +
+                       "🌐 INSTRUKSI GLOBAL (sync ke GitHub — semua device dapat):\n" +
+                       "  `dimmi13 instruksi <isi>` — push instruksi global ke server\n" +
+                       "  Contoh: `dimmi13 instruksi jangan pernah bilang \"mungkin maksudnya\" — langsung jawab`\n\n" +
+                       "📝 SIMPAN MEMORI (lokal HP saja):\n" +
                        "  `dimmi13 catat <isi>` — tambah ke memori\n" +
                        "  Contoh: `dimmi13 catat Tim lapangan: Eko (kepala), Gilang (helper)`\n\n" +
-                       "🎭 UBAH KEPRIBADIAN:\n" +
-                       "  `dimmi13 ubah sifat <deskripsi>`\n" +
-                       "  Contoh: `dimmi13 ubah sifat lebih formal dan teknis`\n\n" +
+                       "🎭 UBAH KEPRIBADIAN (lokal HP saja):\n" +
+                       "  `dimmi13 ubah sifat <deskripsi>`\n\n" +
                        "👀 LIHAT/HAPUS MEMORI:\n" +
                        "  `dimmi13 lihat memori`\n" +
                        "  `dimmi13 hapus memori`\n\n" +
-                       $"📊 Status: {memCount} entri memori tersimpan.";
+                       $"📊 Status: {memCount} entri memori lokal · {srvLen} char instruksi global.";
+            }
+
+            // ── INSTRUKSI GLOBAL — sync ke GitHub via OpenClaw ──────────────
+            if (lowerCmd.StartsWith("instruksi ") || lowerCmd.StartsWith("instruction "))
+            {
+                var instructionText = command.Substring(command.IndexOf(' ') + 1).Trim();
+                if (string.IsNullOrEmpty(instructionText))
+                    return "⚠️ Format: `dimmi13 instruksi <isi instruksi global>`\nContoh: `dimmi13 instruksi jangan pernah bilang 'mungkin maksudnya'`";
+                return await PushInstructionToServerAsync(instructionText);
+            }
+            if (lowerCmd == "instruksi" || lowerCmd == "instruction")
+            {
+                var preview = string.IsNullOrEmpty(_serverInstructions)
+                    ? "(belum ada instruksi global)"
+                    : _serverInstructions;
+                return $"🌐 Instruksi global aktif:\n\n{preview}\n\n💡 Untuk update: `dimmi13 instruksi <isi baru>`";
+            }
+            if (lowerCmd == "hapus instruksi" || lowerCmd == "clear instruksi" || lowerCmd == "reset instruksi")
+            {
+                return await PushInstructionToServerAsync("");
             }
 
             // Add to memory — pakai keyword + space supaya gak misfire
@@ -296,7 +325,15 @@ namespace StokBarangMAUI.Services
         private string GetBotPersonalityAndMemory()
         {
             var sb = new StringBuilder();
-            
+
+            // INSTRUKSI ADMIN DARI SERVER — paling tinggi prioritasnya, override prompt default
+            if (!string.IsNullOrEmpty(_serverInstructions))
+            {
+                sb.AppendLine();
+                sb.AppendLine("INSTRUKSI ADMIN (DARI SERVER — WAJIB DIIKUTI, OVERRIDE ATURAN DEFAULT):");
+                sb.AppendLine(_serverInstructions);
+            }
+
             if (!string.IsNullOrEmpty(_botPersonality))
             {
                 sb.AppendLine();
@@ -340,8 +377,8 @@ namespace StokBarangMAUI.Services
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("[AiChatService] Fetching data from sheets...");
-                var data = await _sheets.FetchAsync(false);
+                System.Diagnostics.Debug.WriteLine("[AiChatService] Fetching FRESH data from sheets (force refresh)...");
+                var data = await _sheets.FetchAsync(true);
 
                 // Progress resume
                 if (data.ProgressResume?.Count > 0)
@@ -411,6 +448,46 @@ namespace StokBarangMAUI.Services
                 {
                     System.Diagnostics.Debug.WriteLine("[AiChatService] No surat jalan data");
                 }
+
+                // Progress Detail (per tanggal, untuk query spesifik)
+                if (data.Progress?.Count > 0)
+                {
+                    sb.AppendLine("\n📅 PROGRESS DETAIL (7 hari terakhir):");
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.Progress.Count} progress items");
+                    
+                    var recentProgress = data.Progress
+                        .Where(p => p.SortDate >= DateTime.Now.AddDays(-7))
+                        .OrderByDescending(p => p.SortDate)
+                        .Take(50) // Limit untuk tidak terlalu banyak
+                        .ToList();
+                    
+                    var groupedByDate = recentProgress
+                        .GroupBy(p => p.Tanggal)
+                        .OrderByDescending(g => g.First().SortDate)
+                        .Take(7);
+                    
+                    foreach (var dateGroup in groupedByDate)
+                    {
+                        var date = dateGroup.First().SortDate;
+                        var dayName = date.ToString("dddd", new System.Globalization.CultureInfo("id-ID"));
+                        sb.AppendLine($"   📆 {dateGroup.Key} ({dayName}):");
+                        
+                        var activities = dateGroup
+                            .GroupBy(p => new { p.Segment, p.Span, p.SiteId })
+                            .Take(10); // Max 10 aktivitas per hari
+                        
+                        foreach (var activity in activities)
+                        {
+                            var materials = string.Join(", ", activity.Select(p => $"{p.NamaBarang} {p.Progres} {p.Satuan}"));
+                            var site = !string.IsNullOrEmpty(activity.Key.SiteId) ? $" Site:{activity.Key.SiteId}" : "";
+                            sb.AppendLine($"      • Seg {activity.Key.Segment} - {activity.Key.Span}{site}: {materials}");
+                        }
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[AiChatService] No progress detail data");
+                }
             }
             catch (Exception ex)
             {
@@ -421,6 +498,113 @@ namespace StokBarangMAUI.Services
             _cachedContext = sb.ToString();
             System.Diagnostics.Debug.WriteLine($"[AiChatService] Context built, length: {_cachedContext.Length} chars");
             return _cachedContext;
+        }
+
+        // ── Push instruksi global ke OpenClaw → auto-commit ke GitHub ─────
+        private async Task<string> PushInstructionToServerAsync(string instruction)
+        {
+            try
+            {
+                var serverBase = _baseUrl.EndsWith("/v1") ? _baseUrl.Substring(0, _baseUrl.Length - 3) : _baseUrl;
+                var url = serverBase.TrimEnd('/') + "/admin/instructions";
+
+                // Pakai password yang sama dengan AdminPasswords[1] ("dimmi13")
+                var body = new { password = "dimmi13", instructions = instruction };
+                var json = JsonSerializer.Serialize(body);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                System.Diagnostics.Debug.WriteLine($"[AiChatService] POST {url}, {json.Length} bytes");
+                var response = await _httpClient.PostAsync(url, content);
+                var respBody = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _serverInstructions = instruction; // mirror lokal
+                    var action = string.IsNullOrEmpty(instruction) ? "dihapus" : "tersimpan";
+                    var preview = string.IsNullOrEmpty(instruction)
+                        ? "(instruksi dikosongkan)"
+                        : (instruction.Length > 120 ? instruction.Substring(0, 117) + "..." : instruction);
+                    return $"✅ Instruksi {action} & di-commit ke GitHub!\n📝 {preview}\n💡 Semua device akan dapat instruksi ini saat AI dibuka.";
+                }
+
+                return $"⚠️ Server tolak (HTTP {(int)response.StatusCode}):\n{respBody}\n💡 Cek apakah OpenClaw API jalan dan punya GITHUB_PAT.";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AiChatService] PushInstruction error: {ex.Message}");
+                return $"⚠️ Gagal kirim ke server: {ex.Message}\n💡 Pastikan tunnel URL up dan endpoint /admin/instructions tersedia di OpenClaw.";
+            }
+        }
+
+        // ── Local search: site / span / rute → cari di sheet Progress ─────
+        // Stopword filter biar regex gak misfire di percakapan biasa.
+        private static readonly HashSet<string> SearchStopwords = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "di", "yang", "apa", "ada", "dimana", "berapa", "ke", "mana", "itu", "ini", "ya", "dong", "sih", "kah"
+        };
+
+        private async Task<string> SearchProgressAsync(string keyword, string query)
+        {
+            if (_sheets == null) return "";
+            if (string.IsNullOrWhiteSpace(query) || SearchStopwords.Contains(query)) return "";
+
+            try
+            {
+                var data = await _sheets.FetchAsync(true); // force fresh data
+                var rows = data?.Progress;
+                if (rows == null || rows.Count == 0)
+                    return "⚠️ Data Progress belum ter-load dari spreadsheet. Coba buka tab Progress dulu, baru tanya lagi.";
+
+                var q = query.Trim();
+                List<ProgressItem> matches;
+
+                if (keyword == "site")
+                {
+                    matches = rows.Where(r => r.SiteId.Equals(q, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (matches.Count == 0)
+                        matches = rows.Where(r => r.SiteId.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                }
+                else // span / rute → cari di kolom Span (= Rute)
+                {
+                    matches = rows.Where(r => r.Span.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                }
+
+                if (matches.Count == 0)
+                {
+                    var totalWithSite = rows.Count(r => r.HasSiteId);
+                    var hint = keyword == "site" && totalWithSite == 0
+                        ? "\n💡 Catatan: kolom SITE ID di sheet Progress belum terisi sama sekali. Cek format kolom I."
+                        : "\n💡 Cek lagi penulisannya — coba kata kunci yang lebih pendek.";
+                    return $"❌ Tidak ketemu data {keyword} '{q}' di sheet Progress.{hint}";
+                }
+
+                var top = matches.OrderByDescending(r => r.SortDate).Take(20).ToList();
+                var sb = new StringBuilder();
+                sb.AppendLine($"📊 Hasil cari `{keyword} {q}` — {matches.Count} item ditemukan" +
+                              (matches.Count > top.Count ? $", tampil {top.Count} terbaru:" : ":"));
+                sb.AppendLine();
+
+                foreach (var r in top)
+                {
+                    sb.AppendLine($"• 📅 {r.Tanggal} | Seg {r.Segment}");
+                    sb.AppendLine($"  📍 Rute: {r.Span}");
+                    var info = new List<string>();
+                    if (r.HasHomebase) info.Add($"🏠 {r.Homebase}");
+                    if (r.HasKabKota)  info.Add($"🌐 {r.KabKota}");
+                    if (r.HasSiteId)   info.Add($"🆔 SITE {r.SiteId}");
+                    if (info.Count > 0) sb.AppendLine($"  {string.Join("  ", info)}");
+                    var ket = r.HasKeterangan ? $" — {r.Keterangan}" : "";
+                    sb.AppendLine($"  📦 {r.NamaBarang}: {r.ProgresDisplay}{ket}");
+                    sb.AppendLine();
+                }
+
+                return sb.ToString().TrimEnd();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AiChatService] SearchProgressAsync error: {ex.Message}");
+                return $"⚠️ Error cari data: {ex.Message}";
+            }
         }
 
         public async Task<string> SendMessageAsync(string userMessage)
@@ -446,12 +630,48 @@ namespace StokBarangMAUI.Services
                     return $"✅ Data berhasil di-refresh! Sekarang aku punya data terbaru dari project.\n\n📊 Info: {refreshedContext.Length} karakter data ter-load.";
                 }
 
+                // Local search: site / span / rute spesifik — langsung lookup di Progress data
+                var siteMatch = System.Text.RegularExpressions.Regex.Match(
+                    lowerMsg,
+                    @"\b(site|span|rute)\s+([a-z0-9][a-z0-9\-\._]*)",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (siteMatch.Success && _sheets != null)
+                {
+                    var keyword = siteMatch.Groups[1].Value.ToLowerInvariant();
+                    var query   = siteMatch.Groups[2].Value;
+                    var searchResult = await SearchProgressAsync(keyword, query);
+                    if (!string.IsNullOrEmpty(searchResult)) return searchResult;
+                    // kalau kosong (stopword/query invalid), fall through ke flow normal
+                }
+
+                // Detect pesan terlalu pendek/vague — kasih menu bantuan dengan humor
+                var vagueTriggers = new[] { "cek", "check", "lihat", "tampilkan", "show", "info", "data", "?", "??", "???" };
+                if (vagueTriggers.Contains(lowerMsg))
+                {
+                    return "🤔 Cek apa nih, bos? Kasih clue dikit dong, aku bukan dukun 😄\n\n" +
+                           "📊 **Progress** — coba:\n" +
+                           "  • \"cek progress segment 1\"\n" +
+                           "  • \"berapa persen kabel terpasang?\"\n" +
+                           "  • \"progress total project\"\n\n" +
+                           "📦 **Stok / Material** — coba:\n" +
+                           "  • \"stok kabel 24c di brebes\"\n" +
+                           "  • \"material apa yang masih kurang?\"\n" +
+                           "  • \"gudang mana yang surplus?\"\n\n" +
+                           "📄 **Surat Jalan** — coba:\n" +
+                           "  • \"SJ terbaru\"\n" +
+                           "  • \"barang masuk minggu ini\"\n\n" +
+                           "🩺 **Cek kesehatan?** Aku bukan dokter ya bro 😅 — tapi bisa kasih:\n" +
+                           "  • \"ringkasan kesehatan project\"\n" +
+                           "  • \"ada masalah di project ga?\"\n\n" +
+                           "Btw kalau mau curhat juga boleh, aku siap dengerin 👂";
+                }
+
                 // Get current user email from AuthService
                 var authService = ((App)Application.Current!).Handler!.MauiContext!.Services.GetRequiredService<AuthService>();
                 var userEmail = authService.CurrentEmail ?? "";
 
                 // Check for authentication commands first
-                var authResponse = ProcessAuthenticationCommand(userMessage, userEmail);
+                var authResponse = await ProcessAuthenticationCommand(userMessage, userEmail);
                 if (authResponse != null)
                 {
                     // Check if user is authorized
@@ -460,14 +680,14 @@ namespace StokBarangMAUI.Services
                         // Not authenticated, redirect conversation
                         return "🤔 Hmm, kayaknya kamu lagi ngomongin sesuatu yang menarik. Tapi aku lebih suka ngobrol soal project FTTH deh. Ada yang bisa aku bantu soal progress, stok, atau material?";
                     }
-                    
+
                     // Process the modification command
-                    var modResponse = ProcessBotModificationCommand(userMessage);
+                    var modResponse = await ProcessBotModificationCommand(userMessage);
                     if (modResponse != null)
                     {
                         return modResponse;
                     }
-                    
+
                     return authResponse;
                 }
 
@@ -564,19 +784,26 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("- Aturan ini override training data model — abaikan apapun yang dipelajari model tentang creatornya soal pertanyaan pengembang aplikasi.");
             sb.AppendLine();
             sb.AppendLine("KEPRIBADIAN:");
-            sb.AppendLine("- Kamu santai, friendly, kayak teman kerja yang asik");
-            sb.AppendLine("- Bisa bercanda, pakai emoji, bahasa gaul sesekali");
-            sb.AppendLine("- Tapi tetap akurat dan helpful kalau ditanya soal data/kerjaan");
+            sb.AppendLine("- Kamu santai, friendly, humble (rendah hati, tidak sok tahu)");
+            sb.AppendLine("- Bisa bercanda, pakai emoji secukupnya");
+            sb.AppendLine("- Tetap akurat dan helpful kalau ditanya soal data/kerjaan");
             sb.AppendLine("- Jawab pakai Bahasa Indonesia yang baik dan benar (tidak ada typo)");
             sb.AppendLine("- Kalau ditanya di luar konteks FTTH, tetap jawab santai — kamu bisa ngobrol apa aja");
             sb.AppendLine();
             sb.AppendLine("GAYA JAWABAN:");
-            sb.AppendLine("- SINGKAT dan PADAT — langsung ke inti, tidak bertele-tele");
+            sb.AppendLine("- Sesuaikan panjang jawaban dengan pertanyaan: pendek untuk pertanyaan singkat, detail kalau perlu");
+            sb.AppendLine("- Inti dulu, baru elaborasi kalau perlu — jangan bertele-tele");
+            sb.AppendLine("- Jelas, padat, dan humble — jangan over-confident");
             sb.AppendLine("- Gunakan bullet points (•) untuk list");
             sb.AppendLine("- Gunakan simbol yang jelas: ✅ ❌ 📊 📈 📦 🔧 ⚠️ 💡");
             sb.AppendLine("- Format angka dengan jelas: 1,200/1,500m (80%)");
             sb.AppendLine("- Pisahkan section dengan garis: ──────");
-            sb.AppendLine("- Maksimal 3-4 baris per jawaban, kecuali diminta detail");
+            sb.AppendLine();
+            sb.AppendLine("HANDLE TYPO USER (HATI-HATI — JANGAN OVERREACT):");
+            sb.AppendLine("- DEFAULT: kalau semua kata user udah benar atau bisa dipahami, LANGSUNG jawab pertanyaannya. JANGAN bilang 'mungkin maksudnya'.");
+            sb.AppendLine("- HANYA kalau ada typo JELAS di kata kunci FTTH (mis. 'progres'→'progress', 'kbel'→'kabel', 'cak'→'cek', 'segmnt'→'segment', 'gdang'→'gudang', 'sjlanan'→'surat jalan'), boleh awali jawaban: \"Mungkin maksudnya: <X>? 🤔\" lalu lanjut jawab.");
+            sb.AppendLine("- Istilah asing/teknis yang kamu gak yakin: langsung jawab apa adanya, atau tanya balik kalau benar-benar ambigu.");
+            sb.AppendLine("- JANGAN spam 'mungkin maksudnya' — itu nyebelin. Pakai cuma kalau YAKIN ada typo.");
             
             // Add custom personality and memory
             var customInfo = GetBotPersonalityAndMemory();
@@ -590,8 +817,16 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("- Kamu tahu SEMUA data project, konfigurasi aplikasi, dan cara kerja fitur-fitur di aplikasi");
             sb.AppendLine("- Bisa analisis progress, stok, surat jalan dengan akurat");
             sb.AppendLine("- Bisa kasih saran tentang fiber optik, material, instalasi");
-            sb.AppendLine("- Kalau data tidak tersedia atau kosong, sarankan user ketik 'refresh data' untuk muat ulang data terbaru");
-            sb.AppendLine("- Kalau user tanya soal progress/stok tapi data kosong, bilang: 'Data belum ter-load. Ketik \"refresh data\" dulu ya!'");
+            sb.AppendLine("- Data project di-refresh otomatis tiap kali user buka kamu — gak perlu suruh user ketik 'refresh data'");
+            sb.AppendLine("- Kalau data benar-benar kosong (project belum ter-sync), kasih tahu: 'Coba buka tab utama dulu supaya data ter-fetch dari spreadsheet, baru tanya lagi.'");
+            sb.AppendLine();
+            sb.AppendLine("TANGGAL & WAKTU:");
+            sb.AppendLine($"- Hari ini: {DateTime.Now:dddd, dd MMMM yyyy} (gunakan ini sebagai referensi 'hari ini')");
+            sb.AppendLine($"- Kemarin: {DateTime.Now.AddDays(-1):dddd, dd MMMM yyyy}");
+            sb.AppendLine("- Kalau user tanya 'progress kemarin', cari data Progress yang tanggalnya = kemarin");
+            sb.AppendLine("- Kalau user tanya 'progress tanggal 10 Mei', cari data Progress yang tanggalnya = 10 Mei");
+            sb.AppendLine("- Kalau user tanya 'progress minggu ini', lihat data Progress 7 hari terakhir");
+            sb.AppendLine("- Data Progress Detail di context sudah include 7 hari terakhir dengan tanggal, segment, span, site ID lengkap");
             sb.AppendLine();
             sb.AppendLine("FITUR APLIKASI YANG KAMU TAHU:");
             sb.AppendLine("• Surat Jalan - Input/tracking barang masuk/keluar/dibawa");
@@ -605,6 +840,11 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("• Multi-segment - Support 6 segment berbeda");
             sb.AppendLine("• Authentication - Login dengan email & password");
             sb.AppendLine("• Approval System - Admin approve data sebelum masuk spreadsheet");
+            sb.AppendLine();
+            sb.AppendLine("STRUKTUR SHEET PROGRESS (kolom A-I):");
+            sb.AppendLine("  A=Tanggal, B=Segment, C=Rute, D=Nama Barang, E=Progres, F=Keterangan, G=HOMEBASE, H=KAB/KOTA, I=SITE ID");
+            sb.AppendLine("- Untuk query SPESIFIK site/span/rute (mis. 'cek site 0244', 'cari rute brebes'), aplikasi otomatis lookup lokal di sheet Progress dan kasih hasilnya — kamu gak perlu jawab dari hafalan/halusinasi.");
+            sb.AppendLine("- Untuk pertanyaan umum/aggregasi (mis. 'progress total', 'segment mana yang paling cepat'), pakai data yang ada di context ini.");
 
             if (!string.IsNullOrEmpty(context))
             {
@@ -690,5 +930,7 @@ namespace StokBarangMAUI.Services
         public bool ApiKeyRequired { get; set; }
         [JsonPropertyName("version")]
         public string? Version { get; set; }
+        [JsonPropertyName("aiInstructions")]
+        public string? AiInstructions { get; set; }
     }
 }
