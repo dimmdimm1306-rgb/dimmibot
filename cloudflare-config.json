@@ -1,5 +1,5 @@
 ﻿{
-    "baseUrl":  "https://machine-glossary-remix-nova.trycloudflare.com/v1",
+    "baseUrl":  "https://fun-programmer-representing-damaged.trycloudflare.com/v1",
     "models":  [
                    "gpt-4o-mini",
                    "gpt-4o",
@@ -9,10 +9,10 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "24",
-    "lastTested":  "2026-05-11T00:33:28Z",
+    "version":  "25",
+    "lastTested":  "2026-05-11T01:50:25Z",
     "notes":  "Server restarted. New tunnel URL. AI bot improved: shorter answers, better formatting, knows all app features.",
-    "tunnelUrl":  "https://machine-glossary-remix-nova.trycloudflare.com",
+    "tunnelUrl":  "https://fun-programmer-representing-damaged.trycloudflare.com",
     "premiumModels":  [
                           "gpt-4o-mini",
                           "gpt-4o"
