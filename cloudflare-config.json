@@ -1,4 +1,4 @@
-﻿{
+{
     "baseUrl":  "https://composed-trusted-jerry-board.trycloudflare.com/v1",
     "models":  [
                    "gpt-4o-mini",
@@ -9,8 +9,8 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "30",
-    "lastTested":  "2026-05-11T15:13:07Z",
+    "version":  "31",
+    "lastTested":  "2026-05-11T15:13:10Z",
     "notes":  "v29: GDrive Reader dengan alias matang per-sheet (header_row_start, header_rows auto). Semua sheet di FWA PROJECT STOK + RESUME Progres FWA sudah di-profile.",
     "tunnelUrl":  "https://composed-trusted-jerry-board.trycloudflare.com",
     "premiumModels":  [
@@ -32,7 +32,7 @@
                },
     "aiInstructions":  "",
     "lastInstructionsUpdate":  "",
-    "gdriveReaderUrl":  "https://admitted-widely-violin-directive.trycloudflare.com",
+    "gdriveReaderUrl":  "https://gregory-interactions-pale-boys.trycloudflare.com",
     "gdriveReaderToken":  "6YqN4XhBUtRm9T8S5zdi7Yh0IhEJ6xyUxftFUBB8",
     "gdriveReaderEnabled":  true,
     "gdriveAliases":  [
