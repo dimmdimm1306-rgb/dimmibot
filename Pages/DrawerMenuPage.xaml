@@ -213,6 +213,27 @@
                 </Grid>
             </Border>
 
+            <!-- About Aplikasi -->
+            <Border BackgroundColor="{DynamicResource HeaderBtnBg}"
+                    StrokeShape="RoundRectangle 12" Stroke="{DynamicResource HeaderBtnBorder}"
+                    Padding="16,12">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnNavAbout"/>
+                </Border.GestureRecognizers>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                    <Label Text="ℹ️" FontSize="18" VerticalOptions="Center"/>
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="About Aplikasi"
+                               FontSize="14" FontAttributes="Bold"
+                               TextColor="{DynamicResource TextPrimary}"/>
+                        <Label Text="Versi, config GitHub, diagnostics"
+                               FontSize="11" TextColor="{DynamicResource TextMuted}"/>
+                    </VerticalStackLayout>
+                    <Label Grid.Column="2" Text="›" FontSize="22"
+                           TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
         </VerticalStackLayout>
 
     </Grid>

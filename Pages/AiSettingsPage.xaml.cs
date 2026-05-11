@@ -6,6 +6,7 @@ namespace StokBarangMAUI.Pages
     {
         private readonly AiChatService _aiService;
         private readonly AuthService _auth;
+        private readonly GDriveReaderService _drive;
         private bool _isPasswordVisible = false;
         private bool _isAdmin = false;
 
@@ -15,6 +16,7 @@ namespace StokBarangMAUI.Pages
             
             _aiService = ((App)Application.Current!).Handler!.MauiContext!.Services.GetRequiredService<AiChatService>();
             _auth = ((App)Application.Current!).Handler!.MauiContext!.Services.GetRequiredService<AuthService>();
+            _drive = ((App)Application.Current!).Handler!.MauiContext!.Services.GetRequiredService<GDriveReaderService>();
             
             _isAdmin = _auth.CanEdit;
 
@@ -53,6 +55,11 @@ namespace StokBarangMAUI.Pages
             {
                 ModelEntry.Text = model;
             }
+
+            // Load Drive Reader settings
+            DriveEnabledSwitch.IsToggled = _drive.IsEnabled;
+            DriveUrlEntry.Text = _drive.BaseUrl;
+            DriveTokenEntry.Text = _drive.Token;
         }
 
         private async void OnSaveApiKey(object sender, EventArgs e)
@@ -142,6 +149,56 @@ namespace StokBarangMAUI.Pages
         private async void OnBackClicked(object sender, EventArgs e)
         {
             await Navigation.PopAsync();
+        }
+
+        // ── Google Drive Reader handlers ─────────────────────────────────
+
+        private void OnDriveEnabledToggled(object sender, ToggledEventArgs e)
+        {
+            _drive.SetEnabled(e.Value);
+        }
+
+        private void OnSaveDriveSettings(object sender, EventArgs e)
+        {
+            var url = DriveUrlEntry.Text?.Trim() ?? "";
+            var token = DriveTokenEntry.Text?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                DriveStatusLabel.IsVisible = true;
+                DriveStatusLabel.Text = "⚠️ URL tidak boleh kosong";
+                DriveStatusLabel.TextColor = Color.FromArgb("#F59E0B");
+                return;
+            }
+
+            _drive.SetBaseUrl(url);
+            _drive.SetToken(token);
+
+            DriveStatusLabel.IsVisible = true;
+            DriveStatusLabel.Text = "✅ Settings Drive tersimpan";
+            DriveStatusLabel.TextColor = Color.FromArgb("#10B981");
+        }
+
+        private async void OnTestDrive(object sender, EventArgs e)
+        {
+            // Save first so test reflects what user typed
+            OnSaveDriveSettings(sender, e);
+
+            DriveStatusLabel.IsVisible = true;
+            DriveStatusLabel.Text = "⏳ Testing koneksi...";
+            DriveStatusLabel.TextColor = Color.FromArgb("#F59E0B");
+
+            var (ok, message, email) = await _drive.CheckHealthAsync();
+            if (ok)
+            {
+                DriveStatusLabel.Text = $"✅ Connected!\nService account: {email}\n\n💡 Share Drive folder-mu ke email di atas (Viewer).";
+                DriveStatusLabel.TextColor = Color.FromArgb("#10B981");
+            }
+            else
+            {
+                DriveStatusLabel.Text = $"❌ Tidak bisa connect: {message}\n\nCek:\n• Apakah start_server.bat jalan di laptop?\n• URL benar?\n• Dari HP: pakai IP/tunnel, bukan localhost";
+                DriveStatusLabel.TextColor = Color.FromArgb("#DC2626");
+            }
         }
     }
 }

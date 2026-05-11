@@ -115,5 +115,12 @@ namespace StokBarangMAUI.Pages
             });
         }
 
+        private async void OnNavAbout(object s, TappedEventArgs e)
+        {
+            HapticFeedback.Default.Perform(HapticFeedbackType.Click);
+            await Navigation.PopModalAsync(false);
+            await _tabbed.Navigation.PushAsync(new AboutPage());
+        }
+
     }
 }

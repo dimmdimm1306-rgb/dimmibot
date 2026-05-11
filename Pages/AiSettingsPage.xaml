@@ -188,6 +188,88 @@
                     </VerticalStackLayout>
                 </Border>
 
+                <!-- Google Drive Reader (read-only) -->
+                <Border BackgroundColor="{DynamicResource CardBg}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="{DynamicResource BorderClr}"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0" Text="📂 Google Drive Reader (Read-Only)"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="14" FontAttributes="Bold"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Column="1" x:Name="DriveEnabledSwitch"
+                                    OnColor="#10B981"
+                                    ThumbColor="White"
+                                    Toggled="OnDriveEnabledToggled"/>
+                        </Grid>
+
+                        <Label Text="Baca file Excel / Google Sheets / folder di Drive lewat chat. 100% read-only — tidak bisa edit/hapus."
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="11"
+                               LineBreakMode="WordWrap"/>
+
+                        <Label Text="Server URL" TextColor="{DynamicResource TextSecond}" FontSize="12"/>
+                        <Border BackgroundColor="{DynamicResource PageBg}"
+                                StrokeShape="RoundRectangle 8"
+                                Stroke="{DynamicResource BorderClr}"
+                                Padding="12,8">
+                            <Entry x:Name="DriveUrlEntry"
+                                   Placeholder="http://localhost:20129"
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="12"
+                                   Keyboard="Url"/>
+                        </Border>
+
+                        <Label Text="Bearer Token (optional)" TextColor="{DynamicResource TextSecond}" FontSize="12"/>
+                        <Border BackgroundColor="{DynamicResource PageBg}"
+                                StrokeShape="RoundRectangle 8"
+                                Stroke="{DynamicResource BorderClr}"
+                                Padding="12,8">
+                            <Entry x:Name="DriveTokenEntry"
+                                   Placeholder="Kosongin kalau server gak pakai auth"
+                                   PlaceholderColor="{DynamicResource TextMuted}"
+                                   TextColor="{DynamicResource TextPrimary}"
+                                   FontSize="12"
+                                   IsPassword="True"/>
+                        </Border>
+
+                        <HorizontalStackLayout Spacing="8">
+                            <Border BackgroundColor="#10B981"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="12,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSaveDriveSettings"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="💾 Simpan" TextColor="White" FontSize="12" FontAttributes="Bold"/>
+                            </Border>
+
+                            <Border BackgroundColor="#6366F1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="12,8">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnTestDrive"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="🔌 Test" TextColor="White" FontSize="12" FontAttributes="Bold"/>
+                            </Border>
+                        </HorizontalStackLayout>
+
+                        <Label x:Name="DriveStatusLabel"
+                               Text=""
+                               TextColor="{DynamicResource TextSecond}"
+                               FontSize="11"
+                               LineBreakMode="WordWrap"
+                               IsVisible="False"/>
+
+                        <Label Text="💡 Di HP, ganti localhost dengan IP laptop atau Cloudflare tunnel URL."
+                               TextColor="{DynamicResource TextMuted}"
+                               FontSize="11"
+                               LineBreakMode="WordWrap"/>
+                    </VerticalStackLayout>
+                </Border>
+
                 <!-- How to Get API Key -->
                 <Border BackgroundColor="#10B981"
                         StrokeShape="RoundRectangle 12"

@@ -34,17 +34,17 @@
                         <Label x:Name="LblTheme" Text="☀" FontSize="15" TextColor="White"
                                HorizontalOptions="Center" VerticalOptions="Center"/>
                     </Border>
-                    <Border BackgroundColor="#6366F1"
-                            StrokeShape="RoundRectangle 12" Stroke="#818CF8" StrokeThickness="1"
-                            Padding="6" VerticalOptions="Center">
+                    <Border BackgroundColor="{DynamicResource AiBotBg}"
+                            StrokeShape="RoundRectangle 12" Stroke="{DynamicResource AiBotBorder}" StrokeThickness="1"
+                            Padding="0" WidthRequest="38" HeightRequest="38" VerticalOptions="Center">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnAiBotClicked"/>
                         </Border.GestureRecognizers>
-                        <Image Source="claw_cat.png" WidthRequest="26" HeightRequest="26"
+                        <Label Text="AI" FontSize="13" FontAttributes="Bold" TextColor="White"
                                HorizontalOptions="Center" VerticalOptions="Center"/>
                     </Border>
-                    <Border BackgroundColor="#1D4ED8"
-                            StrokeShape="RoundRectangle 12" Stroke="#3B82F6" StrokeThickness="1"
+                    <Border BackgroundColor="{DynamicResource AccentBlue}"
+                            StrokeShape="RoundRectangle 12" Stroke="{DynamicResource AccentBlueBorder}" StrokeThickness="1"
                             Padding="11,9" VerticalOptions="Center">
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnUpdateTapped"/>

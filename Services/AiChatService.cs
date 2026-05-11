@@ -24,6 +24,9 @@ namespace StokBarangMAUI.Services
         // Kosongkan kalau gak mau auto-fetch dari GitHub.
         private const string GITHUB_CONFIG_URL = "https://raw.githubusercontent.com/dimmdimm1306-rgb/dimmibot/master/cloudflare-config.json";
 
+        /// <summary>Public accessor untuk AboutPage (diagnostics).</summary>
+        public string GetGithubConfigUrl() => GITHUB_CONFIG_URL;
+
         private readonly HttpClient _httpClient;
         private readonly List<AiChatMessage> _conversationHistory = new();
         private string _baseUrl = "https://openrouter.ai/api/v1";
@@ -63,7 +66,7 @@ namespace StokBarangMAUI.Services
         }
 
         /// <summary>Fetch centralized config — prioritas GitHub raw (stabil, gak pernah berubah URL-nya), fallback ke server /config.</summary>
-        private async Task FetchServerConfigAsync()
+        public async Task FetchServerConfigAsync()
         {
             // Prioritas 1: GitHub raw URL (stable discovery point)
             if (!string.IsNullOrWhiteSpace(GITHUB_CONFIG_URL))
@@ -114,6 +117,30 @@ namespace StokBarangMAUI.Services
                     _serverInstructions = config.AiInstructions;
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] AI instructions loaded ({_serverInstructions.Length} chars)");
                 }
+
+                // Apply GDrive Reader remote config — hemat setup per HP user
+                try
+                {
+                    if (!string.IsNullOrEmpty(config.GDriveReaderUrl)
+                        || !string.IsNullOrEmpty(config.GDriveReaderToken)
+                        || config.GDriveReaderEnabled.HasValue
+                        || (config.GDriveAliases != null && config.GDriveAliases.Count > 0))
+                    {
+                        var drive = ((App)Application.Current!).Handler!.MauiContext!
+                            .Services.GetService<GDriveReaderService>();
+                        drive?.ApplyRemoteConfig(
+                            config.GDriveReaderUrl,
+                            config.GDriveReaderToken,
+                            config.GDriveReaderEnabled,
+                            config.GDriveAliases);
+                        System.Diagnostics.Debug.WriteLine($"[AiChatService] GDrive remote config applied from {source} ({config.GDriveAliases?.Count ?? 0} aliases)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] GDrive remote config apply failed: {ex.Message}");
+                }
+
                 System.Diagnostics.Debug.WriteLine($"[AiChatService] Config updated from {source}: {config.BaseUrl}, model={primaryModel}");
                 return true;
             }
@@ -436,12 +463,23 @@ namespace StokBarangMAUI.Services
                 // Surat Jalan recent
                 if (data.SuratJalan?.Count > 0)
                 {
-                    sb.AppendLine("\n📄 SURAT JALAN TERBARU (10 terakhir):");
+                    sb.AppendLine("\n📄 SURAT JALAN TERBARU (10 terakhir, urut dari paling baru):");
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] Found {data.SuratJalan.Count} surat jalan");
-                    foreach (var sj in data.SuratJalan.Take(10))
+                    var recentSJ = data.SuratJalan
+                        .OrderByDescending(s => s.SortDate)
+                        .Take(10);
+                    foreach (var sj in recentSJ)
                     {
                         var icon = sj.Jenis.ToLower().Contains("masuk") ? "📥" : "📤";
                         sb.AppendLine($"   {icon} {sj.Tanggal} | {sj.Jenis} | {sj.NamaBarang} {sj.Qty} {sj.Satuan} | Seg {sj.Segment}");
+                        var pgr = string.IsNullOrWhiteSpace(sj.Pengirim) ? "-" : sj.Pengirim;
+                        var pnr = string.IsNullOrWhiteSpace(sj.Penerima) ? "-" : sj.Penerima;
+                        var noSj = string.IsNullOrWhiteSpace(sj.NoSJ) ? "-" : sj.NoSJ;
+                        sb.AppendLine($"      No.SJ: {noSj} | Pengirim: {pgr} → Penerima: {pnr}");
+                        if (!string.IsNullOrWhiteSpace(sj.Keterangan))
+                            sb.AppendLine($"      Ket: {sj.Keterangan}");
+                        if (sj.HasLink)
+                            sb.AppendLine($"      🔗 {sj.DriveUrl}");
                     }
                 }
                 else
@@ -461,32 +499,50 @@ namespace StokBarangMAUI.Services
                         .Take(50) // Limit untuk tidak terlalu banyak
                         .ToList();
                     
-                    var groupedByDate = recentProgress
-                        .GroupBy(p => p.Tanggal)
-                        .OrderByDescending(g => g.First().SortDate)
-                        .Take(7);
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Recent progress (7 days): {recentProgress.Count} items");
                     
-                    foreach (var dateGroup in groupedByDate)
+                    if (recentProgress.Count == 0)
                     {
-                        var date = dateGroup.First().SortDate;
-                        var dayName = date.ToString("dddd", new System.Globalization.CultureInfo("id-ID"));
-                        sb.AppendLine($"   📆 {dateGroup.Key} ({dayName}):");
-                        
-                        var activities = dateGroup
-                            .GroupBy(p => new { p.Segment, p.Span, p.SiteId })
-                            .Take(10); // Max 10 aktivitas per hari
-                        
-                        foreach (var activity in activities)
+                        sb.AppendLine("   ⚠️ Tidak ada data progress dalam 7 hari terakhir.");
+                        sb.AppendLine($"   💡 Total data progress di sheet: {data.Progress.Count} items");
+                        if (data.Progress.Count > 0)
                         {
-                            var materials = string.Join(", ", activity.Select(p => $"{p.NamaBarang} {p.Progres} {p.Satuan}"));
-                            var site = !string.IsNullOrEmpty(activity.Key.SiteId) ? $" Site:{activity.Key.SiteId}" : "";
-                            sb.AppendLine($"      • Seg {activity.Key.Segment} - {activity.Key.Span}{site}: {materials}");
+                            var oldest = data.Progress.OrderBy(p => p.SortDate).First();
+                            var newest = data.Progress.OrderByDescending(p => p.SortDate).First();
+                            sb.AppendLine($"   📊 Range tanggal: {oldest.Tanggal} s/d {newest.Tanggal}");
+                        }
+                    }
+                    else
+                    {
+                        var groupedByDate = recentProgress
+                            .GroupBy(p => p.Tanggal)
+                            .OrderByDescending(g => g.First().SortDate)
+                            .Take(7);
+                        
+                        foreach (var dateGroup in groupedByDate)
+                        {
+                            var date = dateGroup.First().SortDate;
+                            var dayName = date.ToString("dddd", new System.Globalization.CultureInfo("id-ID"));
+                            sb.AppendLine($"   📆 {dateGroup.Key} ({dayName}):");
+                            
+                            var activities = dateGroup
+                                .GroupBy(p => new { p.Segment, p.Span, p.SiteId })
+                                .Take(10); // Max 10 aktivitas per hari
+                            
+                            foreach (var activity in activities)
+                            {
+                                var materials = string.Join(", ", activity.Select(p => $"{p.NamaBarang} {p.Progres} {p.Satuan}"));
+                                var site = !string.IsNullOrEmpty(activity.Key.SiteId) ? $" Site:{activity.Key.SiteId}" : "";
+                                sb.AppendLine($"      • Seg {activity.Key.Segment} - {activity.Key.Span}{site}: {materials}");
+                            }
                         }
                     }
                 }
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("[AiChatService] No progress detail data");
+                    sb.AppendLine("\n📅 PROGRESS DETAIL:");
+                    sb.AppendLine("   ⚠️ Data progress belum ter-load dari spreadsheet.");
                 }
             }
             catch (Exception ex)
@@ -644,6 +700,27 @@ namespace StokBarangMAUI.Services
                     // kalau kosong (stopword/query invalid), fall through ke flow normal
                 }
 
+                // Google Drive read-only commands (drive list, drive header, drive filter, dll.)
+                // Handler ini langsung kasih response tanpa perlu LLM — hemat token maksimal.
+                try
+                {
+                    var driveHandler = ((App)Application.Current!).Handler!.MauiContext!
+                        .Services.GetService<GDriveCommandHandler>();
+                    if (driveHandler != null)
+                    {
+                        var (handled, driveResponse) = await driveHandler.TryHandleAsync(userMessage);
+                        if (handled && !string.IsNullOrEmpty(driveResponse))
+                        {
+                            return driveResponse;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AiChatService] Drive handler error: {ex.Message}");
+                    // fall through — user tetap bisa chat normal
+                }
+
                 // Detect pesan terlalu pendek/vague — kasih menu bantuan dengan humor
                 var vagueTriggers = new[] { "cek", "check", "lihat", "tampilkan", "show", "info", "data", "?", "??", "???" };
                 if (vagueTriggers.Contains(lowerMsg))
@@ -795,9 +872,27 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("- Inti dulu, baru elaborasi kalau perlu — jangan bertele-tele");
             sb.AppendLine("- Jelas, padat, dan humble — jangan over-confident");
             sb.AppendLine("- Gunakan bullet points (•) untuk list");
-            sb.AppendLine("- Gunakan simbol yang jelas: ✅ ❌ 📊 📈 📦 🔧 ⚠️ 💡");
+            sb.AppendLine("- Gunakan simbol yang jelas: ✅ ❌ 📊 📈 �� 🔧 ⚠️ 💡");
             sb.AppendLine("- Format angka dengan jelas: 1,200/1,500m (80%)");
             sb.AppendLine("- Pisahkan section dengan garis: ──────");
+            sb.AppendLine();
+            sb.AppendLine("🤷 KALAU KAMU MEMANG GAK BISA JAWAB:");
+            sb.AppendLine("- Kalau pertanyaan di luar data yang ada atau kamu benar-benar tidak tahu jawabannya");
+            sb.AppendLine("- JANGAN bilang 'maaf saya tidak bisa membantu' atau 'saya tidak punya informasi'");
+            sb.AppendLine("- Pakai respons LUCU dan SANTAI seperti:");
+            sb.AppendLine("  • 'Wah, ini di luar keahlianku bro 😅 Cari sendiri ya, apa gunanya aplikasi kalo chat pertanyaan yang ada jawabannya bisa di cek pake bot terus! 😂'");
+            sb.AppendLine("  • 'Aduh, otak AI-ku nge-lag nih 🤖💨 Coba googling aja deh, aku kan bukan mbah dukun yang tau segalanya 🔮😆'");
+            sb.AppendLine("  • 'Hmm... ini pertanyaan level dewa 🧙‍♂️ Aku cuma bot biasa yang tau soal kabel sama tiang doang 😅 Coba tanya yang lebih ahli deh!'");
+            sb.AppendLine("  • 'Nah loh, ini mah di luar job desc-ku 😂 Aku spesialis FTTH, bukan ensiklopedia berjalan! Coba cari di Google Scholar kali ya 📚'");
+            sb.AppendLine("  • 'Waduh, pertanyaan filosofis banget 🤔 Aku kan cuma AI sederhana yang ngitung kabel, bukan Socrates 😅'");
+            sb.AppendLine("- Pilih salah satu yang paling cocok dengan konteks pertanyaan");
+            sb.AppendLine("- Tetap friendly dan jangan terkesan kasar — tujuannya biar user ketawa, bukan tersinggung");
+            sb.AppendLine();
+            sb.AppendLine("⚠️ ATURAN PENTING - BACA DATA DENGAN TELITI:");
+            sb.AppendLine("- JANGAN bilang 'tidak ada data' kalau data ADA di section DATA PROJECT SAAT INI di bawah");
+            sb.AppendLine("- BACA section 📅 PROGRESS DETAIL dengan teliti sebelum jawab pertanyaan tanggal");
+            sb.AppendLine("- Kalau user tanya 'progress kemarin' dan ada data tanggal kemarin di 📅 PROGRESS DETAIL, WAJIB tampilkan datanya");
+            sb.AppendLine("- Kalau memang TIDAK ADA data untuk tanggal tertentu di 📅 PROGRESS DETAIL, baru bilang 'Tidak ada progress untuk tanggal [X]'");
             sb.AppendLine();
             sb.AppendLine("HANDLE TYPO USER (HATI-HATI — JANGAN OVERREACT):");
             sb.AppendLine("- DEFAULT: kalau semua kata user udah benar atau bisa dipahami, LANGSUNG jawab pertanyaannya. JANGAN bilang 'mungkin maksudnya'.");
@@ -821,12 +916,28 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("- Kalau data benar-benar kosong (project belum ter-sync), kasih tahu: 'Coba buka tab utama dulu supaya data ter-fetch dari spreadsheet, baru tanya lagi.'");
             sb.AppendLine();
             sb.AppendLine("TANGGAL & WAKTU:");
-            sb.AppendLine($"- Hari ini: {DateTime.Now:dddd, dd MMMM yyyy} (gunakan ini sebagai referensi 'hari ini')");
-            sb.AppendLine($"- Kemarin: {DateTime.Now.AddDays(-1):dddd, dd MMMM yyyy}");
-            sb.AppendLine("- Kalau user tanya 'progress kemarin', cari data Progress yang tanggalnya = kemarin");
-            sb.AppendLine("- Kalau user tanya 'progress tanggal 10 Mei', cari data Progress yang tanggalnya = 10 Mei");
-            sb.AppendLine("- Kalau user tanya 'progress minggu ini', lihat data Progress 7 hari terakhir");
-            sb.AppendLine("- Data Progress Detail di context sudah include 7 hari terakhir dengan tanggal, segment, span, site ID lengkap");
+            var today = DateTime.Now;
+            var yesterday = today.AddDays(-1);
+            var cultureID = new System.Globalization.CultureInfo("id-ID");
+            sb.AppendLine($"- Hari ini: {today.ToString("dddd, dd MMMM yyyy", cultureID)} (gunakan ini sebagai referensi 'hari ini')");
+            sb.AppendLine($"- Kemarin: {yesterday.ToString("dddd, dd MMMM yyyy", cultureID)}");
+            sb.AppendLine($"- Tanggal kemarin dalam format: {yesterday:dd/MM/yyyy} atau {yesterday.Day} {yesterday:MMMM} {yesterday.Year}");
+            sb.AppendLine();
+            sb.AppendLine("CARA JAWAB PERTANYAAN TANGGAL:");
+            sb.AppendLine("- Kalau user tanya 'progress kemarin', lihat section 📅 PROGRESS DETAIL di bawah, cari tanggal kemarin");
+            sb.AppendLine("- Kalau user tanya 'progress tanggal 10 Mei', cari tanggal '10 Mei' atau '10/05/2026' di section 📅 PROGRESS DETAIL");
+            sb.AppendLine("- Kalau user tanya 'progress minggu ini', lihat semua tanggal di section 📅 PROGRESS DETAIL (sudah 7 hari terakhir)");
+            sb.AppendLine("- PENTING: Kalau data tanggal yang dicari TIDAK ADA di section 📅 PROGRESS DETAIL, jawab: 'Tidak ada progress untuk tanggal [X]. Mungkin hari libur atau belum ada aktivitas.'");
+            sb.AppendLine("- JANGAN bilang 'data tidak ada' kalau data memang ada di section 📅 PROGRESS DETAIL — baca dengan teliti!");
+            sb.AppendLine();
+            sb.AppendLine("CONTOH JAWABAN YANG BENAR:");
+            sb.AppendLine("❌ SALAH: 'Tidak ada data progress kemarin' (padahal ada di 📅 PROGRESS DETAIL)");
+            sb.AppendLine("✅ BENAR: 'Progress kemarin (Sabtu, 10 Mei 2026): • Seg 1 - Brebes-Tegal: Kabel 24c 150m, Tiang 7m 5 btg'");
+            sb.AppendLine();
+            sb.AppendLine("❌ SALAH: 'Data belum ter-load' (padahal section 📅 PROGRESS DETAIL ada isinya)");
+            sb.AppendLine("✅ BENAR: Baca data dari section 📅 PROGRESS DETAIL dan tampilkan");
+            sb.AppendLine();
+            sb.AppendLine("✅ BENAR (kalau memang tidak ada): 'Tidak ada progress untuk tanggal 5 Mei. Mungkin hari libur atau belum ada aktivitas.'");
             sb.AppendLine();
             sb.AppendLine("HARI LIBUR NASIONAL INDONESIA 2026:");
             sb.AppendLine("- 1 Jan (Kamis): Tahun Baru 2026");
@@ -862,22 +973,19 @@ namespace StokBarangMAUI.Services
             sb.AppendLine();
             sb.AppendLine("👤 Kevin");
             sb.AppendLine("   - Suka riweh (cerewet) tapi sregep (rajin) banget soal kerjaan");
-            sb.AppendLine("   - Kalau butuh update cepat atau follow-up, Kevin orangnya");
             sb.AppendLine("   - Banyak omong tapi hasilnya bagus");
             sb.AppendLine();
             sb.AppendLine("👤 Gilang");
             sb.AppendLine("   - Bocah kocak, suka bercanda");
-            sb.AppendLine("   - Bikin suasana lapangan jadi asik");
             sb.AppendLine("   - Jangan terlalu serius kalau ngobrol sama Gilang");
             sb.AppendLine();
             sb.AppendLine("👤 Pak Teguh");
             sb.AppendLine("   - Paling suka kerjaan otomatis, males manual");
             sb.AppendLine("   - Sering minta tolong orang untuk hal-hal teknis");
-            sb.AppendLine("   - Kalau ada yang bisa di-automate, Pak Teguh pasti tertarik");
+            sb.AppendLine("   - Kalau ada yang bisa diajak kerjasama, Pak Teguh pasti tertarik");
             sb.AppendLine();
             sb.AppendLine("👤 Pak Rohim");
-            sb.AppendLine("   - Paling gacor (jago) soal negosiasi dengan ormas & warga lokal");
-            sb.AppendLine("   - Ormas sering minta jatah? Pak Rohim yang handle");
+            sb.AppendLine("   - Paling gacor soal negosiasi dengan ormas & warga lokal");
             sb.AppendLine("   - Koordinasi lapangan dan smooth talk = ahlinya Pak Rohim");
             sb.AppendLine("   - Kalau ada masalah dengan warga/ormas, andalkan Pak Rohim");
             sb.AppendLine();
@@ -902,10 +1010,182 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("• Authentication - Login dengan email & password");
             sb.AppendLine("• Approval System - Admin approve data sebelum masuk spreadsheet");
             sb.AppendLine();
+            sb.AppendLine("🆕 GOOGLE DRIVE READER (READ-ONLY):");
+            sb.AppendLine("- Aplikasi punya fitur baca file di Google Drive (Excel / Google Sheets / CSV / folder) TANPA perlu buka browser.");
+            sb.AppendLine("- Akses 100% read-only — tidak bisa edit/hapus/create apapun. Aman!");
+            sb.AppendLine("- Commands (user ketik langsung di chat):");
+            sb.AppendLine("  • `drive status` — cek koneksi & email service account");
+            sb.AppendLine("  • `drive list` atau `drive list <nama>` — list file ter-share");
+            sb.AppendLine("  • `isi folder <nama/id>` — browse isi folder");
+            sb.AppendLine("  • `drive sheet <nama>` — list tab di file multi-sheet");
+            sb.AppendLine("  • `drive header <nama>` — lihat kolom");
+            sb.AppendLine("  • `drive summary <nama>` — statistik kolom");
+            sb.AppendLine("  • `drive filter <nama> {\"kolom\":\"nilai\",\"limit\":20}` — filter data server-side");
+            sb.AppendLine("- Kalau user minta sesuatu yang kelihatannya butuh baca Drive (mis. 'ambil data dari file X di drive', 'buka BOQ di drive'), ARAHKAN pakai command di atas — JANGAN karang data.");
+            sb.AppendLine("- Kalau user bilang 'drive help' / 'bantuan drive', handler internal akan balas otomatis — kamu gak perlu jawab.");
+            sb.AppendLine();
             sb.AppendLine("STRUKTUR SHEET PROGRESS (kolom A-I):");
             sb.AppendLine("  A=Tanggal, B=Segment, C=Rute, D=Nama Barang, E=Progres, F=Keterangan, G=HOMEBASE, H=KAB/KOTA, I=SITE ID");
             sb.AppendLine("- Untuk query SPESIFIK site/span/rute (mis. 'cek site 0244', 'cari rute brebes'), aplikasi otomatis lookup lokal di sheet Progress dan kasih hasilnya — kamu gak perlu jawab dari hafalan/halusinasi.");
             sb.AppendLine("- Untuk pertanyaan umum/aggregasi (mis. 'progress total', 'segment mana yang paling cepat'), pakai data yang ada di context ini.");
+            sb.AppendLine();
+            sb.AppendLine("STRUKTUR SHEET SURAT JALAN (kolom A-J):");
+            sb.AppendLine("  A=Tanggal, B=Segment, C=Nama Barang, D=QTY, E=Jenis, F=NO_SJ, G=PENGIRIM, H=PENERIMA, I=Keterangan, J=DRIVE (link foto)");
+            sb.AppendLine();
+            sb.AppendLine("📋 ATURAN KHUSUS - QUERY SURAT JALAN PER BARANG:");
+            sb.AppendLine("Kalau user tanya 'surat jalan [nama barang]' (misal: 'surat jalan tiang', 'surat jalan kabel'):");
+            sb.AppendLine("1. Terjemahkan istilah Indonesia ke Inggris dulu (tiang→Pole, kabel→Cable)");
+            sb.AppendLine("2. Cari di kolom C (Nama Barang) yang mengandung kata tersebut");
+            sb.AppendLine("3. Jabarkan SEMUA surat jalan yang match dengan format RAPI SEBARIS:");
+            sb.AppendLine("   📦 Surat Jalan [Nama Barang]:");
+            sb.AppendLine("   ");
+            sb.AppendLine("   📄 [Tanggal] | [Barang] [qty] | Pengirim: [nama] → Penerima: [nama] | No.SJ: [nomor]");
+            sb.AppendLine("   📄 [Tanggal] | [Barang] [qty] | Pengirim: [nama] → Penerima: [nama] | No.SJ: [nomor]");
+            sb.AppendLine("   ");
+            sb.AppendLine("   Total: [X] surat jalan");
+            sb.AppendLine("4. JANGAN pakai 'Baris X' - langsung info tanggal dan barang");
+            sb.AppendLine("5. Format HARUS sebaris agar mudah dibaca dan disalin");
+            sb.AppendLine("6. Kalau tidak ada yang match, jawab: ⚠️ Tidak ada surat jalan untuk [nama barang]");
+            sb.AppendLine("7. Urutkan dari tanggal terbaru ke terlama");
+            sb.AppendLine();
+            sb.AppendLine("📋 ATURAN KHUSUS - SURAT JALAN TERAKHIR MASUK:");
+            sb.AppendLine("Kalau user tanya 'surat jalan terakhir masuk', 'surat jalan terbaru', 'cek surat jalan terakhir':");
+            sb.AppendLine("1. WAJIB pakai data dari section '📄 SURAT JALAN TERBARU' di bawah — JANGAN halusinasi/karang.");
+            sb.AppendLine("2. Data di context sudah urut dari paling baru. Ambil 3 entry teratas yang jenisnya MASUK (atau 3 paling baru kalau user tidak spesifik 'masuk').");
+            sb.AppendLine("3. Format tiap entry MULTI-LINE supaya rapi:");
+            sb.AppendLine();
+            sb.AppendLine("   📦 3 Surat Jalan Terakhir Masuk:");
+            sb.AppendLine();
+            sb.AppendLine("   📄 <isi Tanggal dari data> | Seg <Segment>");
+            sb.AppendLine("      📦 <Nama Barang> (<Qty> <Satuan>)");
+            sb.AppendLine("      📋 <Jenis> | No.SJ: <NoSJ>");
+            sb.AppendLine("      👤 <Pengirim> → <Penerima>");
+            sb.AppendLine("      📝 <Keterangan> (skip kalau kosong)");
+            sb.AppendLine("      🔗 <DriveUrl> (skip kalau kosong/tidak ada link)");
+            sb.AppendLine();
+            sb.AppendLine("4. ⚠️ ATURAN KETAT: JANGAN PERNAH tulis placeholder `[nama]`, `[Tanggal]`, `[Barang]` literal di output! Itu TEMPLATE — ganti dengan isi data sebenarnya.");
+            sb.AppendLine("5. Kalau salah satu field kosong di data (mis. Pengirim tidak ada), tulis `-` di tempatnya, JANGAN biarkan kosong dan JANGAN tulis placeholder.");
+            sb.AppendLine("6. Setelah daftar SJ, tambahkan link spreadsheet:");
+            sb.AppendLine("   Link spreadsheet: https://docs.google.com/spreadsheets/d/1RC2Ylo4DjIAjkNMLe6v0jMnupJMcrP2v5aFTauhhcsg/edit?gid=1213940465");
+            sb.AppendLine();
+            sb.AppendLine("CONTOH OUTPUT BENAR (asumsi data sebenarnya):");
+            sb.AppendLine("   📦 3 Surat Jalan Terakhir Masuk:");
+            sb.AppendLine();
+            sb.AppendLine("   📄 Sabtu, 11 April | Seg BREBES");
+            sb.AppendLine("      📦 Cable 24C (40000 m)");
+            sb.AppendLine("      📋 BARANG MASUK | No.SJ: 223/DO/MBG/IV/2026");
+            sb.AppendLine("      👤 Senan-08112910057 → TEGUH");
+            sb.AppendLine("      📝 10 HUSPEL");
+            sb.AppendLine("      🔗 https://drive.google.com/file/d/1hB4WJHLpdfuON8I_9dJcHnrv49b5SaIs/view");
+            sb.AppendLine();
+            sb.AppendLine("CONTOH OUTPUT SALAH (JANGAN PERNAH):");
+            sb.AppendLine("   📄 [Tanggal] | [Barang] [qty] | Pengirim: [nama] → Penerima: [nama] | Segment [X]  ❌ template literal");
+            sb.AppendLine("   📄 Jumat, 08 Mei | Cable 24C 12000 m | Pengirim → Penerima | Segment PURWOKERTO ❌ Pengirim/Penerima kosong");
+            sb.AppendLine();
+            sb.AppendLine("📋 ATURAN KHUSUS - SURAT JALAN PER LOKASI:");
+            sb.AppendLine("Kalau user tanya 'surat jalan [nama kota/lokasi]' (misal: 'surat jalan surakarta', 'surat jalan brebes'):");
+            sb.AppendLine("1. Cari di kolom B (Segment) atau kolom I (Keterangan) yang mengandung nama kota");
+            sb.AppendLine("2. Atau match dengan segment yang cover kota tersebut:");
+            sb.AppendLine("   • Surakarta → Segment 4 (SUKOHARJO-KLATEN-SURAKARTA-WONOGIRI)");
+            sb.AppendLine("   • Brebes → Segment 1 (CIREBON-BREBES-TEGAL-PEKALONGAN-INDRAMAYU-SEMARANG)");
+            sb.AppendLine("   • Tegal → Segment 1");
+            sb.AppendLine("   • Cilacap → Segment 3 (BANYUMAS-CILACAP-KEBUMEN-PURWOREJO)");
+            sb.AppendLine("   • Tasikmalaya → Segment 2 (TASIKMALAYA-BANJAR)");
+            sb.AppendLine("   • Sragen → Segment 5 (SRAGEN-KARANG ANYAR)");
+            sb.AppendLine("   • Blora → Segment 6 (GROBOGAN-BLORA)");
+            sb.AppendLine("3. Jabarkan dengan format RAPI SEBARIS:");
+            sb.AppendLine("   📦 Surat Jalan [Nama Kota]:");
+            sb.AppendLine("   ");
+            sb.AppendLine("   📄 [Tanggal] | [Barang] [qty] | Pengirim → Penerima | No.SJ: [nomor]");
+            sb.AppendLine("   ");
+            sb.AppendLine("   Total: [X] surat jalan");
+            sb.AppendLine("4. JANGAN pakai 'Baris X' - langsung info yang penting");
+            sb.AppendLine("5. Link langsung ke spreadsheet: https://docs.google.com/spreadsheets/d/1RC2Ylo4DjIAjkNMLe6v0jMnupJMcrP2v5aFTauhhcsg/edit?gid=1213940465");
+            sb.AppendLine();
+            sb.AppendLine("📸 ATURAN KHUSUS - FOTO SURAT JALAN SPESIFIK:");
+            sb.AppendLine("Kalau user tanya 'foto surat jalan baris X' atau 'link foto surat jalan nomor X':");
+            sb.AppendLine("1. Cari data di sheet Surat Jalan pada baris yang diminta");
+            sb.AppendLine("2. Ambil link foto dari kolom J (DRIVE)");
+            sb.AppendLine("3. Format jawaban:");
+            sb.AppendLine("   📸 Foto Surat Jalan Baris [X]:");
+            sb.AppendLine("   • Tanggal: [tanggal]");
+            sb.AppendLine("   • Segment: [segment]");
+            sb.AppendLine("   • Barang: [nama barang] - [qty]");
+            sb.AppendLine("   • No. SJ: [nomor]");
+            sb.AppendLine("   • Link Foto: [URL dari kolom J]");
+            sb.AppendLine("4. Kalau kolom J kosong atau tidak ada link, jawab:");
+            sb.AppendLine("   ⚠️ Foto untuk surat jalan baris [X] belum diupload");
+            sb.AppendLine("5. Link spreadsheet Surat Jalan:");
+            sb.AppendLine("   https://docs.google.com/spreadsheets/d/1RC2Ylo4DjIAjkNMLe6v0jMnupJMcrP2v5aFTauhhcsg/edit?gid=1213940465#gid=1213940465");
+            sb.AppendLine();
+            sb.AppendLine("🌐 TERJEMAHAN ISTILAH (Spreadsheet pakai Bahasa Inggris):");
+            sb.AppendLine("Kalau user pakai istilah Indonesia, terjemahkan dulu sebelum cari di data:");
+            sb.AppendLine("• Kabel / Fiber → Cable");
+            sb.AppendLine("• Tiang → Pole");
+            sb.AppendLine("• Kabel Optik / Fiber Optik → Fiber Optic Cable / FO Cable");
+            sb.AppendLine("• Tiang Beton → Concrete Pole");
+            sb.AppendLine("• Tiang Kayu → Wooden Pole");
+            sb.AppendLine("• Kabel Udara → Aerial Cable");
+            sb.AppendLine("• Kabel Tanah → Underground Cable");
+            sb.AppendLine("• Kotak Sambung → Splice Box / Joint Box");
+            sb.AppendLine("• ODP (Optical Distribution Point) → ODP");
+            sb.AppendLine("• ODC (Optical Distribution Cabinet) → ODC");
+            sb.AppendLine("• OLT (Optical Line Terminal) → OLT");
+            sb.AppendLine("• Drop Cable → Drop Cable");
+            sb.AppendLine("Contoh: User tanya 'kabel di Surakarta' → cari 'Cable' di kolom D (Nama Barang)");
+            sb.AppendLine();
+            sb.AppendLine("📊 KONFIGURASI SPREADSHEET APLIKASI:");
+            sb.AppendLine("Aplikasi ini menggunakan 2 spreadsheet utama:");
+            sb.AppendLine();
+            sb.AppendLine("1️⃣ SPREADSHEET UTAMA (ID: 1RC2Ylo4DjIAjkNMLe6v0jMnupJMcrP2v5aFTauhhcsg)");
+            sb.AppendLine("   • Surat Jalan (GID: 1213940465)");
+            sb.AppendLine("   • Progress Harian (GID: 1637178585) - Data progress real-time per hari");
+            sb.AppendLine("   • Stok MRF (GID: 1736939395)");
+            sb.AppendLine("   • Aktual Stok (GID: 1692657123)");
+            sb.AppendLine();
+            sb.AppendLine("2️⃣ SPREADSHEET RESUME (ID: 1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_)");
+            sb.AppendLine("   • Sheet RESUME (GID: 1316342418) - MASTER DATA semua site dengan header progress");
+            sb.AppendLine("   • Segment 1: CIREBON-BREBES-TEGAL-PEKALONGAN-INDRAMAYU-SEMARANG (GID: 1111450998)");
+            sb.AppendLine("   • Segment 2: TASIKMALAYA-BANJAR (GID: 1943599466)");
+            sb.AppendLine("   • Segment 3: BANYUMAS-CILACAP-KEBUMEN-PURWOREJO (GID: 1686621433)");
+            sb.AppendLine("   • Segment 4: SUKOHARJO-KLATEN-SURAKARTA-WONOGIRI (GID: 842756326)");
+            sb.AppendLine("   • Segment 5: SRAGEN-KARANG ANYAR (GID: 1472813414)");
+            sb.AppendLine("   • Segment 6: GROBOGAN-BLORA (GID: 251176161)");
+            sb.AppendLine();
+            sb.AppendLine("⚠️ ATURAN KHUSUS - CEK PEKERJAAN PER KOTA:");
+            sb.AppendLine("Kalau user tanya 'cek pekerjaan di [nama kota]' atau 'site mana yang belum di [kota]':");
+            sb.AppendLine();
+            sb.AppendLine("📍 SUMBER DATA: Pakai SPREADSHEET RESUME (bukan spreadsheet utama!)");
+            sb.AppendLine("   • Sheet RESUME berisi MASTER DATA semua site");
+            sb.AppendLine("   • Di header ada kolom KAB/KOTA dan kolom PROGRESS");
+            sb.AppendLine("   • Kolom progress di resume = summary/total progress site tersebut");
+            sb.AppendLine();
+            sb.AppendLine("🔍 CARA CEK:");
+            sb.AppendLine("1. Cari di kolom KAB/KOTA (header resume) yang sesuai dengan nama kota yang ditanya");
+            sb.AppendLine("2. Filter hanya yang kolom PROGRESS = 0 atau kosong (belum dikerjakan)");
+            sb.AppendLine("3. JANGAN jabarkan per segment — langsung kasih detail:");
+            sb.AppendLine("   • SITE ID");
+            sb.AppendLine("   • RUTE");
+            sb.AppendLine("   • NAMA BARANG/SPAN");
+            sb.AppendLine("   • HOMEBASE (kalau ada)");
+            sb.AppendLine();
+            sb.AppendLine("📝 FORMAT JAWABAN:");
+            sb.AppendLine("   📍 Pekerjaan yang belum dikerjakan di [KOTA]:");
+            sb.AppendLine("   ");
+            sb.AppendLine("   🔴 Site [ID] - Rute [nama]");
+            sb.AppendLine("      • Span: [nama barang]");
+            sb.AppendLine("      • Homebase: [lokasi]");
+            sb.AppendLine("   ");
+            sb.AppendLine("   Total: [X] site belum dikerjakan");
+            sb.AppendLine();
+            sb.AppendLine("✅ Kalau SEMUA site di kota itu sudah ada progress (tidak ada yang 0), jawab:");
+            sb.AppendLine("   ✅ Semua pekerjaan di [KOTA] sudah dimulai/selesai");
+            sb.AppendLine();
+            sb.AppendLine("💡 CATATAN PENTING:");
+            sb.AppendLine("   • Resume = Master data dengan summary progress per site");
+            sb.AppendLine("   • Progress Harian = Detail progress per hari (untuk query tanggal spesifik)");
+            sb.AppendLine("   • Untuk cek 'site yang belum' → pakai Resume");
+            sb.AppendLine("   • Untuk cek 'progress kemarin/hari ini' → pakai Progress Harian");
 
             if (!string.IsNullOrEmpty(context))
             {
@@ -993,5 +1273,52 @@ namespace StokBarangMAUI.Services
         public string? Version { get; set; }
         [JsonPropertyName("aiInstructions")]
         public string? AiInstructions { get; set; }
+
+        // Drive Reader remote config — semua optional
+        [JsonPropertyName("gdriveReaderUrl")]
+        public string? GDriveReaderUrl { get; set; }
+        [JsonPropertyName("gdriveReaderToken")]
+        public string? GDriveReaderToken { get; set; }
+        [JsonPropertyName("gdriveReaderEnabled")]
+        public bool? GDriveReaderEnabled { get; set; }
+        [JsonPropertyName("gdriveAliases")]
+        public List<GDriveAlias>? GDriveAliases { get; set; }
+    }
+
+    public class GDriveAlias
+    {
+        /// <summary>Keyword(s) yang trigger alias ini. Contoh: ["progres","progress"].</summary>
+        [JsonPropertyName("trigger")]
+        public List<string>? Trigger { get; set; }
+
+        [JsonPropertyName("file_id")]
+        public string? FileId { get; set; }
+
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("sheet_name")]
+        public string? SheetName { get; set; }
+
+        [JsonPropertyName("header_rows")]
+        public int? HeaderRows { get; set; }
+
+        [JsonPropertyName("header_row_start")]
+        public int? HeaderRowStart { get; set; }
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        /// <summary>Optional default filters yang selalu di-apply (mis. tahun=2026).</summary>
+        [JsonPropertyName("default_filters")]
+        public Dictionary<string, object>? DefaultFilters { get; set; }
+
+        /// <summary>Prioritas kolom untuk search tanpa qualifier. Kalau kosong, pakai default list.</summary>
+        [JsonPropertyName("search_columns")]
+        public List<string>? SearchColumns { get; set; }
+
+        /// <summary>Opsi yang ditampilkan sebagai menu kalau user cuma ketik trigger tanpa keyword.</summary>
+        [JsonPropertyName("suggestions")]
+        public List<string>? Suggestions { get; set; }
     }
 }

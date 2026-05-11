@@ -443,7 +443,9 @@ private string CacheFilePath =>
                     NamaBarang = C(row, 3),
                     Progres    = ParseInt(C(row, 4)),
                     Keterangan = C(row, 5),
-                    Homebase   = C(row, 6)
+                    Homebase   = C(row, 6),
+                    KabKota    = C(row, 7),
+                    SiteId     = C(row, 8)
                 });
             }
             return result.OrderByDescending(x => x.SortDate).ToList();
@@ -706,7 +708,9 @@ private string CacheFilePath =>
                     NamaBarang = nama,
                     Progres    = progres,
                     Keterangan = C(row, 5),
-                    Homebase   = C(row, 6)
+                    Homebase   = C(row, 6),
+                    KabKota    = C(row, 7),
+                    SiteId     = C(row, 8)
                 });
             }
             return result;

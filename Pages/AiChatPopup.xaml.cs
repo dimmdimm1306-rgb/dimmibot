@@ -1,4 +1,4 @@
-using StokBarangMAUI.Services;
+﻿using StokBarangMAUI.Services;
 using Microsoft.Maui.Controls.Shapes;
 
 namespace StokBarangMAUI.Pages
@@ -22,10 +22,17 @@ namespace StokBarangMAUI.Pages
             StartAuthCheckTimer();
         }
 
-        // Disable hardware back button — user must tap the X button
+        // Disable hardware back button â€” user must tap the X button
         protected override bool OnBackButtonPressed()
         {
             return true; // true = handled, don't navigate back
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            // Auto-refresh data context tiap kali popup dibuka â€” user gak perlu ketik "refresh data"
+            _aiService.InvalidateContext();
         }
 
         private void StartAuthCheckTimer()
@@ -48,7 +55,7 @@ namespace StokBarangMAUI.Pages
             
             if (isAuthenticated)
             {
-                AuthStatusLabel.Text = "🔓 Admin Mode";
+                AuthStatusLabel.Text = "ðŸ”“ Admin Mode";
                 AuthStatusLabel.IsVisible = true;
             }
             else
@@ -81,9 +88,15 @@ namespace StokBarangMAUI.Pages
 
             try
             {
+                Console.WriteLine($"[Chat] USER: {message}");
+
                 // Get AI response
                 var response = await _aiService.SendMessageAsync(message);
-                
+
+                // Log response summary so we can see what bot shows on device
+                var preview = response.Length > 500 ? response.Substring(0, 500) + "...[truncated]" : response;
+                Console.WriteLine($"[Chat] BOT ({response.Length} chars): {preview}");
+
                 // Add AI response
                 AddAiMessage(response);
                 
@@ -92,7 +105,8 @@ namespace StokBarangMAUI.Pages
             }
             catch (Exception ex)
             {
-                AddAiMessage($"❌ Error: {ex.Message}");
+                Console.WriteLine($"[Chat] ERROR: {ex}");
+                AddAiMessage($"âŒ Error: {ex.Message}");
             }
             finally
             {
@@ -109,6 +123,7 @@ namespace StokBarangMAUI.Pages
             var res = Application.Current?.Resources;
             var cardBg = TryGetColor(res, "AccentGreenBg", "#064E3B");
             var textClr = TryGetColor(res, "AccentGreenBorder", "#10B981");
+            var linkClr = Colors.White;
 
             var border = new Border
             {
@@ -121,11 +136,11 @@ namespace StokBarangMAUI.Pages
 
             var label = new Label
             {
-                Text = message,
-                TextColor = textClr,
-                FontSize = 13,
+                FormattedText = BuildFormattedMessage(message, textClr, linkClr),
                 LineBreakMode = LineBreakMode.WordWrap
             };
+
+            AttachLongPressCopy(border, message);
 
             border.Content = label;
             MessagesContainer.Children.Add(border);
@@ -134,11 +149,14 @@ namespace StokBarangMAUI.Pages
         private void AddAiMessage(string message)
         {
             var res = Application.Current?.Resources;
-            var cardBg = TryGetColor(res, "CardBg", "#001e40");
-            var borderClr = TryGetColor(res, "BorderClr", "#1f477b");
-            var textClr = TryGetColor(res, "TextPrimary", "#d5e3ff");
+            var cardBg = TryGetColor(res, "CardBg", "#FFFFFF");
+            var borderClr = TryGetColor(res, "BorderClr", "#C4C5D6");
+            var textClr = TryGetColor(res, "TextPrimary", "#1A1B23");
+            var aiBotBg = TryGetColor(res, "AiBotBg", "#6514D6");
+            var aiBotBorder = TryGetColor(res, "AiBotBorder", "#7E3DEF");
+            var linkClr = TryGetColor(res, "AccentBlueBorder", "#3B82F6");
 
-            // Grid with cat avatar + message bubble
+            // Grid with AI avatar badge + message bubble
             var grid = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitionCollection
@@ -150,13 +168,25 @@ namespace StokBarangMAUI.Pages
                 HorizontalOptions = LayoutOptions.Start
             };
 
-            var avatar = new Image
+            var avatar = new Border
             {
-                Source = "claw_cat.png",
-                WidthRequest = 28,
-                HeightRequest = 28,
+                BackgroundColor = aiBotBg,
+                Stroke = new SolidColorBrush(aiBotBorder),
+                StrokeThickness = 1,
+                StrokeShape = new RoundRectangle { CornerRadius = 14 },
+                WidthRequest = 32,
+                HeightRequest = 32,
                 VerticalOptions = LayoutOptions.Start,
-                Margin = new Thickness(0, 4, 0, 0)
+                Margin = new Thickness(0, 4, 0, 0),
+                Content = new Label
+                {
+                    Text = "AI",
+                    FontSize = 11,
+                    FontAttributes = FontAttributes.Bold,
+                    TextColor = Colors.White,
+                    HorizontalOptions = LayoutOptions.Center,
+                    VerticalOptions = LayoutOptions.Center
+                }
             };
             Grid.SetColumn(avatar, 0);
 
@@ -173,16 +203,115 @@ namespace StokBarangMAUI.Pages
 
             var label = new Label
             {
-                Text = message,
-                TextColor = textClr,
-                FontSize = 13,
+                FormattedText = BuildFormattedMessage(message, textClr, linkClr),
                 LineBreakMode = LineBreakMode.WordWrap
             };
+
+            AttachLongPressCopy(border, message);
 
             border.Content = label;
             grid.Children.Add(avatar);
             grid.Children.Add(border);
             MessagesContainer.Children.Add(grid);
+        }
+
+        private static readonly System.Text.RegularExpressions.Regex UrlRegex =
+            new(@"https?://[^\s]+", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        private static FormattedString BuildFormattedMessage(string message, Color textColor, Color linkColor)
+        {
+            var fs = new FormattedString();
+            int lastEnd = 0;
+
+            foreach (System.Text.RegularExpressions.Match m in UrlRegex.Matches(message))
+            {
+                if (m.Index > lastEnd)
+                {
+                    fs.Spans.Add(new Span
+                    {
+                        Text = message.Substring(lastEnd, m.Index - lastEnd),
+                        TextColor = textColor,
+                        FontSize = 13
+                    });
+                }
+
+                // Trim trailing punctuation that's usually NOT part of the URL
+                var url = m.Value;
+                int trimLen = 0;
+                while (trimLen < url.Length && ".,;:!?)]}".IndexOf(url[url.Length - 1 - trimLen]) >= 0)
+                    trimLen++;
+                var cleanUrl = trimLen > 0 ? url.Substring(0, url.Length - trimLen) : url;
+                var tail = trimLen > 0 ? url.Substring(url.Length - trimLen) : "";
+
+                var linkSpan = new Span
+                {
+                    Text = cleanUrl,
+                    TextColor = linkColor,
+                    TextDecorations = TextDecorations.Underline,
+                    FontSize = 13
+                };
+                var capturedUrl = cleanUrl;
+                var tap = new TapGestureRecognizer();
+                tap.Tapped += async (_, _) =>
+                {
+                    try { await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(new Uri(capturedUrl)); }
+                    catch { /* invalid URL â€” ignore */ }
+                };
+                linkSpan.GestureRecognizers.Add(tap);
+                fs.Spans.Add(linkSpan);
+
+                if (tail.Length > 0)
+                    fs.Spans.Add(new Span { Text = tail, TextColor = textColor, FontSize = 13 });
+
+                lastEnd = m.Index + m.Length;
+            }
+
+            if (lastEnd < message.Length)
+            {
+                fs.Spans.Add(new Span
+                {
+                    Text = message.Substring(lastEnd),
+                    TextColor = textColor,
+                    FontSize = 13
+                });
+            }
+
+            // Empty message guard â€” at least one empty span so Label has a FormattedString
+            if (fs.Spans.Count == 0)
+                fs.Spans.Add(new Span { Text = message, TextColor = textColor, FontSize = 13 });
+
+            return fs;
+        }
+
+        private void AttachLongPressCopy(View target, string textToCopy)
+        {
+            System.Threading.CancellationTokenSource? cts = null;
+            var ptr = new PointerGestureRecognizer();
+
+            ptr.PointerPressed += (_, _) =>
+            {
+                cts?.Cancel();
+                cts = new System.Threading.CancellationTokenSource();
+                var token = cts.Token;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(500, token);
+                        if (token.IsCancellationRequested) return;
+                        await MainThread.InvokeOnMainThreadAsync(async () =>
+                        {
+                            await Clipboard.SetTextAsync(textToCopy);
+                            await DisplayAlert("âœ“", "Teks disalin ke clipboard", "OK");
+                        });
+                    }
+                    catch (TaskCanceledException) { /* released before threshold */ }
+                });
+            };
+            ptr.PointerReleased += (_, _) => cts?.Cancel();
+            ptr.PointerExited   += (_, _) => cts?.Cancel();
+
+            target.GestureRecognizers.Add(ptr);
         }
 
         private static Color TryGetColor(ResourceDictionary? res, string key, string fallback)
@@ -202,8 +331,9 @@ namespace StokBarangMAUI.Pages
             _aiService.ClearHistory();
 
             // Add welcome message back
-            AddAiMessage("👋 Yo! Gue Claw, AI assistant lo di sini. Tanya apa aja — soal kerjaan, progress, stok, atau mau ngobrol santai juga boleh! 😄");
+            AddAiMessage("ðŸ‘‹ Halo! Saya AI assistant kamu. Tanya apa aja â€” soal pekerjaan, progress, stok, atau mau ngobrol santai juga boleh!");
         }
 
     }
 }
+

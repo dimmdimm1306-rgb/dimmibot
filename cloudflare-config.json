@@ -9,9 +9,9 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "36",
-    "lastTested":  "2026-05-11T16:44:02Z",
-    "notes":  "v35: Suggestions menu for empty queries + date keywords (kemarin, 7 hari, minggu ini).",
+    "version":  "37",
+    "lastTested":  "2026-05-11T17:30:00Z",
+    "notes":  "v37: Status intent (belum/0%/selesai) + fix RESUME BY SITE ID multi-row header.",
     "tunnelUrl":  "https://border-serious-pure-ticket.trycloudflare.com",
     "premiumModels":  [
                           "gpt-4o-mini",
@@ -62,9 +62,10 @@
                                                   "cek progres kemarin",
                                                   "cek progres hari ini",
                                                   "cek progres minggu ini",
+                                                  "cek progres yang belum",
+                                                  "cek progres 0%",
                                                   "cek progres site 0244",
                                                   "cek progres rute brebes",
-                                                  "cek progres kabel 24c",
                                                   "cek progres brebes",
                                                   "cek progres sukoharjo"
                                               ]
@@ -175,9 +176,9 @@
                               "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
                               "name":  "Resume per Site ID",
                               "sheet_name":  "RESUME BY SITE ID",
-                              "header_rows":  1,
+                              "header_rows":  2,
                               "header_row_start":  1,
-                              "description":  "Breakdown progres per SITE ID + kabupaten",
+                              "description":  "Breakdown progres per SITE ID: Kabel 24c, Tiang 7m/9m, Terminasi, X Frame, ODP, Closure (paling lengkap)",
                               "search_columns":  [
                                                      "SITE ID",
                                                      "Rute",
@@ -185,8 +186,9 @@
                                                  ],
                               "suggestions":  [
                                                   "cek site 0244",
-                                                  "cek site 0087",
-                                                  "cek site 0295"
+                                                  "cek site yang belum",
+                                                  "cek site progres 0%",
+                                                  "cek site yang selesai"
                                               ]
                           },
                           {

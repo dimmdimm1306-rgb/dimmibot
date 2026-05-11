@@ -21,10 +21,15 @@
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                 </Border>
                 
-                <HorizontalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="8">
-                    <Image Source="claw_cat.png" WidthRequest="32" HeightRequest="32" VerticalOptions="Center"/>
+                <HorizontalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="10">
+                    <Border BackgroundColor="{DynamicResource AiBotBg}"
+                            StrokeShape="RoundRectangle 16" Stroke="{DynamicResource AiBotBorder}" StrokeThickness="1"
+                            WidthRequest="36" HeightRequest="36" VerticalOptions="Center">
+                        <Label Text="AI" FontSize="13" FontAttributes="Bold" TextColor="White"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
                     <VerticalStackLayout VerticalOptions="Center">
-                        <Label Text="Claw Assistant" TextColor="White"
+                        <Label Text="AI Assistant" TextColor="White"
                                FontSize="18" FontAttributes="Bold"/>
                         <HorizontalStackLayout Spacing="6">
                             <Label Text="Tanya apa saja tentang pekerjaan Anda" TextColor="{DynamicResource HeaderSubtitle}"
@@ -53,13 +58,19 @@
             <VerticalStackLayout x:Name="MessagesContainer" Spacing="12">
                 <!-- Welcome message -->
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" HorizontalOptions="Start">
-                    <Image Grid.Column="0" Source="claw_cat.png" WidthRequest="28" HeightRequest="28" VerticalOptions="Start" Margin="0,4,0,0"/>
-                    <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg}" 
+                    <Border Grid.Column="0" BackgroundColor="{DynamicResource AiBotBg}"
+                            StrokeShape="RoundRectangle 14" Stroke="{DynamicResource AiBotBorder}" StrokeThickness="1"
+                            WidthRequest="32" HeightRequest="32"
+                            VerticalOptions="Start" Margin="0,4,0,0">
+                        <Label Text="AI" FontSize="11" FontAttributes="Bold" TextColor="White"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
                             Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
                             StrokeShape="RoundRectangle 12"
                             Padding="12"
                             MaximumWidthRequest="280">
-                        <Label Text="👋 Yo! Gue Claw, AI assistant lo di sini. Tanya apa aja — soal kerjaan, progress, stok, atau mau ngobrol santai juga boleh! 😄"
+                        <Label Text="👋 Halo! Saya AI assistant kamu. Tanya apa aja — soal pekerjaan, progress, stok, atau mau ngobrol santai juga boleh!"
                                TextColor="{DynamicResource TextPrimary}"
                                FontSize="13"
                                LineBreakMode="WordWrap"/>
@@ -84,7 +95,7 @@
                        Completed="OnSendMessage"/>
             </Border>
 
-            <Border Grid.Column="1" BackgroundColor="#6366F1"
+            <Border Grid.Column="1" BackgroundColor="{DynamicResource AiBotBg}"
                     StrokeShape="RoundRectangle 22"
                     Padding="16,12"
                     WidthRequest="50"
