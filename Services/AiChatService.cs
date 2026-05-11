@@ -876,9 +876,10 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("   - Kalau ada yang bisa di-automate, Pak Teguh pasti tertarik");
             sb.AppendLine();
             sb.AppendLine("👤 Pak Rohim");
-            sb.AppendLine("   - Paling gacor (jago) soal ngomong dengan orang di lapangan");
-            sb.AppendLine("   - Koordinasi dan negosiasi = ahlinya Pak Rohim");
-            sb.AppendLine("   - Kalau ada masalah komunikasi atau butuh smooth talk, andalkan Pak Rohim");
+            sb.AppendLine("   - Paling gacor (jago) soal negosiasi dengan ormas & warga lokal");
+            sb.AppendLine("   - Ormas sering minta jatah? Pak Rohim yang handle");
+            sb.AppendLine("   - Koordinasi lapangan dan smooth talk = ahlinya Pak Rohim");
+            sb.AppendLine("   - Kalau ada masalah dengan warga/ormas, andalkan Pak Rohim");
             sb.AppendLine();
             sb.AppendLine("Kalau user tanya soal tim/orang, kasih info karakteristik mereka dengan gaya santai & lucu!");
             sb.AppendLine();
