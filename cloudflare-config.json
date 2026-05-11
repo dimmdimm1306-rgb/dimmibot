@@ -9,8 +9,8 @@
                ],
     "model":  "gpt-4o-mini",
     "apiKeyRequired":  false,
-    "version":  "31",
-    "lastTested":  "2026-05-11T15:13:10Z",
+    "version":  "32",
+    "lastTested":  "2026-05-11T15:17:20Z",
     "notes":  "v29: GDrive Reader dengan alias matang per-sheet (header_row_start, header_rows auto). Semua sheet di FWA PROJECT STOK + RESUME Progres FWA sudah di-profile.",
     "tunnelUrl":  "https://composed-trusted-jerry-board.trycloudflare.com",
     "premiumModels":  [
@@ -32,7 +32,7 @@
                },
     "aiInstructions":  "",
     "lastInstructionsUpdate":  "",
-    "gdriveReaderUrl":  "https://gregory-interactions-pale-boys.trycloudflare.com",
+    "gdriveReaderUrl":  "https://blond-intelligent-looksmart-offline.trycloudflare.com",
     "gdriveReaderToken":  "6YqN4XhBUtRm9T8S5zdi7Yh0IhEJ6xyUxftFUBB8",
     "gdriveReaderEnabled":  true,
     "gdriveAliases":  [
@@ -49,7 +49,7 @@
                               "sheet_name":  "Progress",
                               "header_rows":  1,
                               "header_row_start":  1,
-                              "description":  "Log progres harian kabel, tiang, material per segment â€” 355+ baris",
+                              "description":  "Log progres harian kabel, tiang, material per segment Ã¢â‚¬â€ 355+ baris",
                               "search_columns":  [
                                                      "SITE ID",
                                                      "Rute",
