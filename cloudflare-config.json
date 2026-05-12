@@ -9,9 +9,9 @@
     ],
     "model": "gpt-4o-mini",
     "apiKeyRequired": false,
-    "version": "42",
+    "version": "43",
     "lastTested": "2026-05-12T19:10:47Z",
-    "notes": "v42: Deployed to VPS (Tencent Lighthouse 43.157.226.109) with Cloudflare Named Tunnel. URLs: ai.dimmi.online + drive.dimmi.online. Fixed URLs, no more random tunnel.",
+    "notes": "v43: Fix cek stok route to Aktual Stok (crosstab), add kebutuhan material alias",
     "tunnelUrl": "https://ai.dimmi.online",
     "premiumModels": [
         "gpt-4o-mini",
@@ -75,14 +75,46 @@
                 "cek stok",
                 "stok",
                 "stock",
-                "material gudang"
+                "material gudang",
+                "stok gudang",
+                "aktual stok",
+                "stok aktual"
             ],
             "file_id": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
-            "name": "Stok Material",
+            "name": "Aktual Stok Material",
+            "sheet_name": "Aktual Stok",
+            "header_rows": 3,
+            "header_row_start": 1,
+            "description": "Crosstab 2D: material (Cable 24C, Tiang 7M, 9M, dll) x kota (Brebes, Tasikmalaya, Purwokerto, Sukoharjo, Sragen, Grobogan) dengan angka diterima/keluar/implementasi/aktual",
+            "search_columns": [
+                "STOK GUDANG",
+                "Material"
+            ],
+            "suggestions": [
+                "cek stok cable 24c",
+                "cek stok tiang 7m",
+                "cek stok tiang 9m",
+                "cek stok brebes",
+                "cek stok purwokerto",
+                "cek stok sukoharjo",
+                "cek stok sragen",
+                "cek stok grobogan",
+                "cek stok tasikmalaya"
+            ]
+        },
+        {
+            "trigger": [
+                "kebutuhan material",
+                "stok kebutuhan",
+                "stok vol",
+                "material kebutuhan"
+            ],
+            "file_id": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
+            "name": "Volume Kebutuhan Material",
             "sheet_name": "Stok",
             "header_rows": 2,
             "header_row_start": 3,
-            "description": "Stok material per segment: Kabel 24C, Tiang 7/9m, Closure, ODP",
+            "description": "Vol kebutuhan material per segment (planning) - bukan stok aktual di gudang",
             "search_columns": [
                 "Homebase",
                 "PIC",
@@ -90,12 +122,8 @@
                 "Status"
             ],
             "suggestions": [
-                "cek stok brebes",
-                "cek stok purwokerto",
-                "cek stok sukoharjo",
-                "cek stok sragen",
-                "cek stok grobogan",
-                "cek stok tasikmalaya"
+                "kebutuhan material brebes",
+                "kebutuhan material sukoharjo"
             ]
         },
         {
