@@ -1,294 +1,294 @@
 {
-    "baseUrl":  "https://brick-yard-calgary-pencil.trycloudflare.com/v1",
-    "models":  [
-                   "gpt-4o-mini",
-                   "gpt-4o",
-                   "liquid/lfm-2.5-1.2b-instruct:free",
-                   "nvidia/nemotron-nano-9b-v2:free",
-                   "openai/gpt-oss-120b:free"
-               ],
-    "model":  "gpt-4o-mini",
-    "apiKeyRequired":  false,
-    "version":  "41",
-    "lastTested":  "2026-05-12T07:39:31Z",
-    "notes":  "v37: Status intent (belum/0%/selesai) + fix RESUME BY SITE ID multi-row header.",
-    "tunnelUrl":  "https://brick-yard-calgary-pencil.trycloudflare.com",
-    "premiumModels":  [
-                          "gpt-4o-mini",
-                          "gpt-4o"
-                      ],
-    "freeModels":  [
-                       "liquid/lfm-2.5-1.2b-instruct:free",
-                       "nvidia/nemotron-nano-9b-v2:free",
-                       "openai/gpt-oss-120b:free"
-                   ],
-    "pricing":  {
-                    "gpt-4o-mini":  "$0.15/1M input, $0.60/1M output",
-                    "gpt-4o":  "$2.50/1M input, $10/1M output"
-                },
-    "status":  {
-                   "gpt-4o-mini":  "Working",
-                   "aiBot":  "GDrive Reader aliases with menu"
-               },
-    "aiInstructions":  "",
-    "lastInstructionsUpdate":  "",
-    "gdriveReaderUrl":  "https://helicopter-firewall-dark-facilities.trycloudflare.com",
-    "gdriveReaderToken":  "6YqN4XhBUtRm9T8S5zdi7Yh0IhEJ6xyUxftFUBB8",
-    "gdriveReaderEnabled":  true,
-    "gdriveAliases":  [
-                          {
-                              "trigger":  [
-                                              "cek progres",
-                                              "progres",
-                                              "progress",
-                                              "cek progress",
-                                              "progres harian"
-                                          ],
-                              "file_id":  "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
-                              "name":  "Progress Harian",
-                              "sheet_name":  "Progress",
-                              "header_rows":  1,
-                              "header_row_start":  1,
-                              "description":  "Log progres harian kabel, tiang, material per segment",
-                              "search_columns":  [
-                                                     "SITE ID",
-                                                     "Rute",
-                                                     "Nama Barang",
-                                                     "KAB/KOTA",
-                                                     "HOMEBASE",
-                                                     "Segment"
-                                                 ],
-                              "suggestions":  [
-                                                  "cek progres kemarin",
-                                                  "cek progres hari ini",
-                                                  "cek progres minggu ini",
-                                                  "cek progres yang belum",
-                                                  "cek progres 0%",
-                                                  "cek progres site 0244",
-                                                  "cek progres rute brebes",
-                                                  "cek progres brebes",
-                                                  "cek progres sukoharjo"
-                                              ]
-                          },
-                          {
-                              "trigger":  [
-                                              "cek stok",
-                                              "stok",
-                                              "stock",
-                                              "material gudang"
-                                          ],
-                              "file_id":  "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
-                              "name":  "Stok Material",
-                              "sheet_name":  "Stok",
-                              "header_rows":  2,
-                              "header_row_start":  3,
-                              "description":  "Stok material per segment: Kabel 24C, Tiang 7/9m, Closure, ODP",
-                              "search_columns":  [
-                                                     "Homebase",
-                                                     "PIC",
-                                                     "Segment",
-                                                     "Status"
-                                                 ],
-                              "suggestions":  [
-                                                  "cek stok brebes",
-                                                  "cek stok purwokerto",
-                                                  "cek stok sukoharjo",
-                                                  "cek stok sragen",
-                                                  "cek stok grobogan",
-                                                  "cek stok tasikmalaya"
-                                              ]
-                          },
-                          {
-                              "trigger":  [
-                                              "surat jalan",
-                                              "cek sj",
-                                              "sj",
-                                              "cek surat jalan"
-                                          ],
-                              "file_id":  "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
-                              "name":  "Surat Jalan",
-                              "sheet_name":  "Surat Jalan",
-                              "header_rows":  1,
-                              "header_row_start":  2,
-                              "description":  "Riwayat surat jalan: Tanggal, Segment, Nama Barang, QTY, Jenis, NO_SJ",
-                              "search_columns":  [
-                                                     "NO_SJ",
-                                                     "Nama Barang",
-                                                     "PENGIRIM",
-                                                     "PENERIMA",
-                                                     "Segment",
-                                                     "Jenis"
-                                                 ],
-                              "suggestions":  [
-                                                  "surat jalan kemarin",
-                                                  "surat jalan hari ini",
-                                                  "surat jalan minggu ini",
-                                                  "surat jalan cable",
-                                                  "surat jalan tiang",
-                                                  "surat jalan brebes",
-                                                  "surat jalan sukoharjo"
-                                              ]
-                          },
-                          {
-                              "trigger":  [
-                                              "cek alamat",
-                                              "alamat",
-                                              "lokasi gudang",
-                                              "alamat gudang"
-                                          ],
-                              "file_id":  "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
-                              "name":  "Alamat Gudang",
-                              "sheet_name":  "Alamat",
-                              "header_rows":  1,
-                              "header_row_start":  1,
-                              "description":  "Master alamat gudang per segment",
-                              "search_columns":  [
-                                                     "GUDANG",
-                                                     "SEGMENT",
-                                                     "ALAMAT"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "resume",
-                                              "resume progres",
-                                              "resume progress",
-                                              "ringkasan progres",
-                                              "resume project"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Resume Semua Segment",
-                              "sheet_name":  "RESUME",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Rekap total per segment: Kabel 24c, Tiang 7m/9m, Terminasi",
-                              "search_columns":  [
-                                                     "Segment"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "resume site",
-                                              "cek site",
-                                              "site id",
-                                              "by site"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Resume per Site ID",
-                              "sheet_name":  "RESUME BY SITE ID",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Breakdown progres per SITE ID: Kabel 24c, Tiang 7m/9m, Terminasi, X Frame, ODP, Closure (paling lengkap)",
-                              "search_columns":  [
-                                                     "SITE ID",
-                                                     "Rute",
-                                                     "KAB/KOTA"
-                                                 ],
-                              "suggestions":  [
-                                                  "cek site 0244",
-                                                  "cek site yang belum",
-                                                  "cek site progres 0%",
-                                                  "cek site yang selesai"
-                                              ]
-                          },
-                          {
-                              "trigger":  [
-                                              "progres brebes",
-                                              "brebes"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Progres BREBES",
-                              "sheet_name":  "BREBES",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Detail progres segment Brebes - Tegal - Pekalongan",
-                              "search_columns":  [
-                                                     "RUTE",
-                                                     "KAB"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "progres tasikmalaya",
-                                              "tasikmalaya",
-                                              "tasik"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Progres TASIKMALAYA",
-                              "sheet_name":  "TASIKMALAYA",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Detail progres segment Tasikmalaya - Banjar",
-                              "search_columns":  [
-                                                     "RUTE",
-                                                     "KAB"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "progres purwokerto",
-                                              "purwokerto"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Progres PURWOKERTO",
-                              "sheet_name":  "PURWOKERTO",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Detail progres segment Banyumas - Cilacap - Kebumen - Purworejo",
-                              "search_columns":  [
-                                                     "RUTE",
-                                                     "KAB"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "progres sukoharjo",
-                                              "sukoharjo",
-                                              "solo"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Progres SUKOHARJO",
-                              "sheet_name":  "SUKOHARJO",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Detail progres segment Sukoharjo - Klaten - Surakarta - Wonogiri",
-                              "search_columns":  [
-                                                     "RUTE",
-                                                     "KAB"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "progres sragen",
-                                              "sragen"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Progres SRAGEN",
-                              "sheet_name":  "SRAGEN",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Detail progres segment Sragen - Karang Anyar",
-                              "search_columns":  [
-                                                     "RUTE",
-                                                     "KAB"
-                                                 ]
-                          },
-                          {
-                              "trigger":  [
-                                              "progres grobogan",
-                                              "grobogan",
-                                              "blora"
-                                          ],
-                              "file_id":  "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
-                              "name":  "Progres GROBOGAN",
-                              "sheet_name":  "GROBOGAN",
-                              "header_rows":  2,
-                              "header_row_start":  1,
-                              "description":  "Detail progres segment Grobogan - Blora",
-                              "search_columns":  [
-                                                     "RUTE",
-                                                     "KAB"
-                                                 ]
-                          }
-                      ]
+    "baseUrl": "https://ai.dimmi.online/v1",
+    "models": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "liquid/lfm-2.5-1.2b-instruct:free",
+        "nvidia/nemotron-nano-9b-v2:free",
+        "openai/gpt-oss-120b:free"
+    ],
+    "model": "gpt-4o-mini",
+    "apiKeyRequired": false,
+    "version": "42",
+    "lastTested": "2026-05-12T19:10:47Z",
+    "notes": "v42: Deployed to VPS (Tencent Lighthouse 43.157.226.109) with Cloudflare Named Tunnel. URLs: ai.dimmi.online + drive.dimmi.online. Fixed URLs, no more random tunnel.",
+    "tunnelUrl": "https://ai.dimmi.online",
+    "premiumModels": [
+        "gpt-4o-mini",
+        "gpt-4o"
+    ],
+    "freeModels": [
+        "liquid/lfm-2.5-1.2b-instruct:free",
+        "nvidia/nemotron-nano-9b-v2:free",
+        "openai/gpt-oss-120b:free"
+    ],
+    "pricing": {
+        "gpt-4o-mini": "$0.15/1M input, $0.60/1M output",
+        "gpt-4o": "$2.50/1M input, $10/1M output"
+    },
+    "status": {
+        "gpt-4o-mini": "Working",
+        "aiBot": "GDrive Reader aliases with menu"
+    },
+    "aiInstructions": "",
+    "lastInstructionsUpdate": "",
+    "gdriveReaderUrl": "https://drive.dimmi.online",
+    "gdriveReaderToken": "6YqN4XhBUtRm9T8S5zdi7Yh0IhEJ6xyUxftFUBB8",
+    "gdriveReaderEnabled": true,
+    "gdriveAliases": [
+        {
+            "trigger": [
+                "cek progres",
+                "progres",
+                "progress",
+                "cek progress",
+                "progres harian"
+            ],
+            "file_id": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
+            "name": "Progress Harian",
+            "sheet_name": "Progress",
+            "header_rows": 1,
+            "header_row_start": 1,
+            "description": "Log progres harian kabel, tiang, material per segment",
+            "search_columns": [
+                "SITE ID",
+                "Rute",
+                "Nama Barang",
+                "KAB/KOTA",
+                "HOMEBASE",
+                "Segment"
+            ],
+            "suggestions": [
+                "cek progres kemarin",
+                "cek progres hari ini",
+                "cek progres minggu ini",
+                "cek progres yang belum",
+                "cek progres 0%",
+                "cek progres site 0244",
+                "cek progres rute brebes",
+                "cek progres brebes",
+                "cek progres sukoharjo"
+            ]
+        },
+        {
+            "trigger": [
+                "cek stok",
+                "stok",
+                "stock",
+                "material gudang"
+            ],
+            "file_id": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
+            "name": "Stok Material",
+            "sheet_name": "Stok",
+            "header_rows": 2,
+            "header_row_start": 3,
+            "description": "Stok material per segment: Kabel 24C, Tiang 7/9m, Closure, ODP",
+            "search_columns": [
+                "Homebase",
+                "PIC",
+                "Segment",
+                "Status"
+            ],
+            "suggestions": [
+                "cek stok brebes",
+                "cek stok purwokerto",
+                "cek stok sukoharjo",
+                "cek stok sragen",
+                "cek stok grobogan",
+                "cek stok tasikmalaya"
+            ]
+        },
+        {
+            "trigger": [
+                "surat jalan",
+                "cek sj",
+                "sj",
+                "cek surat jalan"
+            ],
+            "file_id": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
+            "name": "Surat Jalan",
+            "sheet_name": "Surat Jalan",
+            "header_rows": 1,
+            "header_row_start": 2,
+            "description": "Riwayat surat jalan: Tanggal, Segment, Nama Barang, QTY, Jenis, NO_SJ",
+            "search_columns": [
+                "NO_SJ",
+                "Nama Barang",
+                "PENGIRIM",
+                "PENERIMA",
+                "Segment",
+                "Jenis"
+            ],
+            "suggestions": [
+                "surat jalan kemarin",
+                "surat jalan hari ini",
+                "surat jalan minggu ini",
+                "surat jalan cable",
+                "surat jalan tiang",
+                "surat jalan brebes",
+                "surat jalan sukoharjo"
+            ]
+        },
+        {
+            "trigger": [
+                "cek alamat",
+                "alamat",
+                "lokasi gudang",
+                "alamat gudang"
+            ],
+            "file_id": "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg",
+            "name": "Alamat Gudang",
+            "sheet_name": "Alamat",
+            "header_rows": 1,
+            "header_row_start": 1,
+            "description": "Master alamat gudang per segment",
+            "search_columns": [
+                "GUDANG",
+                "SEGMENT",
+                "ALAMAT"
+            ]
+        },
+        {
+            "trigger": [
+                "resume",
+                "resume progres",
+                "resume progress",
+                "ringkasan progres",
+                "resume project"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Resume Semua Segment",
+            "sheet_name": "RESUME",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Rekap total per segment: Kabel 24c, Tiang 7m/9m, Terminasi",
+            "search_columns": [
+                "Segment"
+            ]
+        },
+        {
+            "trigger": [
+                "resume site",
+                "cek site",
+                "site id",
+                "by site"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Resume per Site ID",
+            "sheet_name": "RESUME BY SITE ID",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Breakdown progres per SITE ID: Kabel 24c, Tiang 7m/9m, Terminasi, X Frame, ODP, Closure (paling lengkap)",
+            "search_columns": [
+                "SITE ID",
+                "Rute",
+                "KAB/KOTA"
+            ],
+            "suggestions": [
+                "cek site 0244",
+                "cek site yang belum",
+                "cek site progres 0%",
+                "cek site yang selesai"
+            ]
+        },
+        {
+            "trigger": [
+                "progres brebes",
+                "brebes"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Progres BREBES",
+            "sheet_name": "BREBES",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Detail progres segment Brebes - Tegal - Pekalongan",
+            "search_columns": [
+                "RUTE",
+                "KAB"
+            ]
+        },
+        {
+            "trigger": [
+                "progres tasikmalaya",
+                "tasikmalaya",
+                "tasik"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Progres TASIKMALAYA",
+            "sheet_name": "TASIKMALAYA",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Detail progres segment Tasikmalaya - Banjar",
+            "search_columns": [
+                "RUTE",
+                "KAB"
+            ]
+        },
+        {
+            "trigger": [
+                "progres purwokerto",
+                "purwokerto"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Progres PURWOKERTO",
+            "sheet_name": "PURWOKERTO",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Detail progres segment Banyumas - Cilacap - Kebumen - Purworejo",
+            "search_columns": [
+                "RUTE",
+                "KAB"
+            ]
+        },
+        {
+            "trigger": [
+                "progres sukoharjo",
+                "sukoharjo",
+                "solo"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Progres SUKOHARJO",
+            "sheet_name": "SUKOHARJO",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Detail progres segment Sukoharjo - Klaten - Surakarta - Wonogiri",
+            "search_columns": [
+                "RUTE",
+                "KAB"
+            ]
+        },
+        {
+            "trigger": [
+                "progres sragen",
+                "sragen"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Progres SRAGEN",
+            "sheet_name": "SRAGEN",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Detail progres segment Sragen - Karang Anyar",
+            "search_columns": [
+                "RUTE",
+                "KAB"
+            ]
+        },
+        {
+            "trigger": [
+                "progres grobogan",
+                "grobogan",
+                "blora"
+            ],
+            "file_id": "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_",
+            "name": "Progres GROBOGAN",
+            "sheet_name": "GROBOGAN",
+            "header_rows": 2,
+            "header_row_start": 1,
+            "description": "Detail progres segment Grobogan - Blora",
+            "search_columns": [
+                "RUTE",
+                "KAB"
+            ]
+        }
+    ]
 }
