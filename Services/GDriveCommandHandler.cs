@@ -83,6 +83,10 @@ namespace StokBarangMAUI.Services
                 var cityResult = await TryDirectCityWorkQueryAsync(lower);
                 if (cityResult.handled) return (true, CapResponse(cityResult.response));
 
+                // Site/rute progress from RESUME sheets (search across all 6 segments)
+                var siteProgressResult = await TrySiteProgressFromResumeAsync(lower);
+                if (siteProgressResult.handled) return (true, CapResponse(siteProgressResult.response));
+
                 var multiStepResult = TryMultiStepQuery(lower);
                 if (multiStepResult.handled) return (true, CapResponse(multiStepResult.response));
             }
@@ -1196,8 +1200,161 @@ namespace StokBarangMAUI.Services
         // ── Multi-step clarification (site yang belum dikerjakan, dll) ──
 
         /// <summary>
-        /// Direct city work query: "cek pekerjaan di brebes", "yang belum di sragen", "pekerjaan belum di klaten"
-        /// Langsung execute tanpa multi-step kalau kota bisa di-resolve.
+        /// Search site/rute progress across all 6 RESUME segment sheets.
+        /// Trigger: "cek progres site [ID]", "progres site [ID]", "site [ID]", "rute [nama]"
+        /// </summary>
+        private async Task<(bool handled, string? response)> TrySiteProgressFromResumeAsync(string lower)
+        {
+            // Match patterns
+            var m = Regex.Match(lower,
+                @"\b(cek\s+)?(progres(s)?|progress)\s+(site|rute)\s+(?<q>[a-z0-9\-_\.]+)",
+                RegexOptions.IgnoreCase);
+            if (!m.Success)
+            {
+                // "site 0244" or "rute brebes"
+                m = Regex.Match(lower, @"^(cek\s+)?(site|rute)\s+(?<q>[a-z0-9\-_\.]{3,})\s*$", RegexOptions.IgnoreCase);
+            }
+            if (!m.Success) return (false, null);
+
+            var query = m.Groups["q"].Value.Trim().ToUpperInvariant();
+            var searchType = m.Value.Contains("rute") ? "RUTE" : "SITE";
+
+            // Get file ID from aliases
+            var resumeAlias = _drive.Aliases.FirstOrDefault(a =>
+                a.SheetName == "RESUME BY SITE ID" || a.SheetName == "BREBES");
+            if (resumeAlias == null || string.IsNullOrEmpty(resumeAlias.FileId))
+                return (false, null); // fall through to other handlers
+
+            var fileId = resumeAlias.FileId;
+            var segments = new[] { "BREBES", "TASIKMALAYA", "PURWOKERTO", "SUKOHARJO", "SRAGEN", "GROBOGAN" };
+            var allMatches = new List<(string segment, Dictionary<string, object> row)>();
+
+            // Search across all 6 segments
+            foreach (var seg in segments)
+            {
+                try
+                {
+                    // Determine search column based on type
+                    var searchCol = searchType == "SITE" ? "No" : "RUTE"; // "No" col sometimes has site-like IDs
+                    // Actually search in RUTE column (contains site IDs in format "XXX;SITE-ID")
+                    var result = await _drive.FilterSheetAsync(
+                        fileId,
+                        filters: null, // get all, filter client-side (fuzzy)
+                        columns: new[] { "No", "RUTE", "KAB - KOTA",
+                            "Penarikan Kabel 24 core adss - Plan",
+                            "Penarikan Kabel 24 core adss - Progress",
+                            "Penarikan Kabel 24 core adss - %",
+                            "Penanaman Tiang 7m 24 Core - Plan",
+                            "Penanaman Tiang 7m 24 Core - Progress",
+                            "Penanaman Tiang 7m 24 Core - %",
+                            "Penanaman Tiang 9m 24 Core - Plan",
+                            "Penanaman Tiang 9m 24 Core - Progress",
+                            "Penanaman Tiang 9m 24 Core - %" },
+                        sheetName: seg,
+                        limit: 100,
+                        headerRows: 2,
+                        headerRowStart: 1);
+
+                    if (result?.Data == null) continue;
+
+                    foreach (var row in result.Data)
+                    {
+                        var rute = GetStringValue(row, "RUTE").ToUpperInvariant();
+                        var no = row.ContainsKey("No") ? row["No"]?.ToString()?.ToUpperInvariant() ?? "" : "";
+
+                        // Match: query appears in RUTE or No column
+                        if (rute.Contains(query) || no.Contains(query))
+                        {
+                            allMatches.Add((seg, row));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[GDriveCmd] SiteProgress {seg} error: {ex.Message}");
+                    // continue to next segment
+                }
+            }
+
+            if (allMatches.Count == 0)
+                return (true, $"🔍 Tidak ketemu `{query}` di 6 segment RESUME.\n\n💡 Coba keyword lebih pendek, misal: `site 0244` atau `rute JC2`");
+
+            // Format results — show all matches with progress %
+            return (true, FormatSiteProgressResult(query, allMatches));
+        }
+
+        /// <summary>Format site progress results from RESUME sheets.</summary>
+        private static string FormatSiteProgressResult(string query, List<(string segment, Dictionary<string, object> row)> matches)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"📍 **Progres Site/Rute: `{query}`**");
+            sb.AppendLine($"🔎 Ditemukan di {matches.Select(m => m.segment).Distinct().Count()} segment ({matches.Count} rute)");
+            sb.AppendLine();
+
+            int shown = 0;
+            foreach (var (seg, row) in matches.Take(15))
+            {
+                var rute = GetStringValue(row, "RUTE");
+                var kota = GetStringValue(row, "KAB - KOTA");
+                if (kota == "-") kota = GetStringValue(row, "KAB/KOTA"); // fallback
+
+                var pctKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - %");
+                var pctT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - %");
+                var pctT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - %");
+
+                var planKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Plan");
+                var progKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Progress");
+                var planT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - Plan");
+                var progT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - Progress");
+                var planT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - Plan");
+                var progT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - Progress");
+
+                // Convert ratio to percentage (sheet stores as ratio like 1.22 = 122%)
+                var kabelPct = pctKabel <= 2 ? pctKabel * 100 : pctKabel;
+                var t7Pct = pctT7 <= 2 ? pctT7 * 100 : pctT7;
+                var t9Pct = pctT9 <= 2 ? pctT9 * 100 : pctT9;
+
+                // Status emoji per category
+                var kabelIcon = kabelPct >= 100 ? "✅" : (kabelPct > 0 ? "🟡" : "🔴");
+                var t7Icon = t7Pct >= 100 ? "✅" : (t7Pct > 0 ? "🟡" : "🔴");
+                var t9Icon = t9Pct >= 100 ? "✅" : (t9Pct > 0 ? "🟡" : "🔴");
+
+                // Truncate rute
+                var ruteShort = rute.Length > 35 ? rute.Substring(0, 32) + "..." : rute;
+
+                sb.AppendLine($"━━ **{seg}** ━━");
+                sb.AppendLine($"📌 {ruteShort}");
+                if (kota != "-") sb.AppendLine($"   📍 {kota}");
+                sb.AppendLine();
+                sb.AppendLine($"   {kabelIcon} Kabel: {progKabel:N0}/{planKabel:N0}m ({kabelPct:N0}%)");
+                sb.AppendLine($"   {t7Icon} Tiang 7m: {progT7:N0}/{planT7:N0} ({t7Pct:N0}%)");
+                sb.AppendLine($"   {t9Icon} Tiang 9m: {progT9:N0}/{planT9:N0} ({t9Pct:N0}%)");
+                sb.AppendLine();
+
+                shown++;
+            }
+
+            if (matches.Count > shown)
+                sb.AppendLine($"📄 ...+{matches.Count - shown} rute lagi");
+
+            // Summary: berapa yang belum 100%
+            var belum100 = matches.Count(m =>
+            {
+                var k = GetNumericValue(m.row, "Penarikan Kabel 24 core adss - %");
+                var t7 = GetNumericValue(m.row, "Penanaman Tiang 7m 24 Core - %");
+                var t9 = GetNumericValue(m.row, "Penanaman Tiang 9m 24 Core - %");
+                return (k < 1.0) || (t7 < 1.0) || (t9 < 1.0);
+            });
+
+            sb.AppendLine($"📊 **{belum100}/{matches.Count}** rute belum 100% di semua kategori");
+            sb.AppendLine();
+            sb.AppendLine("💡 ✅=selesai 🟡=sedang jalan 🔴=belum mulai");
+
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Direct city work query: "cek pekerjaan di brebes", "yang belum di sragen"
         /// </summary>
         private async Task<(bool handled, string? response)> TryDirectCityWorkQueryAsync(string lower)
         {

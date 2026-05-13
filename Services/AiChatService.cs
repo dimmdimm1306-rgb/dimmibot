@@ -694,22 +694,8 @@ namespace StokBarangMAUI.Services
                     return $" Data berhasil di-refresh! Sekarang aku punya data terbaru dari project.\n\n Info: {refreshedContext.Length} karakter data ter-load.";
                 }
 
-                // Local search: site / span / rute spesifik  langsung lookup di Progress data
-                var siteMatch = System.Text.RegularExpressions.Regex.Match(
-                    lowerMsg,
-                    @"\b(site|span|rute)\s+([a-z0-9][a-z0-9\-\._]*)",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                if (siteMatch.Success && _sheets != null)
-                {
-                    var keyword = siteMatch.Groups[1].Value.ToLowerInvariant();
-                    var query   = siteMatch.Groups[2].Value;
-                    var searchResult = await SearchProgressAsync(keyword, query);
-                    if (!string.IsNullOrEmpty(searchResult)) return searchResult;
-                    // kalau kosong (stopword/query invalid), fall through ke flow normal
-                }
-
                 // Google Drive read-only commands (drive list, drive header, drive filter, dll.)
-                // Handler ini langsung kasih response tanpa perlu LLM  hemat token maksimal.
+                // Handler ini juga handle "site [ID]" dari RESUME sheets (prioritas di atas Progress harian).
                 try
                 {
                     var driveHandler = ((App)Application.Current!).Handler!.MauiContext!
@@ -727,6 +713,20 @@ namespace StokBarangMAUI.Services
                 {
                     System.Diagnostics.Debug.WriteLine($"[AiChatService] Drive handler error: {ex.Message}");
                     // fall through  user tetap bisa chat normal
+                }
+
+                // Fallback: Local search di sheet Progress (data harian) kalau GDrive handler gak handle
+                var siteMatch = System.Text.RegularExpressions.Regex.Match(
+                    lowerMsg,
+                    @"\b(site|span|rute)\s+([a-z0-9][a-z0-9\-\._]*)",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (siteMatch.Success && _sheets != null)
+                {
+                    var keyword = siteMatch.Groups[1].Value.ToLowerInvariant();
+                    var query   = siteMatch.Groups[2].Value;
+                    var searchResult = await SearchProgressAsync(keyword, query);
+                    if (!string.IsNullOrEmpty(searchResult)) return searchResult;
+                    // kalau kosong (stopword/query invalid), fall through ke flow normal
                 }
 
                 // Detect pesan terlalu pendek/vague  kasih menu bantuan dengan humor
