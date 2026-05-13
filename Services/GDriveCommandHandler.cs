@@ -1205,27 +1205,29 @@ namespace StokBarangMAUI.Services
         /// </summary>
         private async Task<(bool handled, string? response)> TrySiteProgressFromResumeAsync(string lower)
         {
-            // Match patterns
+            // Match patterns — broad to catch various user inputs
             var m = Regex.Match(lower,
                 @"\b(cek\s+)?(progres(s)?|progress)\s+(site|rute)\s+(?<q>[a-z0-9\-_\.]+)",
                 RegexOptions.IgnoreCase);
             if (!m.Success)
             {
-                // "site 0244" or "rute brebes"
-                m = Regex.Match(lower, @"^(cek\s+)?(site|rute)\s+(?<q>[a-z0-9\-_\.]{3,})\s*$", RegexOptions.IgnoreCase);
+                // "site 0244" or "rute JC2" (with or without prefix, anywhere in message)
+                m = Regex.Match(lower, @"\b(cek\s+)?(site|rute)\s+(?<q>[a-z0-9][a-z0-9\-_\.]{2,})", RegexOptions.IgnoreCase);
+            }
+            if (!m.Success)
+            {
+                // "cek 0244" or "progres 0244" (site ID pattern without "site" keyword)
+                m = Regex.Match(lower, @"\b(cek|progres(s)?|progress|search|cari)\s+(?<q>JAW-[A-Z0-9\-]+|[0-9]{4})", RegexOptions.IgnoreCase);
             }
             if (!m.Success) return (false, null);
 
             var query = m.Groups["q"].Value.Trim().ToUpperInvariant();
             var searchType = m.Value.Contains("rute") ? "RUTE" : "SITE";
 
-            // Get file ID from aliases
+            // Get file ID from aliases or hardcoded fallback
             var resumeAlias = _drive.Aliases.FirstOrDefault(a =>
                 a.SheetName == "RESUME BY SITE ID" || a.SheetName == "BREBES");
-            if (resumeAlias == null || string.IsNullOrEmpty(resumeAlias.FileId))
-                return (false, null); // fall through to other handlers
-
-            var fileId = resumeAlias.FileId;
+            var fileId = resumeAlias?.FileId ?? "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_"; // RESUME Progres FWA.xlsx
             var segments = new[] { "BREBES", "TASIKMALAYA", "PURWOKERTO", "SUKOHARJO", "SRAGEN", "GROBOGAN" };
             var allMatches = new List<(string segment, Dictionary<string, object> row)>();
 
@@ -1240,16 +1242,7 @@ namespace StokBarangMAUI.Services
                     var result = await _drive.FilterSheetAsync(
                         fileId,
                         filters: null, // get all, filter client-side (fuzzy)
-                        columns: new[] { "No", "RUTE", "KAB - KOTA",
-                            "Penarikan Kabel 24 core adss - Plan",
-                            "Penarikan Kabel 24 core adss - Progress",
-                            "Penarikan Kabel 24 core adss - %",
-                            "Penanaman Tiang 7m 24 Core - Plan",
-                            "Penanaman Tiang 7m 24 Core - Progress",
-                            "Penanaman Tiang 7m 24 Core - %",
-                            "Penanaman Tiang 9m 24 Core - Plan",
-                            "Penanaman Tiang 9m 24 Core - Progress",
-                            "Penanaman Tiang 9m 24 Core - %" },
+                        columns: null, // get ALL columns (names vary per segment)
                         sheetName: seg,
                         limit: 100,
                         headerRows: 2,
@@ -1259,14 +1252,23 @@ namespace StokBarangMAUI.Services
 
                     foreach (var row in result.Data)
                     {
-                        var rute = GetStringValue(row, "RUTE").ToUpperInvariant();
-                        var no = row.ContainsKey("No") ? row["No"]?.ToString()?.ToUpperInvariant() ?? "" : "";
-
-                        // Match: query appears in RUTE or No column
-                        if (rute.Contains(query) || no.Contains(query))
+                        // Search query in RUTE column and all string values
+                        bool found = false;
+                        foreach (var kv in row)
                         {
-                            allMatches.Add((seg, row));
+                            if (kv.Value == null) continue;
+                            var val = kv.Value.ToString()?.ToUpperInvariant() ?? "";
+                            if (val.Contains(query))
+                            {
+                                // Skip if match is in a numeric-only column (%, Plan, Progress)
+                                var colU = kv.Key.ToUpperInvariant();
+                                if (colU.Contains("%") || colU.Contains("PLAN") || colU.Contains("PROGRESS") || colU.Contains("MP"))
+                                    continue;
+                                found = true;
+                                break;
+                            }
                         }
+                        if (found) allMatches.Add((seg, row));
                     }
                 }
                 catch (Exception ex)
@@ -1294,20 +1296,19 @@ namespace StokBarangMAUI.Services
             int shown = 0;
             foreach (var (seg, row) in matches.Take(15))
             {
-                var rute = GetStringValue(row, "RUTE");
-                var kota = GetStringValue(row, "KAB - KOTA");
-                if (kota == "-") kota = GetStringValue(row, "KAB/KOTA"); // fallback
+                var rute = FindFuzzyCol(row, "RUTE");
+                var kota = FindFuzzyCol(row, "KAB");
 
-                var pctKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - %");
-                var pctT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - %");
-                var pctT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - %");
+                var pctKabel = FindFuzzyNum(row, "Kabel", "%");
+                var pctT7 = FindFuzzyNum(row, "7m", "%");
+                var pctT9 = FindFuzzyNum(row, "9m", "%");
 
-                var planKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Plan");
-                var progKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Progress");
-                var planT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - Plan");
-                var progT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - Progress");
-                var planT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - Plan");
-                var progT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - Progress");
+                var planKabel = FindFuzzyNum(row, "Kabel", "Plan");
+                var progKabel = FindFuzzyNum(row, "Kabel", "Progress");
+                var planT7 = FindFuzzyNum(row, "7m", "Plan");
+                var progT7 = FindFuzzyNum(row, "7m", "Progress");
+                var planT9 = FindFuzzyNum(row, "9m", "Plan");
+                var progT9 = FindFuzzyNum(row, "9m", "Progress");
 
                 // Convert ratio to percentage (sheet stores as ratio like 1.22 = 122%)
                 var kabelPct = pctKabel <= 2 ? pctKabel * 100 : pctKabel;
@@ -1324,7 +1325,7 @@ namespace StokBarangMAUI.Services
 
                 sb.AppendLine($"━━ **{seg}** ━━");
                 sb.AppendLine($"📌 {ruteShort}");
-                if (kota != "-") sb.AppendLine($"   📍 {kota}");
+                if (!string.IsNullOrEmpty(kota) && kota != "-") sb.AppendLine($"   📍 {kota}");
                 sb.AppendLine();
                 sb.AppendLine($"   {kabelIcon} Kabel: {progKabel:N0}/{planKabel:N0}m ({kabelPct:N0}%)");
                 sb.AppendLine($"   {t7Icon} Tiang 7m: {progT7:N0}/{planT7:N0} ({t7Pct:N0}%)");
@@ -1340,10 +1341,13 @@ namespace StokBarangMAUI.Services
             // Summary: berapa yang belum 100%
             var belum100 = matches.Count(m =>
             {
-                var k = GetNumericValue(m.row, "Penarikan Kabel 24 core adss - %");
-                var t7 = GetNumericValue(m.row, "Penanaman Tiang 7m 24 Core - %");
-                var t9 = GetNumericValue(m.row, "Penanaman Tiang 9m 24 Core - %");
-                return (k < 1.0) || (t7 < 1.0) || (t9 < 1.0);
+                var k = FindFuzzyNum(m.row, "Kabel", "%");
+                var t7 = FindFuzzyNum(m.row, "7m", "%");
+                var t9 = FindFuzzyNum(m.row, "9m", "%");
+                var kPct = k <= 2 ? k * 100 : k;
+                var t7Pct = t7 <= 2 ? t7 * 100 : t7;
+                var t9Pct = t9 <= 2 ? t9 * 100 : t9;
+                return (kPct < 100) || (t7Pct < 100) || (t9Pct < 100);
             });
 
             sb.AppendLine($"📊 **{belum100}/{matches.Count}** rute belum 100% di semua kategori");
@@ -1351,6 +1355,35 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("💡 ✅=selesai 🟡=sedang jalan 🔴=belum mulai");
 
             return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Find column value by fuzzy key match (contains both keywords).</summary>
+        private static string FindFuzzyCol(Dictionary<string, object> row, string keyword)
+        {
+            foreach (var kv in row)
+            {
+                if (kv.Key.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    var v = kv.Value?.ToString()?.Trim();
+                    if (!string.IsNullOrWhiteSpace(v) && v != "null") return v;
+                }
+            }
+            return "-";
+        }
+
+        /// <summary>Find numeric column value by fuzzy match (key contains both keyword1 AND keyword2).</summary>
+        private static double FindFuzzyNum(Dictionary<string, object> row, string keyword1, string keyword2)
+        {
+            foreach (var kv in row)
+            {
+                var k = kv.Key;
+                if (k.IndexOf(keyword1, StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    k.IndexOf(keyword2, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return ParseStokNumber(kv.Value?.ToString());
+                }
+            }
+            return 0;
         }
 
         /// <summary>
