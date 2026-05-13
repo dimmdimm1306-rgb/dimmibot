@@ -1525,15 +1525,15 @@ namespace StokBarangMAUI.Services
                 : $"Pekerjaan di {segment} — {statusLabel}";
 
             sb.AppendLine($"📋 **{title}**");
-            sb.AppendLine($"({rows.Count} dari {totalRows} rute)");
+            sb.AppendLine($"📊 {rows.Count} dari {totalRows} rute");
             sb.AppendLine();
 
             if (rows.Count == 0)
             {
                 if (intent == "done")
-                    sb.AppendLine("Belum ada rute yang dikerjakan.");
+                    sb.AppendLine("😅 Belum ada rute yang dikerjakan.");
                 else
-                    sb.AppendLine("✅ Semua rute sudah dikerjakan!");
+                    sb.AppendLine("🎉 Semua rute sudah dikerjakan! Mantap!");
                 return sb.ToString().TrimEnd();
             }
 
@@ -1562,10 +1562,11 @@ namespace StokBarangMAUI.Services
             sb.AppendLine("```");
 
             if (rows.Count > shown)
-                sb.AppendLine($"...+{rows.Count - shown} rute lagi");
+                sb.AppendLine($"📄 ...+{rows.Count - shown} rute lagi");
 
             sb.AppendLine();
             sb.AppendLine("💡 Kabel(m) = Plan penarikan kabel, T7/T9 = Plan tiang 7m/9m");
+            sb.AppendLine("🔎 Ketik `site [ID]` untuk detail spesifik");
 
             return sb.ToString().TrimEnd();
         }
@@ -1583,91 +1584,281 @@ namespace StokBarangMAUI.Services
         {
             var stokAlias = _drive.Aliases.FirstOrDefault(a => a.SheetName == "Aktual Stok");
             if (stokAlias == null || string.IsNullOrEmpty(stokAlias.FileId))
-                return (true, "Config Aktual Stok tidak ketemu.");
-
-            var hr = stokAlias.HeaderRows ?? 3;
-            var hrs = stokAlias.HeaderRowStart ?? 1;
+                return (true, "⚠️ Config Aktual Stok tidak ketemu.");
 
             try
             {
-                string? keyword = barang == "ALL" ? null : barang;
-                var result = await _drive.SmartFilterAsync(
-                    stokAlias.FileId, "Aktual Stok",
-                    keyword, null, new List<string> { "STOK GUDANG" }, 20, hr, hrs);
+                // Fetch ALL data from Aktual Stok (crosstab, 3-row header)
+                var result = await _drive.FilterSheetAsync(
+                    stokAlias.FileId,
+                    filters: null,
+                    columns: null, // all columns
+                    sheetName: "Aktual Stok",
+                    limit: 30,
+                    headerRows: 3,
+                    headerRowStart: 1);
 
                 return (true, FormatStokCrosstab(gudang, barang, result));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[GDriveCmd] ExecuteStok error: {ex.Message}");
-                return (true, $"Gagal query stok: {ex.Message}");
+                return (true, $"❌ Gagal query stok: {ex.Message}");
             }
         }
 
-        /// <summary>Format crosstab result dengan filter kolom ke gudang tertentu.</summary>
+        /// <summary>Format crosstab stok dengan emoji yang menarik.</summary>
         private string FormatStokCrosstab(string gudang, string barang, SheetFilterResult? result)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine($"Stok {(barang == "ALL" ? "semua barang" : barang)} di {gudang}");
-            sb.AppendLine(new string('-', 30));
-
             if (result == null || result.Data == null || result.Data.Count == 0)
+                return "📭 Data Aktual Stok kosong.";
+
+            var sb = new StringBuilder();
+
+            // Determine which columns to show based on gudang
+            // Crosstab structure (from raw preview):
+            // Col 0: Material name (key varies: "STOK GUDANG..." or first col)
+            // Col 1-6: Stok Diterima per gudang (BREBES, TASIK, PWT, SKH, SRAGEN, GROBOGAN)
+            // Col 7: Grand Total Diterima
+            // Col 8: TOTAL SISA GUDANG
+            // Col 9: Grand Total Keluar
+            // Col 10-15: Stok Keluar per gudang
+
+            // Find column name patterns
+            string? colMaterial = null;
+            string? colGrandDiterima = null;
+            string? colSisaGudang = null;
+            string? colGrandKeluar = null;
+            string? colGudangDiterima = null;
+            string? colGudangKeluar = null;
+
+            if (result.Columns != null && result.Columns.Count > 0)
             {
-                sb.AppendLine("Tidak ada data.");
+                colMaterial = result.Columns[0]; // first col = material name
+                foreach (var c in result.Columns)
+                {
+                    var cu = c.ToUpperInvariant();
+                    if (cu.Contains("GRAND TOTAL") && cu.Contains(">>")) colGrandDiterima ??= c;
+                    if (cu.Contains("SISA GUDANG") || cu.Contains("TOTAL SISA")) colSisaGudang ??= c;
+                    if (cu.Contains("GRAND TOTAL TERPAKAI") && cu.Contains("<<")) colGrandKeluar ??= c;
+                }
+            }
+
+            // Gudang-specific column matching
+            string gudangPattern = gudang switch
+            {
+                "BREBES" => "CIREBON|BREBES|TEGAL|PEKALONGAN|INDRAMAYU|SEMARANG",
+                "TASIKMALAYA" => "TASIKMALAYA|BANJAR",
+                "PURWOKERTO" => "BANYUMAS|CILACAP|KEBUMEN|PURWOREJO",
+                "SUKOHARJO" => "SUKOHARJO|KLATEN|SURAKARTA|WONOGIRI",
+                "SRAGEN" => "SRAGEN|KARANG",
+                "GROBOGAN" => "GROBOGAN|BLORA",
+                _ => ""
+            };
+
+            // Title
+            if (gudang == "ALL")
+            {
+                sb.AppendLine("📦 **STOK MATERIAL — Ringkasan Semua Gudang**");
+            }
+            else
+            {
+                sb.AppendLine($"📦 **STOK MATERIAL — Gudang {gudang}**");
+            }
+            sb.AppendLine();
+
+            // Filter rows by barang if specified
+            var rows = result.Data;
+            if (barang != "ALL" && !string.IsNullOrEmpty(barang))
+            {
+                rows = rows.Where(r =>
+                {
+                    var name = r.Values.FirstOrDefault()?.ToString() ?? "";
+                    return name.ToUpperInvariant().Contains(barang.ToUpperInvariant());
+                }).ToList();
+            }
+
+            if (rows.Count == 0)
+            {
+                sb.AppendLine($"🔍 Material '{barang}' tidak ditemukan di sheet Aktual Stok.");
                 return sb.ToString().TrimEnd();
             }
 
-            // Filter columns: only those matching gudang (or all if gudang=ALL)
-            bool matchGudangCol(string colName)
+            // === ALL gudang: show summary table ===
+            if (gudang == "ALL")
             {
-                if (gudang == "ALL") return true;
-                var cn = colName.ToUpperInvariant();
-                return cn.Contains(gudang) ||
-                       (gudang == "BREBES" && (cn.Contains("CIREBON") || cn.Contains("TEGAL") || cn.Contains("PEKALONGAN"))) ||
-                       (gudang == "TASIKMALAYA" && cn.Contains("TASIK")) ||
-                       (gudang == "PURWOKERTO" && (cn.Contains("BANYUMAS") || cn.Contains("CILACAP") || cn.Contains("KEBUMEN"))) ||
-                       (gudang == "SUKOHARJO" && (cn.Contains("KLATEN") || cn.Contains("SURAKARTA") || cn.Contains("WONOGIRI"))) ||
-                       (gudang == "SRAGEN" && cn.Contains("KARANG")) ||
-                       (gudang == "GROBOGAN" && cn.Contains("BLORA"));
-            }
+                sb.AppendLine("```");
+                sb.AppendLine(string.Format("{0,-22} {1,9} {2,9} {3,9}", "Material", "Diterima", "Keluar", "Sisa"));
+                sb.AppendLine(new string('─', 52));
 
-            int rowIdx = 0;
-            foreach (var row in result.Data.Take(10))
-            {
-                // First column is material name
-                var materialName = row.FirstOrDefault().Value?.ToString()?.Trim() ?? "?";
-                sb.AppendLine();
-                sb.AppendLine($"- {materialName}");
-
-                foreach (var kv in row.Skip(1))
+                foreach (var row in rows.Take(15))
                 {
-                    if (!matchGudangCol(kv.Key)) continue;
-                    if (kv.Value == null) continue;
-                    var v = kv.Value.ToString()?.Trim();
-                    if (string.IsNullOrWhiteSpace(v) || v == "null" || v.Equals("nan", StringComparison.OrdinalIgnoreCase)) continue;
+                    var material = GetFirstColValue(row);
+                    if (string.IsNullOrWhiteSpace(material) || material.Length < 3) continue;
 
-                    // Shorten long column names
-                    var colShort = kv.Key;
-                    colShort = Regex.Replace(colShort, @"\s*-\s*CIREBON.*SEMARANG", " - BREBES");
-                    colShort = Regex.Replace(colShort, @"\s*-\s*TASIKMALAYA\s*-\s*BANJAR", " - TASIK");
-                    colShort = Regex.Replace(colShort, @"\s*-\s*BANYUMAS.*PURWOREJO", " - PWT");
-                    colShort = Regex.Replace(colShort, @"\s*-\s*SUKOHARJO.*WONOGIRI", " - SKH");
-                    colShort = Regex.Replace(colShort, @"\s*-\s*SRAGEN.*KARANG\s*ANYAR", " - SRAGEN");
-                    colShort = Regex.Replace(colShort, @"\s*-\s*GROBOGAN\s*-\s*BLORA", " - GRBG");
+                    var diterima = FindColValue(row, result.Columns, "GRAND TOTAL", ">>"); 
+                    var keluar = FindColValue(row, result.Columns, "GRAND TOTAL TERPAKAI", "<<");
+                    var sisa = FindColValue(row, result.Columns, "SISA GUDANG", "SISA");
 
-                    sb.AppendLine($"  {colShort}: {v}");
+                    // Shorten material name
+                    var matShort = ShortenMaterial(material);
+                    sb.AppendLine(string.Format("{0,-22} {1,9} {2,9} {3,9}", matShort, FormatNum(diterima), FormatNum(keluar), FormatNum(sisa)));
                 }
-                rowIdx++;
-                if (sb.Length > 900) break; // safety for cap
-            }
-
-            if (rowIdx < result.Data.Count)
-            {
+                sb.AppendLine("```");
                 sb.AppendLine();
-                sb.AppendLine($"(+{result.Data.Count - rowIdx} material lagi)");
+
+                // Highlight items with low/zero sisa
+                var lowStock = new List<string>();
+                foreach (var row in rows.Take(15))
+                {
+                    var material = GetFirstColValue(row);
+                    if (string.IsNullOrWhiteSpace(material) || material.Length < 3) continue;
+                    var sisa = FindColValue(row, result.Columns, "SISA GUDANG", "SISA");
+                    if (sisa <= 0)
+                        lowStock.Add(ShortenMaterial(material));
+                }
+                if (lowStock.Count > 0)
+                {
+                    sb.AppendLine($"🚨 **Stok habis:** {string.Join(", ", lowStock)}");
+                    sb.AppendLine();
+                }
+
+                sb.AppendLine("💡 Ketik `stok di brebes` atau `stok kabel 24c` untuk detail per gudang/material");
+            }
+            else
+            {
+                // === Per gudang: show diterima + keluar for that gudang ===
+                sb.AppendLine("```");
+                sb.AppendLine(string.Format("{0,-22} {1,8} {2,8} {3,8}", "Material", "Masuk", "Keluar", "Sisa"));
+                sb.AppendLine(new string('─', 49));
+
+                foreach (var row in rows.Take(15))
+                {
+                    var material = GetFirstColValue(row);
+                    if (string.IsNullOrWhiteSpace(material) || material.Length < 3) continue;
+
+                    var masuk = FindGudangColValue(row, result.Columns, gudangPattern, isKeluar: false);
+                    var keluar = FindGudangColValue(row, result.Columns, gudangPattern, isKeluar: true);
+                    var sisa = masuk - keluar;
+
+                    var matShort = ShortenMaterial(material);
+                    sb.AppendLine(string.Format("{0,-22} {1,8} {2,8} {3,8}", matShort, FormatNum(masuk), FormatNum(keluar), FormatNum(sisa)));
+                }
+                sb.AppendLine("```");
+                sb.AppendLine();
+
+                // Emoji indicators
+                sb.AppendLine("📊 Masuk = stok diterima, Keluar = stok terpakai");
             }
 
             return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Get first column value (material name) from row.</summary>
+        private static string GetFirstColValue(Dictionary<string, object> row)
+        {
+            return row.Values.FirstOrDefault()?.ToString()?.Trim() ?? "";
+        }
+
+        /// <summary>Find column value by partial name match (for Grand Total, Sisa, etc).</summary>
+        private static double FindColValue(Dictionary<string, object> row, List<string>? columns, string pattern1, string pattern2)
+        {
+            foreach (var kv in row)
+            {
+                var cu = kv.Key.ToUpperInvariant();
+                if (cu.Contains(pattern1.ToUpperInvariant()) && cu.Contains(pattern2.ToUpperInvariant()))
+                {
+                    return ParseStokNumber(kv.Value?.ToString());
+                }
+            }
+            // Fallback: try pattern1 only
+            foreach (var kv in row)
+            {
+                var cu = kv.Key.ToUpperInvariant();
+                if (cu.Contains(pattern1.ToUpperInvariant()))
+                    return ParseStokNumber(kv.Value?.ToString());
+            }
+            return 0;
+        }
+
+        /// <summary>Find gudang-specific column value (diterima or keluar section).</summary>
+        private static double FindGudangColValue(Dictionary<string, object> row, List<string>? columns, string gudangPattern, bool isKeluar)
+        {
+            if (string.IsNullOrEmpty(gudangPattern)) return 0;
+            var regex = new Regex(gudangPattern, RegexOptions.IgnoreCase);
+
+            // Columns are ordered: first half = diterima, second half (after Grand Total) = keluar
+            // We need to find the right section
+            bool passedGrandTotal = false;
+            foreach (var kv in row)
+            {
+                var cu = kv.Key.ToUpperInvariant();
+                if (cu.Contains("GRAND TOTAL") && cu.Contains(">>"))
+                {
+                    passedGrandTotal = true;
+                    continue;
+                }
+                if (cu.Contains("SISA GUDANG") || cu.Contains("GRAND TOTAL TERPAKAI"))
+                {
+                    passedGrandTotal = true;
+                    continue;
+                }
+
+                if (regex.IsMatch(kv.Key))
+                {
+                    // Before Grand Total = diterima section, after = keluar section
+                    if (!isKeluar && !passedGrandTotal)
+                        return ParseStokNumber(kv.Value?.ToString());
+                    if (isKeluar && passedGrandTotal)
+                        return ParseStokNumber(kv.Value?.ToString());
+                }
+            }
+            return 0;
+        }
+
+        /// <summary>Parse stok number: "44.000" or "  44.000 " or "(6.522)" → double.</summary>
+        private static double ParseStokNumber(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s) || s == "null" || s == "-" || s.Equals("nan", StringComparison.OrdinalIgnoreCase))
+                return 0;
+            s = s.Trim();
+            bool negative = s.StartsWith("(") && s.EndsWith(")");
+            if (negative) s = s.Trim('(', ')').Trim();
+            // Indonesian number format: "44.000" = 44000, "14.272" = 14272
+            // Remove dots (thousand separator), replace comma with dot for decimal
+            s = s.Replace(".", "").Replace(",", ".").Trim();
+            if (double.TryParse(s, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var d))
+                return negative ? -d : d;
+            return 0;
+        }
+
+        /// <summary>Format number with thousand separator (Indonesian style).</summary>
+        private static string FormatNum(double val)
+        {
+            if (val == 0) return "0";
+            if (val < 0) return $"({Math.Abs(val):N0})".Replace(",", ".");
+            return val.ToString("N0").Replace(",", ".");
+        }
+
+        /// <summary>Shorten material name for table display.</summary>
+        private static string ShortenMaterial(string name)
+        {
+            if (name.Length <= 22) return name;
+            // Common shortenings
+            var s = name;
+            s = Regex.Replace(s, @"Penarikan Kabel 24 core adss", "Cable 24C", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Penanaman Tiang 7m.*", "Tiang 7M", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Penanaman Tiang 9m.*", "Tiang 9M", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"ODP 8 Port.*Fisher", "ODP 8 Port", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Connector.*Feeder", "Connector SC UPC", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Patchcord.*Outdoor", "Patchcord 5M", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Closure 24C \(Komplit\)", "Closure 24C", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Strength Clamp25/50", "Strength Clamp", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"X Frame 80 X 80", "X Frame 80x80", RegexOptions.IgnoreCase);
+            s = Regex.Replace(s, @"Pigtail SC/UPC 1 meter", "Pigtail SC/UPC", RegexOptions.IgnoreCase);
+            if (s.Length > 22) s = s.Substring(0, 19) + "...";
+            return s;
         }
 
         private static string BuildHelp()
