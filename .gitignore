@@ -1,0 +1,53 @@
+# Credentials - JANGAN COMMIT!
+credentials/
+*.json
+!mcp.json
+!cloudflare-config.json
+
+# Google Drive credentials
+gdrive-credentials.json
+*-credentials.json
+
+# Bearer tokens
+.token
+*.token
+mcp_gdrive_filter/.token
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+.idea/
+
+# Build
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.apk
+*.aab
+
+# mcp_gdrive_filter runtime artifacts
+mcp_gdrive_filter/_*.log
+mcp_gdrive_filter/_status.json
+mcp_gdrive_filter/schemas.json
+mcp_gdrive_filter/schemas_summary.txt
+
+# OS
+.DS_Store
+Thumbs.db

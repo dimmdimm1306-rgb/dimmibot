@@ -21,7 +21,7 @@ namespace StokBarangMAUI.Pages
             _ = LoadGithubAsync();
         }
 
-        // ── Load info ──────────────────────────────────────────────────
+        //  Load info 
 
         private void LoadLocal()
         {
@@ -47,7 +47,7 @@ namespace StokBarangMAUI.Pages
             LblLocalAiUrl.Text = string.IsNullOrEmpty(_aiService.GetBaseUrl()) ? "(kosong)" : _aiService.GetBaseUrl();
             LblLocalAiModel.Text = string.IsNullOrEmpty(_aiService.GetModel()) ? "(kosong)" : _aiService.GetModel();
             LblLocalDriveUrl.Text = string.IsNullOrEmpty(_drive.BaseUrl) ? "(kosong)" : _drive.BaseUrl;
-            LblLocalDriveToken.Text = string.IsNullOrEmpty(_drive.Token) ? "❌ Belum di-set" : $"✅ Terisi ({_drive.Token.Length} chars)";
+            LblLocalDriveToken.Text = string.IsNullOrEmpty(_drive.Token) ? " Belum di-set" : $" Terisi ({_drive.Token.Length} chars)";
         }
 
         private async Task LoadGithubAsync()
@@ -61,14 +61,14 @@ namespace StokBarangMAUI.Pages
                 return;
             }
 
-            LblCfgVersion.Text = "⏳ Fetching...";
+            LblCfgVersion.Text = " Fetching...";
 
             try
             {
                 var resp = await _http.GetAsync(url);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    LblCfgVersion.Text = $"❌ HTTP {(int)resp.StatusCode}";
+                    LblCfgVersion.Text = $" HTTP {(int)resp.StatusCode}";
                     return;
                 }
                 var json = await resp.Content.ReadAsStringAsync();
@@ -81,15 +81,15 @@ namespace StokBarangMAUI.Pages
                 LblAiModel.Text = root.TryGetProperty("model", out var am) ? am.GetString() ?? "-" : "-";
                 LblDriveUrl.Text = root.TryGetProperty("gdriveReaderUrl", out var du) ? du.GetString() ?? "-" : "-";
                 LblDriveEnabled.Text = root.TryGetProperty("gdriveReaderEnabled", out var de)
-                    ? (de.GetBoolean() ? "✅ true" : "❌ false") : "-";
+                    ? (de.GetBoolean() ? " true" : " false") : "-";
             }
             catch (Exception ex)
             {
-                LblCfgVersion.Text = $"❌ {ex.Message}";
+                LblCfgVersion.Text = $" {ex.Message}";
             }
         }
 
-        // ── Actions ────────────────────────────────────────────────────
+        //  Actions 
 
         private async void OnBackClicked(object sender, EventArgs e)
         {
@@ -104,14 +104,14 @@ namespace StokBarangMAUI.Pages
 
         private async void OnFetchGithub(object sender, EventArgs e)
         {
-            LblCfgVersion.Text = "⏳ Re-fetching & applying config...";
+            LblCfgVersion.Text = " Re-fetching & applying config...";
             try
             {
                 await _aiService.FetchServerConfigAsync();
                 await Task.Delay(500);
                 LoadLocal();
                 await LoadGithubAsync();
-                await DisplayAlert("Done", "✅ Config dari GitHub sudah di-fetch & apply ke local.", "OK");
+                await DisplayAlert("Done", " Config dari GitHub sudah di-fetch & apply ke local.", "OK");
             }
             catch (Exception ex)
             {
@@ -121,66 +121,66 @@ namespace StokBarangMAUI.Pages
 
         private async void OnRunDiagnostics(object sender, EventArgs e)
         {
-            LblDiagnostics.Text = "⏳ Testing...\n";
+            LblDiagnostics.Text = " Testing...\n";
             var sb = new StringBuilder();
 
             // 1. GitHub reachable
-            sb.AppendLine("1️⃣  GitHub config:");
+            sb.AppendLine("1  GitHub config:");
             try
             {
                 var r = await _http.GetAsync(_aiService.GetGithubConfigUrl());
-                sb.AppendLine(r.IsSuccessStatusCode ? $"    ✅ OK (HTTP {(int)r.StatusCode})" : $"    ❌ HTTP {(int)r.StatusCode}");
+                sb.AppendLine(r.IsSuccessStatusCode ? $"     OK (HTTP {(int)r.StatusCode})" : $"     HTTP {(int)r.StatusCode}");
             }
-            catch (Exception ex) { sb.AppendLine($"    ❌ {ex.Message}"); }
+            catch (Exception ex) { sb.AppendLine($"     {ex.Message}"); }
 
             // 2. AI base URL reachable (check /config)
             sb.AppendLine();
-            sb.AppendLine("2️⃣  AI server:");
+            sb.AppendLine("2  AI server:");
             try
             {
                 var aiUrl = _aiService.GetBaseUrl();
-                if (string.IsNullOrEmpty(aiUrl)) sb.AppendLine("    ⚠️ URL kosong");
+                if (string.IsNullOrEmpty(aiUrl)) sb.AppendLine("     URL kosong");
                 else
                 {
                     var test = aiUrl.Replace("/v1", "") + "/config";
                     var r = await _http.GetAsync(test);
-                    sb.AppendLine(r.IsSuccessStatusCode ? $"    ✅ {test} OK" : $"    ❌ HTTP {(int)r.StatusCode}");
+                    sb.AppendLine(r.IsSuccessStatusCode ? $"     {test} OK" : $"     HTTP {(int)r.StatusCode}");
                 }
             }
-            catch (Exception ex) { sb.AppendLine($"    ❌ {ex.Message}"); }
+            catch (Exception ex) { sb.AppendLine($"     {ex.Message}"); }
 
             // 3. Drive Reader health
             sb.AppendLine();
-            sb.AppendLine("3️⃣  GDrive Reader:");
+            sb.AppendLine("3  GDrive Reader:");
             if (!_drive.IsEnabled)
             {
-                sb.AppendLine("    ⚠️ Disabled (toggle ON di AI Settings)");
+                sb.AppendLine("     Disabled (toggle ON di AI Settings)");
             }
             else if (string.IsNullOrEmpty(_drive.BaseUrl))
             {
-                sb.AppendLine("    ❌ URL kosong");
+                sb.AppendLine("     URL kosong");
             }
             else
             {
                 var (ok, msg, email) = await _drive.CheckHealthAsync();
                 if (ok)
                 {
-                    sb.AppendLine($"    ✅ Server OK");
-                    sb.AppendLine($"    📧 {email}");
+                    sb.AppendLine($"     Server OK");
+                    sb.AppendLine($"     {email}");
                 }
                 else
                 {
-                    sb.AppendLine($"    ❌ {msg}");
+                    sb.AppendLine($"     {msg}");
                 }
             }
 
             // 4. Token setup
             sb.AppendLine();
-            sb.AppendLine("4️⃣  Drive token:");
+            sb.AppendLine("4  Drive token:");
             if (string.IsNullOrEmpty(_drive.Token))
-                sb.AppendLine("    ⚠️ Belum di-set (akan 401 kalau server pakai auth)");
+                sb.AppendLine("     Belum di-set (akan 401 kalau server pakai auth)");
             else
-                sb.AppendLine($"    ✅ Set ({_drive.Token.Length} chars)");
+                sb.AppendLine($"     Set ({_drive.Token.Length} chars)");
 
             LblDiagnostics.Text = sb.ToString().TrimEnd();
         }
@@ -188,19 +188,19 @@ namespace StokBarangMAUI.Pages
         private async void OnCopyGithubUrl(object sender, EventArgs e)
         {
             await Clipboard.SetTextAsync(LblGithubUrl.Text);
-            await DisplayAlert("📋 Copied", "URL GitHub disalin ke clipboard.", "OK");
+            await DisplayAlert(" Copied", "URL GitHub disalin ke clipboard.", "OK");
         }
 
         private async void OnCopyAiUrl(object sender, EventArgs e)
         {
             await Clipboard.SetTextAsync(LblAiBaseUrl.Text);
-            await DisplayAlert("📋 Copied", "AI URL disalin.", "OK");
+            await DisplayAlert(" Copied", "AI URL disalin.", "OK");
         }
 
         private async void OnCopyDriveUrl(object sender, EventArgs e)
         {
             await Clipboard.SetTextAsync(LblDriveUrl.Text);
-            await DisplayAlert("📋 Copied", "Drive URL disalin.", "OK");
+            await DisplayAlert(" Copied", "Drive URL disalin.", "OK");
         }
 
         private async void OnResetPreferences(object sender, EventArgs e)
@@ -226,7 +226,7 @@ namespace StokBarangMAUI.Pages
             await Task.Delay(500);
             LoadLocal();
             await LoadGithubAsync();
-            await DisplayAlert("Done", "✅ Preferences di-reset. Config GitHub sudah diterapkan.", "OK");
+            await DisplayAlert("Done", " Preferences di-reset. Config GitHub sudah diterapkan.", "OK");
         }
     }
 }

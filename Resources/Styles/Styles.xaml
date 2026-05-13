@@ -430,11 +430,12 @@
         <Setter Property="IconColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource White}}" />
     </Style>
 
+    <!-- Tab bar = navy (#1A1F3D) with white labels + lavender indicator (Stitch Titan) -->
     <Style TargetType="TabbedPage">
-        <Setter Property="BarBackgroundColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray950}}" />
-        <Setter Property="BarTextColor" Value="{AppThemeBinding Light={StaticResource Magenta}, Dark={StaticResource White}}" />
-        <Setter Property="UnselectedTabColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray950}}" />
-        <Setter Property="SelectedTabColor" Value="{AppThemeBinding Light={StaticResource Gray950}, Dark={StaticResource Gray200}}" />
+        <Setter Property="BarBackgroundColor" Value="#1A1F3D" />
+        <Setter Property="BarTextColor" Value="#FFFFFF" />
+        <Setter Property="UnselectedTabColor" Value="#B0B5D0" />
+        <Setter Property="SelectedTabColor" Value="#B8C3FF" />
     </Style>
 
 </ResourceDictionary>

@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -19,7 +19,7 @@ namespace StokBarangMAUI.Services
     ///
     /// Remote config (optional): kalau env GITHUB_CONFIG_URL di-set di AiChatService,
     /// field gdriveReaderUrl + gdriveReaderToken dari JSON itu akan di-apply
-    /// via ApplyRemoteConfig() â€” HP gak perlu manual setup.
+    /// via ApplyRemoteConfig()  HP gak perlu manual setup.
     /// </summary>
     public class GDriveReaderService
     {
@@ -35,7 +35,7 @@ namespace StokBarangMAUI.Services
             _http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
         }
 
-        // â”€â”€ Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Configuration 
         public string BaseUrl => Preferences.Get(PREF_URL, DEFAULT_URL).TrimEnd('/');
         public string Token => Preferences.Get(PREF_TOKEN, "");
         public bool IsEnabled => Preferences.Get(PREF_ENABLED, false);
@@ -47,10 +47,10 @@ namespace StokBarangMAUI.Services
         /// <summary>
         /// Apply remote config (dari GitHub raw JSON via AiChatService).
         /// JSON fields yang dikenali:
-        ///   gdriveReaderUrl     â€” URL server (tunnel). Kosong = skip.
-        ///   gdriveReaderToken   â€” bearer token. Kosong = skip.
-        ///   gdriveReaderEnabled â€” bool auto-enable.
-        ///   gdriveAliases       â€” list alias untuk natural-language command (cek progres, stok, dll).
+        ///   gdriveReaderUrl      URL server (tunnel). Kosong = skip.
+        ///   gdriveReaderToken    bearer token. Kosong = skip.
+        ///   gdriveReaderEnabled  bool auto-enable.
+        ///   gdriveAliases        list alias untuk natural-language command (cek progres, stok, dll).
         ///
         /// Logic:
         ///   - Kalau user TIDAK set "lock" manual (gdrive_manual_override=false/missing):
@@ -85,7 +85,7 @@ namespace StokBarangMAUI.Services
                 SetEnabled(true);
             }
 
-            // Aliases â€” always overwrite with remote (single source of truth)
+            // Aliases  always overwrite with remote (single source of truth)
             _aliases = aliases ?? new List<GDriveAlias>();
         }
 
@@ -102,7 +102,7 @@ namespace StokBarangMAUI.Services
             if (!string.IsNullOrEmpty(remoteToken)) SetToken(remoteToken);
         }
 
-        // â”€â”€ Health / service account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Health / service account 
         public async Task<(bool ok, string message, string? serviceAccountEmail)> CheckHealthAsync()
         {
             try
@@ -136,7 +136,7 @@ namespace StokBarangMAUI.Services
             catch { return null; }
         }
 
-        // â”€â”€ Read operations (all GET-equivalent) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Read operations (all GET-equivalent) 
 
         /// <summary>List files at Drive root / search. Read-only.</summary>
         public Task<DriveListResult?> ListFilesAsync(
@@ -210,7 +210,29 @@ namespace StokBarangMAUI.Services
                 header_row_start = headerRowStart
             });
 
-        // â”€â”€ Internal HTTP helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        /// <summary>Smart filter with semantic intent (outstanding/done/date). Server-side cached + filtered.</summary>
+        public Task<SheetFilterResult?> SmartFilterAsync(
+            string fileId,
+            string? sheetName = null,
+            string? keyword = null,
+            string? intent = null,
+            IEnumerable<string>? searchColumns = null,
+            int limit = 30,
+            int headerRows = 1,
+            int headerRowStart = 1)
+            => PostAsync<SheetFilterResult>("/sheet/smart_filter", new
+            {
+                file_id = fileId,
+                sheet_name = sheetName,
+                keyword,
+                intent,
+                search_columns = searchColumns,
+                limit,
+                header_rows = headerRows,
+                header_row_start = headerRowStart
+            });
+
+        //  Internal HTTP helpers 
         private async Task<T?> PostAsync<T>(string path, object body)
         {
             try
@@ -264,7 +286,7 @@ namespace StokBarangMAUI.Services
         }
     }
 
-    // â”€â”€ DTOs matching HTTP server JSON responses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    //  DTOs matching HTTP server JSON responses 
 
     public class DriveFileDto
     {

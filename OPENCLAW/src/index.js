@@ -23,7 +23,8 @@ const REQUIRED_ENV = [
 
 const sheetName = process.env.SHEET_NAME || 'Arsip';
 const dataSheetId = process.env.DATA_SHEET_ID || '';
-const dataSheetName = process.env.DATA_SHEET_NAME || 'Sheet1';
+const dataSheetTabs = (process.env.DATA_SHEET_TABS || process.env.DATA_SHEET_NAME || 'Sheet1')
+  .split(',').map((s) => s.trim()).filter(Boolean);
 const dataUpdateInterval = parseInt(process.env.DATA_UPDATE_INTERVAL || '86400000', 10);
 const allowedChat = process.env.ALLOWED_GROUP_OR_NUMBER || '';
 const logChatId = process.env.LOG_CHAT_ID !== 'false';
@@ -31,7 +32,8 @@ const sendReply = process.env.SEND_REPLY === 'true';
 const casualReply = process.env.CASUAL_REPLY === 'true';
 const requireMention = process.env.REQUIRE_MENTION !== 'false';
 
-let cachedData = [];
+// cachedData[tab] = { headers: string[], rows: string[][] }
+let cachedData = {};
 let lastDataUpdate = 0;
 
 function checkEnv() {
@@ -402,48 +404,60 @@ async function ensureAuthDir() {
   return authDir;
 }
 
+// Tab dengan baris title merged di atas (header sebenarnya di baris 2)
+const TAB_HEADER_ROW = {
+  'Surat Jalan': 2,
+};
+
+async function fetchTab(sheets, spreadsheetId, tab) {
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${tab}!A:Z`,
+    });
+    const rows = response.data.values || [];
+    if (rows.length === 0) {
+      console.log(`⚠️  Tab "${tab}" kosong.`);
+      return { headers: [], rows: [] };
+    }
+    const headerRowIdx = (TAB_HEADER_ROW[tab] || 1) - 1;
+    const headerRow = rows[headerRowIdx] || [];
+    const headers = headerRow.map((h) => String(h || '').trim());
+    const data = rows.slice(headerRowIdx + 1);
+    console.log(`✅ Fetched ${data.length} baris dari "${tab}" (header row ${headerRowIdx + 1}).`);
+    return { headers, rows: data };
+  } catch (error) {
+    console.error(`❌ Tab "${tab}" gagal: ${error.message}`);
+    return { headers: [], rows: [] };
+  }
+}
+
 async function fetchDataFromSpreadsheet(sheets) {
   if (!dataSheetId) {
     console.log('DATA_SHEET_ID tidak diset, skip fetch data spreadsheet.');
-    return [];
+    return {};
   }
 
-  try {
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: extractId(dataSheetId, 'sheet'),
-      range: `${dataSheetName}!A:I`,
-    });
+  const spreadsheetId = extractId(dataSheetId, 'sheet');
+  const results = await Promise.allSettled(
+    dataSheetTabs.map((tab) => fetchTab(sheets, spreadsheetId, tab))
+  );
 
-    const rows = response.data.values || [];
-    if (rows.length === 0) {
-      console.log('Spreadsheet data kosong.');
-      return [];
-    }
+  const out = {};
+  dataSheetTabs.forEach((tab, i) => {
+    const r = results[i];
+    out[tab] = r.status === 'fulfilled' ? r.value : { headers: [], rows: [] };
+  });
+  return out;
+}
 
-    const headers = rows[0];
-    const data = rows.slice(1).map((row) => ({
-      tanggal: row[0] || '',
-      segment: row[1] || '',
-      rute: row[2] || '',
-      namaBarang: row[3] || '',
-      progress: row[4] || '',
-      keterangan: row[5] || '',
-      homebase: row[6] || '',
-      kabKota: row[7] || '',
-      siteId: row[8] || '',
-    }));
-
-    console.log(`Berhasil fetch ${data.length} baris data dari spreadsheet.`);
-    return data;
-  } catch (error) {
-    console.error('Error fetch data spreadsheet:', error.message);
-    return [];
-  }
+function isCacheEmpty() {
+  return !cachedData || Object.values(cachedData).every((t) => !t || !t.rows || t.rows.length === 0);
 }
 
 async function updateDataCache(sheets) {
   const now = Date.now();
-  if (now - lastDataUpdate < dataUpdateInterval && cachedData.length > 0) {
+  if (now - lastDataUpdate < dataUpdateInterval && !isCacheEmpty()) {
     console.log('Cache masih fresh, skip update.');
     return;
   }
@@ -453,65 +467,155 @@ async function updateDataCache(sheets) {
   lastDataUpdate = now;
 }
 
+function colLetter(i) {
+  let s = '';
+  let n = i;
+  while (n >= 0) {
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
 function searchData(query) {
-  if (!cachedData.length) {
+  if (isCacheEmpty()) {
     return 'Data belum tersedia. Bot sedang sync data.';
   }
 
   const lowerQuery = query.toLowerCase().trim();
-  
   console.log(`Searching for: "${lowerQuery}"`);
-  
-  // Parse tanggal dari query
+
   const dateFilter = parseDateQuery(lowerQuery);
-  
-  if (dateFilter) {
-    console.log(`Date filter detected: ${dateFilter.full}`);
-  }
-  
-  // Filter data
-  let results = cachedData.filter((item) => {
-    // Filter by date if specified
-    if (dateFilter) {
-      const matched = matchDate(item.tanggal, dateFilter);
-      if (matched) {
-        console.log(`Date matched: ${item.tanggal}`);
+  if (dateFilter) console.log(`Date filter detected: ${dateFilter.full}`);
+
+  // Non-date keyword (kalau query hanya tanggal, keywordOnly jadi kosong)
+  const keywordOnly = lowerQuery.replace(
+    /\b(hari ini|kemarin|today|yesterday|\d{1,2}\s*(jan|feb|mar|apr|mei|may|jun|jul|agu|aug|sep|okt|oct|nov|des|dec))\b/gi,
+    ''
+  ).trim();
+
+  const perTab = {};
+  let totalHits = 0;
+
+  for (const tab of Object.keys(cachedData)) {
+    const { headers, rows } = cachedData[tab] || {};
+    if (!rows || rows.length === 0) continue;
+
+    const matches = rows.filter((row) => {
+      const dateCell = String(row[0] || '');
+      if (dateFilter) {
+        if (!matchDate(dateCell, dateFilter)) return false;
+        if (!keywordOnly) return true;
       }
-      return matched;
+      if (!keywordOnly && !dateFilter) {
+        return row.some((cell) => String(cell || '').toLowerCase().includes(lowerQuery));
+      }
+      return row.some((cell) => String(cell || '').toLowerCase().includes(keywordOnly));
+    });
+
+    if (matches.length > 0) {
+      perTab[tab] = { headers: headers || [], matches };
+      totalHits += matches.length;
     }
-    
-    // Filter by keyword (skip if query is only date-related)
-    if (!dateFilter || lowerQuery.replace(/\b(hari ini|kemarin|today|yesterday|\d{1,2}\s*(jan|feb|mar|apr|mei|may|jun|jul|agu|aug|sep|okt|oct|nov|des|dec))\b/gi, '').trim()) {
-      return Object.values(item).some((value) =>
-        String(value).toLowerCase().includes(lowerQuery)
-      );
-    }
-    
-    return false;
+  }
+
+  console.log(`Found ${totalHits} results across ${Object.keys(perTab).length} tabs`);
+
+  if (totalHits === 0) {
+    return `Tidak ada data ditemukan untuk: ${query}`;
+  }
+
+  return formatMultiTabResults(perTab, query, totalHits);
+}
+
+function headerIndex(headers, name) {
+  const target = name.toUpperCase().replace(/\s+/g, '');
+  return headers.findIndex((h) => h && h.toUpperCase().replace(/\s+/g, '') === target);
+}
+
+function formatSuratJalanBlock(matches, headers, MAX_PER_TAB) {
+  const iTgl = headerIndex(headers, 'Tanggal');
+  const iSeg = headerIndex(headers, 'Segment');
+  const iBrg = headerIndex(headers, 'Nama Barang');
+  const iQty = headerIndex(headers, 'QTY');
+  const iJns = headerIndex(headers, 'Jenis');
+  const iSJ  = headerIndex(headers, 'NO_SJ');
+  const iPgr = headerIndex(headers, 'PENGIRIM');
+  const iPnr = headerIndex(headers, 'PENERIMA');
+  const iKet = headerIndex(headers, 'Keterangan');
+  const iDrv = headerIndex(headers, 'DRIVE');
+
+  const lines = [];
+  const shown = matches.slice(0, MAX_PER_TAB);
+  const cell = (row, n) => (n >= 0 ? String(row[n] || '').trim() : '');
+
+  shown.forEach((row, idx) => {
+    const tgl = cell(row, iTgl);
+    const seg = cell(row, iSeg);
+    const brg = cell(row, iBrg);
+    const qty = cell(row, iQty);
+    const jns = cell(row, iJns);
+    const sj  = cell(row, iSJ);
+    const pgr = cell(row, iPgr);
+    const pnr = cell(row, iPnr);
+    const ket = cell(row, iKet);
+    const drv = cell(row, iDrv);
+
+    lines.push('');
+    lines.push(`📄 ${idx + 1}. ${tgl || '-'}${seg ? ` | Seg ${seg}` : ''}`);
+    if (brg || qty) lines.push(`   📦 ${brg || '-'}${qty ? ` (${qty})` : ''}`);
+    const meta = [jns && `📋 ${jns}`, sj && `No.SJ: ${sj}`].filter(Boolean).join(' | ');
+    if (meta) lines.push(`   ${meta}`);
+    if (pgr || pnr) lines.push(`   👤 ${pgr || '-'} → ${pnr || '-'}`);
+    if (ket) lines.push(`   📝 ${ket}`);
+    if (drv && /^https?:\/\//i.test(drv)) lines.push(`   🔗 ${drv}`);
   });
 
-  console.log(`Found ${results.length} results`);
+  if (matches.length > MAX_PER_TAB) {
+    lines.push('');
+    lines.push(`   ... +${matches.length - MAX_PER_TAB} lainnya`);
+  }
+  return lines.join('\n');
+}
 
-  if (results.length === 0) {
-    // Show sample dates from data for debugging
-    const sampleDates = cachedData.slice(0, 3).map(item => item.tanggal).join(', ');
-    return `Tidak ada data ditemukan untuk: ${query}\n\nContoh format tanggal di data: ${sampleDates}`;
+function formatGenericTabBlock(matches, headers, MAX_PER_TAB) {
+  const lines = [];
+  const shown = matches.slice(0, MAX_PER_TAB);
+  shown.forEach((row, idx) => {
+    const cellLines = [];
+    for (let i = 0; i < row.length; i++) {
+      const val = String(row[i] || '').trim();
+      if (!val) continue;
+      const label = headers[i] ? headers[i] : colLetter(i);
+      cellLines.push(`   ${label}: ${val}`);
+    }
+    lines.push('');
+    lines.push(`${idx + 1}.`);
+    lines.push(cellLines.join('\n'));
+  });
+  if (matches.length > MAX_PER_TAB) {
+    lines.push(`   ... +${matches.length - MAX_PER_TAB} lainnya`);
+  }
+  return lines.join('\n');
+}
+
+function formatMultiTabResults(perTab, query, totalHits) {
+  const MAX_PER_TAB = 5;
+  const lines = [`📋 Ditemukan ${totalHits} hasil untuk "${query}":`];
+
+  for (const tab of Object.keys(perTab)) {
+    const { headers, matches } = perTab[tab];
+    const more = matches.length > MAX_PER_TAB ? `, tampil ${MAX_PER_TAB} pertama` : '';
+    lines.push('');
+    lines.push(`━━━ ${tab} (${matches.length} hasil${more}) ━━━`);
+
+    const block = tab === 'Surat Jalan'
+      ? formatSuratJalanBlock(matches, headers, MAX_PER_TAB)
+      : formatGenericTabBlock(matches, headers, MAX_PER_TAB);
+    lines.push(block);
   }
 
-  // Check if query is for a location (kab/kota)
-  const locationKeywords = ['sragen', 'brebes', 'tegal', 'semarang', 'pekalongan', 'cirebon', 'indramayu'];
-  const isLocationQuery = locationKeywords.some(loc => lowerQuery.includes(loc));
-
-  if (isLocationQuery) {
-    return formatLocationSummary(results, query);
-  }
-
-  // Regular query - show details
-  if (results.length > 20) {
-    return `Ditemukan ${results.length} hasil untuk "${query}". Terlalu banyak, coba query lebih spesifik.`;
-  }
-
-  return formatDetailedResults(results, query);
+  return lines.join('\n').trim();
 }
 
 function parseDateQuery(query) {
@@ -562,68 +666,6 @@ function matchDate(dateStr, dateFilter) {
   return lower.includes(dateFilter.day.toString()) && 
          (lower.includes(dateFilter.month.toLowerCase()) || 
           lower.includes(dateFilter.dayName.toLowerCase()));
-}
-
-function formatLocationSummary(results, query) {
-  // Group by nama barang and sum progress
-  const summary = {};
-  
-  results.forEach((item) => {
-    const barang = item.namaBarang || 'Unknown';
-    if (!summary[barang]) {
-      summary[barang] = {
-        namaBarang: barang,
-        totalProgress: 0,
-        count: 0,
-        sites: []
-      };
-    }
-    
-    const progress = parseFloat(item.progress) || 0;
-    summary[barang].totalProgress += progress;
-    summary[barang].count += 1;
-    if (item.siteId) {
-      summary[barang].sites.push(item.siteId);
-    }
-  });
-
-  let reply = `📊 Ringkasan Progress untuk "${query}":\n`;
-  reply += `Total: ${results.length} site\n\n`;
-
-  Object.values(summary).forEach((item) => {
-    reply += `🔹 ${item.namaBarang}\n`;
-    reply += `   Total Progress: ${item.totalProgress.toLocaleString()}\n`;
-    reply += `   Jumlah Site: ${item.count}\n`;
-    reply += `   Rata-rata: ${Math.round(item.totalProgress / item.count).toLocaleString()}\n\n`;
-  });
-
-  return reply.trim();
-}
-
-function formatDetailedResults(results, query) {
-  let reply = `📋 Ditemukan ${results.length} hasil untuk "${query}":\n\n`;
-  
-  const maxResults = Math.min(results.length, 15);
-  
-  for (let i = 0; i < maxResults; i++) {
-    const item = results[i];
-    reply += `${i + 1}. ${item.tanggal}\n`;
-    reply += `   Rute: ${item.rute}\n`;
-    reply += `   Barang: ${item.namaBarang}\n`;
-    reply += `   Progress: ${item.progress}\n`;
-    reply += `   Site ID: ${item.siteId}\n`;
-    if (item.keterangan) {
-      reply += `   Ket: ${item.keterangan}\n`;
-    }
-    reply += '\n';
-  }
-  
-  if (results.length > maxResults) {
-    reply += `... dan ${results.length - maxResults} hasil lainnya.\n`;
-    reply += `Gunakan keyword lebih spesifik untuk hasil lebih sedikit.\n`;
-  }
-
-  return reply.trim();
 }
 
 function isDataQuery(text) {

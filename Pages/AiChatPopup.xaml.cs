@@ -1,4 +1,4 @@
-﻿using StokBarangMAUI.Services;
+using StokBarangMAUI.Services;
 using Microsoft.Maui.Controls.Shapes;
 
 namespace StokBarangMAUI.Pages
@@ -22,7 +22,7 @@ namespace StokBarangMAUI.Pages
             StartAuthCheckTimer();
         }
 
-        // Disable hardware back button â€” user must tap the X button
+        // Disable hardware back button  user must tap the X button
         protected override bool OnBackButtonPressed()
         {
             return true; // true = handled, don't navigate back
@@ -31,7 +31,7 @@ namespace StokBarangMAUI.Pages
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            // Auto-refresh data context tiap kali popup dibuka â€” user gak perlu ketik "refresh data"
+            // Auto-refresh data context tiap kali popup dibuka  user gak perlu ketik "refresh data"
             _aiService.InvalidateContext();
         }
 
@@ -55,7 +55,7 @@ namespace StokBarangMAUI.Pages
             
             if (isAuthenticated)
             {
-                AuthStatusLabel.Text = "ðŸ”“ Admin Mode";
+                AuthStatusLabel.Text = " Admin Mode";
                 AuthStatusLabel.IsVisible = true;
             }
             else
@@ -106,7 +106,7 @@ namespace StokBarangMAUI.Pages
             catch (Exception ex)
             {
                 Console.WriteLine($"[Chat] ERROR: {ex}");
-                AddAiMessage($"âŒ Error: {ex.Message}");
+                AddAiMessage($" Error: {ex.Message}");
             }
             finally
             {
@@ -255,7 +255,7 @@ namespace StokBarangMAUI.Pages
                 tap.Tapped += async (_, _) =>
                 {
                     try { await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(new Uri(capturedUrl)); }
-                    catch { /* invalid URL â€” ignore */ }
+                    catch { /* invalid URL  ignore */ }
                 };
                 linkSpan.GestureRecognizers.Add(tap);
                 fs.Spans.Add(linkSpan);
@@ -276,7 +276,7 @@ namespace StokBarangMAUI.Pages
                 });
             }
 
-            // Empty message guard â€” at least one empty span so Label has a FormattedString
+            // Empty message guard  at least one empty span so Label has a FormattedString
             if (fs.Spans.Count == 0)
                 fs.Spans.Add(new Span { Text = message, TextColor = textColor, FontSize = 13 });
 
@@ -302,7 +302,7 @@ namespace StokBarangMAUI.Pages
                         await MainThread.InvokeOnMainThreadAsync(async () =>
                         {
                             await Clipboard.SetTextAsync(textToCopy);
-                            await DisplayAlert("âœ“", "Teks disalin ke clipboard", "OK");
+                            await DisplayAlert("", "Teks disalin ke clipboard", "OK");
                         });
                     }
                     catch (TaskCanceledException) { /* released before threshold */ }
@@ -331,7 +331,7 @@ namespace StokBarangMAUI.Pages
             _aiService.ClearHistory();
 
             // Add welcome message back
-            AddAiMessage("ðŸ‘‹ Halo! Saya AI assistant kamu. Tanya apa aja â€” soal pekerjaan, progress, stok, atau mau ngobrol santai juga boleh!");
+            AddAiMessage(" Halo! Saya AI assistant kamu. Tanya apa aja  soal pekerjaan, progress, stok, atau mau ngobrol santai juga boleh!");
         }
 
     }

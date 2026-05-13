@@ -28,8 +28,8 @@ namespace StokBarangMAUI.Pages
             {
                 BaseUrlEntry.IsEnabled = false;
                 ModelEntry.IsEnabled = false;
-                BaseUrlEntry.Placeholder = "🔒 Hanya Admin yang bisa ubah";
-                ModelEntry.Placeholder = "🔒 Hanya Admin yang bisa ubah";
+                BaseUrlEntry.Placeholder = " Hanya Admin yang bisa ubah";
+                ModelEntry.Placeholder = " Hanya Admin yang bisa ubah";
             }
         }
 
@@ -97,7 +97,7 @@ namespace StokBarangMAUI.Pages
                 _aiService.SetModel(model);
             }
             
-            await DisplayAlert("Success", "✅ Settings berhasil disimpan!", "OK");
+            await DisplayAlert("Success", " Settings berhasil disimpan!", "OK");
         }
 
         private void OnShowApiKey(object sender, EventArgs e)
@@ -121,27 +121,27 @@ namespace StokBarangMAUI.Pages
         private async void OnTestAi(object sender, EventArgs e)
         {
             TestResultLabel.IsVisible = true;
-            TestResultLabel.Text = "⏳ Testing...";
+            TestResultLabel.Text = " Testing...";
             TestResultLabel.TextColor = Color.FromArgb("#F59E0B");
 
             try
             {
                 var response = await _aiService.SendMessageAsync("Halo, test koneksi. Jawab dengan singkat.");
                 
-                if (response.StartsWith("❌") || response.StartsWith("⚠️"))
+                if (response.StartsWith("") || response.StartsWith(""))
                 {
-                    TestResultLabel.Text = $"❌ Test gagal:\n{response}";
+                    TestResultLabel.Text = $" Test gagal:\n{response}";
                     TestResultLabel.TextColor = Color.FromArgb("#DC2626");
                 }
                 else
                 {
-                    TestResultLabel.Text = $"✅ Test berhasil!\nAI Response: {response}";
+                    TestResultLabel.Text = $" Test berhasil!\nAI Response: {response}";
                     TestResultLabel.TextColor = Color.FromArgb("#10B981");
                 }
             }
             catch (Exception ex)
             {
-                TestResultLabel.Text = $"❌ Error: {ex.Message}";
+                TestResultLabel.Text = $" Error: {ex.Message}";
                 TestResultLabel.TextColor = Color.FromArgb("#DC2626");
             }
         }
@@ -151,7 +151,7 @@ namespace StokBarangMAUI.Pages
             await Navigation.PopAsync();
         }
 
-        // ── Google Drive Reader handlers ─────────────────────────────────
+        //  Google Drive Reader handlers 
 
         private void OnDriveEnabledToggled(object sender, ToggledEventArgs e)
         {
@@ -166,7 +166,7 @@ namespace StokBarangMAUI.Pages
             if (string.IsNullOrWhiteSpace(url))
             {
                 DriveStatusLabel.IsVisible = true;
-                DriveStatusLabel.Text = "⚠️ URL tidak boleh kosong";
+                DriveStatusLabel.Text = " URL tidak boleh kosong";
                 DriveStatusLabel.TextColor = Color.FromArgb("#F59E0B");
                 return;
             }
@@ -175,7 +175,7 @@ namespace StokBarangMAUI.Pages
             _drive.SetToken(token);
 
             DriveStatusLabel.IsVisible = true;
-            DriveStatusLabel.Text = "✅ Settings Drive tersimpan";
+            DriveStatusLabel.Text = " Settings Drive tersimpan";
             DriveStatusLabel.TextColor = Color.FromArgb("#10B981");
         }
 
@@ -185,18 +185,18 @@ namespace StokBarangMAUI.Pages
             OnSaveDriveSettings(sender, e);
 
             DriveStatusLabel.IsVisible = true;
-            DriveStatusLabel.Text = "⏳ Testing koneksi...";
+            DriveStatusLabel.Text = " Testing koneksi...";
             DriveStatusLabel.TextColor = Color.FromArgb("#F59E0B");
 
             var (ok, message, email) = await _drive.CheckHealthAsync();
             if (ok)
             {
-                DriveStatusLabel.Text = $"✅ Connected!\nService account: {email}\n\n💡 Share Drive folder-mu ke email di atas (Viewer).";
+                DriveStatusLabel.Text = $" Connected!\nService account: {email}\n\n Share Drive folder-mu ke email di atas (Viewer).";
                 DriveStatusLabel.TextColor = Color.FromArgb("#10B981");
             }
             else
             {
-                DriveStatusLabel.Text = $"❌ Tidak bisa connect: {message}\n\nCek:\n• Apakah start_server.bat jalan di laptop?\n• URL benar?\n• Dari HP: pakai IP/tunnel, bukan localhost";
+                DriveStatusLabel.Text = $" Tidak bisa connect: {message}\n\nCek:\n Apakah start_server.bat jalan di laptop?\n URL benar?\n Dari HP: pakai IP/tunnel, bukan localhost";
                 DriveStatusLabel.TextColor = Color.FromArgb("#DC2626");
             }
         }

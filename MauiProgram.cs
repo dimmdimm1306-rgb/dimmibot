@@ -38,6 +38,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<UploadCoordinator>();
         builder.Services.AddSingleton<ApprovalService>();
         builder.Services.AddSingleton<OpenClawBotService>();
+        builder.Services.AddSingleton<GDriveReaderService>();
+        builder.Services.AddSingleton<GDriveCommandHandler>();
         builder.Services.AddSingleton<AiChatService>();
         builder.Services.AddTransient<MainPage>();
 

@@ -6,12 +6,12 @@
     
     <!-- Floating AI Button di pojok kanan bawah dengan margin -->
     <Grid InputTransparent="True">
-        <Border HorizontalOptions="End" 
+        <Border HorizontalOptions="End"
                 VerticalOptions="End"
                 Margin="0,0,20,80"
-                WidthRequest="60" 
+                WidthRequest="60"
                 HeightRequest="60"
-                BackgroundColor="#6366F1"
+                BackgroundColor="{DynamicResource AiBotBg}"
                 StrokeShape="RoundRectangle 30"
                 Stroke="White"
                 StrokeThickness="2"
@@ -20,15 +20,14 @@
             <Border.GestureRecognizers>
                 <TapGestureRecognizer Tapped="OnAiButtonTapped"/>
             </Border.GestureRecognizers>
-            
-            <Grid>
-                <Image Source="claw_cat.png" 
-                       WidthRequest="36"
-                       HeightRequest="36"
-                       HorizontalOptions="Center" 
-                       VerticalOptions="Center"
-                       InputTransparent="True"/>
-            </Grid>
+
+            <Label Text="AI"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   InputTransparent="True"/>
         </Border>
     </Grid>
 </ContentView>

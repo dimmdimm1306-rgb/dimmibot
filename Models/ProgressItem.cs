@@ -121,11 +121,13 @@ namespace StokBarangMAUI.Models
         public string   Tanggal  { get; set; } = string.Empty;
         public DateTime SortDate { get; set; } = DateTime.MinValue;
         public string Segment    { get; set; } = string.Empty;
-        public string Span       { get; set; } = string.Empty;
+        public string Span       { get; set; } = string.Empty;  // kolom C — secara semantik = Rute
         public string NamaBarang { get; set; } = string.Empty;
         public int    Progres    { get; set; }
         public string Keterangan { get; set; } = string.Empty;
         public string Homebase   { get; set; } = string.Empty;
+        public string KabKota    { get; set; } = string.Empty;  // kolom H
+        public string SiteId     { get; set; } = string.Empty;  // kolom I
 
         public bool   IsDone        => Keterangan.Contains("done", StringComparison.OrdinalIgnoreCase)
                                     && !Keterangan.Contains("belum", StringComparison.OrdinalIgnoreCase)
@@ -134,6 +136,8 @@ namespace StokBarangMAUI.Models
         public string StatusText    => IsDone ? "✓ Done" : "⏳ Proses";
         public bool   HasKeterangan => !string.IsNullOrWhiteSpace(Keterangan);
         public bool   HasHomebase   => !string.IsNullOrWhiteSpace(Homebase);
+        public bool   HasKabKota    => !string.IsNullOrWhiteSpace(KabKota);
+        public bool   HasSiteId     => !string.IsNullOrWhiteSpace(SiteId);
 
         public string Satuan         => MaterialUnit.Get(NamaBarang);
         public string ProgresDisplay => $"{Progres:N0} {Satuan}";

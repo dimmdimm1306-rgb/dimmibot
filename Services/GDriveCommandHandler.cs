@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -7,25 +7,25 @@ namespace StokBarangMAUI.Services
     /// <summary>
     /// Natural-language command handler untuk akses Google Drive read-only.
     ///
-    /// Pola: mirip SearchProgressAsync di AiChatService â€” detect keyword di message,
+    /// Pola: mirip SearchProgressAsync di AiChatService  detect keyword di message,
     /// call GDriveReaderService, format hasilnya jadi teks rapi buat ditampilin langsung
     /// (skip LLM, hemat token maksimal).
     ///
     /// Command yang di-support (semua bahasa Indonesia natural):
-    ///   â€¢ "drive list" / "list drive" / "file drive"
-    ///   â€¢ "drive folder [nama/id]"
-    ///   â€¢ "drive sheet [nama/id]" â€” list tab
-    ///   â€¢ "drive header [nama/id]" / "kolom drive [nama/id]"
-    ///   â€¢ "drive summary [nama/id]"
-    ///   â€¢ "drive filter [nama/id] [json atau kriteria]"
-    ///   â€¢ "drive status" / "cek drive"
-    ///   â€¢ "drive help" / "bantuan drive"
+    ///    "drive list" / "list drive" / "file drive"
+    ///    "drive folder [nama/id]"
+    ///    "drive sheet [nama/id]"  list tab
+    ///    "drive header [nama/id]" / "kolom drive [nama/id]"
+    ///    "drive summary [nama/id]"
+    ///    "drive filter [nama/id] [json atau kriteria]"
+    ///    "drive status" / "cek drive"
+    ///    "drive help" / "bantuan drive"
     /// </summary>
     public class GDriveCommandHandler
     {
         private readonly GDriveReaderService _drive;
 
-        // Cache pemetaan "nama file" â†’ file_id biar user bisa refer by name
+        // Cache pemetaan "nama file"  file_id biar user bisa refer by name
         private readonly Dictionary<string, string> _nameToIdCache = new(StringComparer.OrdinalIgnoreCase);
         private DateTime _cacheExpiry = DateTime.MinValue;
 
@@ -35,6 +35,19 @@ namespace StokBarangMAUI.Services
         }
 
         /// <summary>
+        /// Cek apakah message user adalah command drive. Return true + isi response kalau ya.
+        /// Return false kalau bukan command drive (lanjut ke LLM flow biasa).
+        // Max chars untuk response (biar hemat token & ga spam layar)
+        private const int MAX_RESPONSE_CHARS = 1000;
+
+        /// <summary>Cap response string dan tambah "... (trimmed)" kalau overflow.</summary>
+        private static string CapResponse(string? s)
+        {
+            if (string.IsNullOrEmpty(s)) return s ?? "";
+            if (s.Length <= MAX_RESPONSE_CHARS) return s;
+            return s.Substring(0, MAX_RESPONSE_CHARS - 20) + "\n...(trimmed)";
+        }
+
         /// Cek apakah message user adalah command drive. Return true + isi response kalau ya.
         /// Return false kalau bukan command drive (lanjut ke LLM flow biasa).
         /// </summary>
@@ -48,14 +61,36 @@ namespace StokBarangMAUI.Services
 
             Console.WriteLine($"[GDriveCmd] TryHandle: '{msg}' (enabled={_drive.IsEnabled}, aliases={_drive.Aliases.Count})");
 
-            // === Alias detection (dari remote config) â€” PRIORITAS TINGGI ===
+            // === PENDING CLARIFICATION: user tadi ditanya, sekarang jawab ===
+            // State format JSON: {"flow":"stok","step":"gudang"} atau {"flow":"stok","step":"barang","gudang":"BREBES"}
+            var pendingJson = Preferences.Get("gdrive_pending_clarif", "");
+            if (!string.IsNullOrEmpty(pendingJson))
+            {
+                Console.WriteLine($"[GDriveCmd] Has pending: {pendingJson}");
+                var resolved = await TryResolveClarificationAsync(pendingJson, msg, lower);
+                if (resolved.handled)
+                {
+                    return (true, CapResponse(resolved.response));
+                }
+                // Cancel flow kalau user ketik sesuatu yang ga match
+                Preferences.Remove("gdrive_pending_clarif");
+            }
+
+            // === Detect multi-step queries (site belum / stok / dll) ===
+            if (_drive.IsEnabled)
+            {
+                var multiStepResult = TryMultiStepQuery(lower);
+                if (multiStepResult.handled) return (true, CapResponse(multiStepResult.response));
+            }
+
+            // === Alias detection (dari remote config) ===
             if (_drive.IsEnabled && _drive.Aliases.Count > 0)
             {
                 var aliasResult = await TryHandleAliasAsync(msg, lower);
-                if (aliasResult.handled) return aliasResult;
+                if (aliasResult.handled) return (true, CapResponse(aliasResult.response));
             }
 
-            // Quick rejection â€” harus ada kata "drive" atau prefix khusus
+            // Quick rejection - harus ada kata "drive" atau prefix khusus
             if (!ContainsDriveKeyword(lower))
                 return (false, null);
 
@@ -134,7 +169,7 @@ namespace StokBarangMAUI.Services
                     return (true, await BuildFilterAsync(rest));
                 }
 
-                // Keyword "drive" tapi tidak ada pattern yang match â†’ kasih help
+                // Keyword "drive" tapi tidak ada pattern yang match  kasih help
                 if (lower.Contains("drive"))
                 {
                     return (true, BuildHelp());
@@ -142,35 +177,35 @@ namespace StokBarangMAUI.Services
             }
             catch (Exception ex)
             {
-                return (true, $"âŒ Error akses Drive: {ex.Message}\n\nðŸ’¡ Cek apakah server Python (http_server.py) sedang jalan di laptop, dan URL di Settings sudah benar.");
+                return (true, $" Error akses Drive: {ex.Message}\n\n Cek apakah server Python (http_server.py) sedang jalan di laptop, dan URL di Settings sudah benar.");
             }
 
             return (false, null);
         }
 
-        // â”€â”€ Command builders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Command builders 
 
         private async Task<string> BuildStatusAsync()
         {
             var (ok, message, email) = await _drive.CheckHealthAsync();
             var sb = new StringBuilder();
-            sb.AppendLine("ðŸ”Œ **Status Google Drive Reader**");
+            sb.AppendLine("\uD83D\uDD0C **Status Google Drive Reader**");
             sb.AppendLine();
             sb.AppendLine($"Server: {_drive.BaseUrl}");
-            sb.AppendLine($"Koneksi: {(ok ? "âœ… OK" : "âŒ " + message)}");
+            sb.AppendLine($"Koneksi: {(ok ? " OK" : " " + message)}");
             if (!string.IsNullOrEmpty(email))
             {
                 sb.AppendLine($"Service account: `{email}`");
                 sb.AppendLine();
-                sb.AppendLine("ðŸ’¡ Share folder/file Google Drive-mu ke email di atas (permission: Viewer) supaya bisa dibaca.");
+                sb.AppendLine(" Share folder/file Google Drive-mu ke email di atas (permission: Viewer) supaya bisa dibaca.");
             }
             if (!ok)
             {
                 sb.AppendLine();
-                sb.AppendLine("ðŸ› ï¸ **Troubleshooting:**");
+                sb.AppendLine(" **Troubleshooting:**");
                 sb.AppendLine("1. Pastikan `start_server.bat` di laptop sedang jalan");
-                sb.AppendLine("2. Cek URL di AI Settings â†’ Drive Reader URL");
-                sb.AppendLine("3. Kalau HP â†’ laptop, pakai IP laptop atau Cloudflare tunnel (bukan localhost)");
+                sb.AppendLine("2. Cek URL di AI Settings  Drive Reader URL");
+                sb.AppendLine("3. Kalau HP  laptop, pakai IP laptop atau Cloudflare tunnel (bukan localhost)");
             }
             return sb.ToString().TrimEnd();
         }
@@ -190,46 +225,46 @@ namespace StokBarangMAUI.Services
             CacheNameToId(result.Files);
 
             var sb = new StringBuilder();
-            sb.AppendLine($"ðŸ“‚ **File di Google Drive** ({result.Total} file)");
+            sb.AppendLine($" **File di Google Drive** ({result.Total} file)");
             if (!string.IsNullOrWhiteSpace(nameQuery))
-                sb.AppendLine($"ðŸ”Ž Filter nama: *{nameQuery}*");
+                sb.AppendLine($" Filter nama: *{nameQuery}*");
             sb.AppendLine();
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine("");
 
             int i = 1;
             foreach (var f in result.Files)
             {
                 var icon = TypeIcon(f.Type ?? f.MimeType ?? "");
                 sb.AppendLine($"{i}. {icon} **{f.Name}**");
-                sb.AppendLine($"   ðŸ“‹ `{f.Id}` ({f.Type ?? "file"})");
+                sb.AppendLine($"    `{f.Id}` ({f.Type ?? "file"})");
                 i++;
             }
             sb.AppendLine();
-            sb.AppendLine("ðŸ’¡ Tip: `drive header <nama file>` untuk lihat kolom.");
+            sb.AppendLine(" Tip: `drive header <nama file>` untuk lihat kolom.");
             return sb.ToString().TrimEnd();
         }
 
         private async Task<string> BuildFolderContentsAsync(string folderRef)
         {
             var folderId = await ResolveFileIdAsync(folderRef);
-            // folderId boleh null/empty â†’ list root (semua yg ter-share)
+            // folderId boleh null/empty  list root (semua yg ter-share)
 
             var result = await _drive.ListFolderContentsAsync(folderId, recursive: false);
-            if (result == null) return "âŒ Gagal ambil isi folder.";
+            if (result == null) return " Gagal ambil isi folder.";
 
             var sb = new StringBuilder();
-            sb.AppendLine($"ðŸ“ **Isi Folder** {(string.IsNullOrWhiteSpace(folderRef) ? "(root â€” file ter-share)" : $"*{folderRef}*")}");
+            sb.AppendLine($" **Isi Folder** {(string.IsNullOrWhiteSpace(folderRef) ? "(root  file ter-share)" : $"*{folderRef}*")}");
             sb.AppendLine();
             sb.AppendLine($"Summary: {result.Summary?.Folders ?? 0} folder, {result.Summary?.Spreadsheets ?? 0} spreadsheet, {result.Summary?.OtherFiles ?? 0} file lain");
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine("");
 
             if (result.Folders != null && result.Folders.Count > 0)
             {
                 sb.AppendLine();
-                sb.AppendLine("ðŸ“ **Folder:**");
+                sb.AppendLine(" **Folder:**");
                 foreach (var f in result.Folders)
                 {
-                    sb.AppendLine($"  â€¢ {f.Name}  `{f.Id}`");
+                    sb.AppendLine($"   {f.Name}  `{f.Id}`");
                 }
             }
 
@@ -237,21 +272,21 @@ namespace StokBarangMAUI.Services
             {
                 CacheNameToId(result.Spreadsheets);
                 sb.AppendLine();
-                sb.AppendLine("ðŸ“Š **Spreadsheet:**");
+                sb.AppendLine(" **Spreadsheet:**");
                 foreach (var f in result.Spreadsheets)
                 {
                     var icon = TypeIcon(f.Type ?? "");
-                    sb.AppendLine($"  â€¢ {icon} {f.Name}  `{f.Id}`");
+                    sb.AppendLine($"   {icon} {f.Name}  `{f.Id}`");
                 }
             }
 
             if (result.OtherFiles != null && result.OtherFiles.Count > 0)
             {
                 sb.AppendLine();
-                sb.AppendLine("ðŸ“„ **Lainnya:**");
+                sb.AppendLine(" **Lainnya:**");
                 foreach (var f in result.OtherFiles)
                 {
-                    sb.AppendLine($"  â€¢ {f.Name}  `{f.Id}`");
+                    sb.AppendLine($"   {f.Name}  `{f.Id}`");
                 }
             }
 
@@ -261,19 +296,19 @@ namespace StokBarangMAUI.Services
         private async Task<string> BuildSheetTabsAsync(string fileRef)
         {
             if (string.IsNullOrWhiteSpace(fileRef))
-                return "âš ï¸ Kasih nama atau ID file-nya ya. Contoh: `drive sheet BOQ FWA`";
+                return " Kasih nama atau ID file-nya ya. Contoh: `drive sheet BOQ FWA`";
 
             var fileId = await ResolveFileIdAsync(fileRef);
             if (string.IsNullOrEmpty(fileId))
-                return $"âŒ File '{fileRef}' tidak ketemu di Drive. Coba `drive list {fileRef}` dulu.";
+                return $" File '{fileRef}' tidak ketemu di Drive. Coba `drive list {fileRef}` dulu.";
 
             var result = await _drive.ListSheetTabsAsync(fileId);
-            if (result == null) return "âŒ Gagal ambil tab sheet.";
+            if (result == null) return " Gagal ambil tab sheet.";
 
             var sb = new StringBuilder();
-            sb.AppendLine($"ðŸ“‘ **Tab di *{result.FileName}***");
+            sb.AppendLine($" **Tab di *{result.FileName}***");
             sb.AppendLine($"Total: {result.TotalSheets} tab");
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine("");
             if (result.Sheets != null)
             {
                 int i = 1;
@@ -289,26 +324,26 @@ namespace StokBarangMAUI.Services
         private async Task<string> BuildHeadersAsync(string fileRef)
         {
             if (string.IsNullOrWhiteSpace(fileRef))
-                return "âš ï¸ Kasih nama atau ID file-nya ya. Contoh: `drive header BOQ FWA`";
+                return " Kasih nama atau ID file-nya ya. Contoh: `drive header BOQ FWA`";
 
             var (fileId, sheetName, headerRows, headerRowStart) = ParseFileSheetHeader(fileRef);
             var resolved = await ResolveFileIdAsync(fileId);
             if (string.IsNullOrEmpty(resolved))
-                return $"âŒ File '{fileId}' tidak ketemu di Drive.";
+                return $" File '{fileId}' tidak ketemu di Drive.";
 
             var result = await _drive.GetSheetHeadersAsync(resolved, sheetName, headerRows, headerRowStart);
-            if (result == null) return "âŒ Gagal ambil header.";
+            if (result == null) return " Gagal ambil header.";
 
             var sb = new StringBuilder();
-            sb.AppendLine($"ðŸ“Š **{result.FileName}**");
+            sb.AppendLine($" **{result.FileName}**");
             if (!string.IsNullOrEmpty(sheetName))
                 sb.AppendLine($"Sheet: *{sheetName}*");
             if (headerRows > 1)
                 sb.AppendLine($"Header rows: {headerRows} (multi-row header aktif)");
             if (headerRowStart > 1)
                 sb.AppendLine($"Header row start: baris {headerRowStart}");
-            sb.AppendLine($"ðŸ“ {result.TotalRows:N0} baris Ã— {result.TotalColumns} kolom");
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine($" {result.TotalRows:N0} baris  {result.TotalColumns} kolom");
+            sb.AppendLine("");
             sb.AppendLine("**Kolom:**");
             if (result.Columns != null)
             {
@@ -321,30 +356,30 @@ namespace StokBarangMAUI.Services
                 }
             }
             sb.AppendLine();
-            sb.AppendLine($"ðŸ’¡ Untuk filter data, coba: `drive filter {result.FileName} {{\"{result.Columns?.FirstOrDefault() ?? "kolom"}\":\"nilai\"}}`");
+            sb.AppendLine($" Untuk filter data, coba: `drive filter {result.FileName} {{\"{result.Columns?.FirstOrDefault() ?? "kolom"}\":\"nilai\"}}`");
             if (headerRows == 1 && headerRowStart == 1)
-                sb.AppendLine("ðŸ’¡ Kalau kolom terlihat aneh, coba `@h2` (header 2 baris) atau `@s3` (header dimulai baris 3).");
+                sb.AppendLine(" Kalau kolom terlihat aneh, coba `@h2` (header 2 baris) atau `@s3` (header dimulai baris 3).");
             return sb.ToString().TrimEnd();
         }
 
         private async Task<string> BuildSummaryAsync(string fileRef)
         {
             if (string.IsNullOrWhiteSpace(fileRef))
-                return "âš ï¸ Kasih nama atau ID file-nya ya. Contoh: `drive summary BOQ FWA`";
+                return " Kasih nama atau ID file-nya ya. Contoh: `drive summary BOQ FWA`";
 
             var (fileId, sheetName, headerRows, headerRowStart) = ParseFileSheetHeader(fileRef);
             var resolved = await ResolveFileIdAsync(fileId);
             if (string.IsNullOrEmpty(resolved))
-                return $"âŒ File '{fileId}' tidak ketemu di Drive.";
+                return $" File '{fileId}' tidak ketemu di Drive.";
 
             var result = await _drive.GetSheetSummaryAsync(resolved, sheetName, null, headerRows, headerRowStart);
-            if (result == null) return "âŒ Gagal ambil summary.";
+            if (result == null) return " Gagal ambil summary.";
 
             var sb = new StringBuilder();
-            sb.AppendLine($"ðŸ“ˆ **Summary Data**");
+            sb.AppendLine($" **Summary Data**");
             if (!string.IsNullOrEmpty(sheetName))
                 sb.AppendLine($"Sheet: *{sheetName}*");
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine("");
 
             try
             {
@@ -353,7 +388,7 @@ namespace StokBarangMAUI.Services
                 {
                     var rows = shape.GetProperty("rows").GetInt32();
                     var cols = shape.GetProperty("columns").GetInt32();
-                    sb.AppendLine($"ðŸ“ {rows:N0} baris Ã— {cols} kolom");
+                    sb.AppendLine($" {rows:N0} baris  {cols} kolom");
                     sb.AppendLine();
                 }
 
@@ -361,7 +396,7 @@ namespace StokBarangMAUI.Services
                 {
                     foreach (var prop in cols_el.EnumerateObject())
                     {
-                        sb.AppendLine($"ðŸ“Œ **{prop.Name}**");
+                        sb.AppendLine($" **{prop.Name}**");
                         var v = prop.Value;
                         if (v.TryGetProperty("dtype", out var dt)) sb.AppendLine($"   Type: {dt.GetString()}");
                         if (v.TryGetProperty("non_null", out var nn)) sb.AppendLine($"   Non-null: {nn.GetInt32():N0}");
@@ -380,7 +415,7 @@ namespace StokBarangMAUI.Services
             }
             catch (Exception ex)
             {
-                sb.AppendLine($"âš ï¸ Parsing error: {ex.Message}");
+                sb.AppendLine($" Parsing error: {ex.Message}");
             }
             return sb.ToString().TrimEnd();
         }
@@ -388,22 +423,22 @@ namespace StokBarangMAUI.Services
         private async Task<string> BuildFilterAsync(string args)
         {
             if (string.IsNullOrWhiteSpace(args))
-                return "âš ï¸ Format: `drive filter <nama file> {\"kolom\":\"nilai\"}`\n\nContoh:\n  â€¢ `drive filter BOQ FWA {\"segment\":\"FWA\",\"limit\":20}`\n  â€¢ `drive filter Monthly Report {\"tanggal\":{\"min\":\"2024-01-01\"}}`";
+                return " Format: `drive filter <nama file> {\"kolom\":\"nilai\"}`\n\nContoh:\n   `drive filter BOQ FWA {\"segment\":\"FWA\",\"limit\":20}`\n   `drive filter Monthly Report {\"tanggal\":{\"min\":\"2024-01-01\"}}`";
 
             // Parse: "<nama file>[#sheet][@h2] <json>"
             var jsonStart = args.IndexOf('{');
             if (jsonStart < 0)
-                return "âš ï¸ Kriteria filter harus berupa JSON. Contoh: `drive filter BOQ FWA {\"segment\":\"FWA\"}`";
+                return " Kriteria filter harus berupa JSON. Contoh: `drive filter BOQ FWA {\"segment\":\"FWA\"}`";
 
             var fileRef = args.Substring(0, jsonStart).Trim();
             var jsonStr = args.Substring(jsonStart).Trim();
             if (string.IsNullOrEmpty(fileRef))
-                return "âš ï¸ Kasih nama file-nya dulu. Contoh: `drive filter BOQ FWA {\"segment\":\"FWA\"}`";
+                return " Kasih nama file-nya dulu. Contoh: `drive filter BOQ FWA {\"segment\":\"FWA\"}`";
 
             var (fileId, sheetName, headerRows, headerRowStart) = ParseFileSheetHeader(fileRef);
             var resolved = await ResolveFileIdAsync(fileId);
             if (string.IsNullOrEmpty(resolved))
-                return $"âŒ File '{fileId}' tidak ketemu di Drive.";
+                return $" File '{fileId}' tidak ketemu di Drive.";
 
             Dictionary<string, object>? filters = null;
             int limit = 50;
@@ -441,16 +476,16 @@ namespace StokBarangMAUI.Services
             }
             catch (JsonException ex)
             {
-                return $"âŒ JSON tidak valid: {ex.Message}\n\nContoh yang benar: `drive filter BOQ FWA {{\"segment\":\"FWA\",\"limit\":20}}`";
+                return $" JSON tidak valid: {ex.Message}\n\nContoh yang benar: `drive filter BOQ FWA {{\"segment\":\"FWA\",\"limit\":20}}`";
             }
 
             var result = await _drive.FilterSheetAsync(resolved, filters, columns, sheetName, limit, headerRows, headerRowStart);
-            if (result == null) return "âŒ Gagal filter data.";
+            if (result == null) return " Gagal filter data.";
 
             var sb = new StringBuilder();
-            sb.AppendLine($"ðŸ”Ž **Hasil Filter**");
-            sb.AppendLine($"Total: {result.OriginalRows:N0} baris â†’ filter {result.RowsAfterFilter:N0} â†’ tampil {result.RowsReturned}");
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine($" **Hasil Filter**");
+            sb.AppendLine($"Total: {result.OriginalRows:N0} baris  filter {result.RowsAfterFilter:N0}  tampil {result.RowsReturned}");
+            sb.AppendLine("");
 
             if (result.Data == null || result.Data.Count == 0)
             {
@@ -472,7 +507,7 @@ namespace StokBarangMAUI.Services
                     {
                         var s = val.ToString();
                         if (!string.IsNullOrWhiteSpace(s) && s != "null")
-                            sb.AppendLine($"  â€¢ {col}: {s}");
+                            sb.AppendLine($"   {col}: {s}");
                     }
                 }
                 i++;
@@ -487,7 +522,7 @@ namespace StokBarangMAUI.Services
             return sb.ToString().TrimEnd();
         }
 
-        // â”€â”€ Alias handling (natural language â†’ sheet query) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  Alias handling (natural language  sheet query) 
 
         /// <summary>
         /// Match message ke alias config dari GitHub. Kalau ada trigger yang match,
@@ -528,12 +563,12 @@ namespace StokBarangMAUI.Services
 
             if (string.IsNullOrEmpty(matched.SheetName))
             {
-                return (true, $"âš ï¸ Alias '{matchedTrigger}' tidak punya sheet_name. Cek config GitHub.");
+                return (true, $" Alias '{matchedTrigger}' tidak punya sheet_name. Cek config GitHub.");
             }
 
             try
             {
-                // Extract sisa kata setelah trigger â†’ jadi search keyword
+                // Extract sisa kata setelah trigger  jadi search keyword
                 var afterTrigger = ExtractAfterTrigger(msg, lower, matchedTrigger!);
                 var header_rows = matched.HeaderRows ?? 1;
                 var header_row_start = matched.HeaderRowStart ?? 1;
@@ -593,23 +628,35 @@ namespace StokBarangMAUI.Services
 
                 if (postFilter != null)
                 {
-                    // Fetch all then filter client-side (for outstanding/progress intent)
-                    Console.WriteLine($"[GDriveCmd] Fetching all rows then client post-filter");
-                    result = await _drive.FilterSheetAsync(
-                        matched.FileId!, new Dictionary<string, object>(filters), null,
-                        matched.SheetName, 200, header_rows, header_row_start);
-                    result = ApplyPostFilter(result, postFilter);
+                    // Use server-side smart filter (cached + efficient)
+                    Console.WriteLine($"[GDriveCmd] SmartFilter intent={postFilter.Mode} keyword={keyword.value}");
+                    result = await _drive.SmartFilterAsync(
+                        matched.FileId!,
+                        matched.SheetName,
+                        keyword.value,
+                        postFilter.Mode,
+                        matched.SearchColumns,
+                        limit,
+                        header_rows,
+                        header_row_start);
                 }
                 else if (keyword.column == "__any__" || (!isListAll && keyword.column == null))
                 {
-                    Console.WriteLine($"[GDriveCmd] Calling FilterAcrossColumns with keyword='{keyword.value}' limit={limit}");
-                    result = await FilterAcrossColumnsAsync(
-                        matched.FileId!, matched.SheetName, header_rows, header_row_start,
-                        keyword.value!, filters, limit, matched.SearchColumns);
+                    // Use smart filter for keyword search too (cached)
+                    Console.WriteLine($"[GDriveCmd] SmartFilter keyword='{keyword.value}' limit={limit}");
+                    result = await _drive.SmartFilterAsync(
+                        matched.FileId!,
+                        matched.SheetName,
+                        keyword.value,
+                        null,
+                        matched.SearchColumns,
+                        limit,
+                        header_rows,
+                        header_row_start);
                 }
                 else
                 {
-                    Console.WriteLine($"[GDriveCmd] Calling FilterSheet with filters={filters.Count} keys, limit={limit}");
+                    Console.WriteLine($"[GDriveCmd] FilterSheet with filters={filters.Count} keys, limit={limit}");
                     result = await _drive.FilterSheetAsync(
                         matched.FileId!, filters, null, matched.SheetName, limit, header_rows, header_row_start);
                 }
@@ -619,7 +666,7 @@ namespace StokBarangMAUI.Services
             }
             catch (Exception ex)
             {
-                return (true, $"âŒ Gagal ambil data {matched.Name ?? matchedTrigger}: {ex.Message}\n\nðŸ’¡ Cek server Python sedang jalan dan tunnel aktif.");
+                return (true, $" Gagal ambil data {matched.Name ?? matchedTrigger}: {ex.Message}\n\n Cek server Python sedang jalan dan tunnel aktif.");
             }
         }
 
@@ -653,53 +700,57 @@ namespace StokBarangMAUI.Services
             var sb = new StringBuilder();
             var title = alias.Name ?? alias.SheetName ?? "Data";
             if (!string.IsNullOrWhiteSpace(keyword))
-                sb.AppendLine($"ðŸ” **{title}** â€” cari: *{keyword}*");
+                sb.AppendLine($" **{title}**  cari: *{keyword}*");
             else
-                sb.AppendLine($"ðŸ“Š **{title}**");
+                sb.AppendLine($" **{title}**");
 
             if (!string.IsNullOrEmpty(alias.Description))
                 sb.AppendLine($"_{alias.Description}_");
 
-            sb.AppendLine("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
+            sb.AppendLine("");
 
             if (result == null || result.Data == null || result.Data.Count == 0)
             {
                 sb.AppendLine();
                 if (!string.IsNullOrWhiteSpace(keyword))
-                    sb.AppendLine($"âš ï¸ Tidak ada data yang cocok dengan '{keyword}' di sheet {alias.SheetName}.");
+                    sb.AppendLine($" Tidak ada data yang cocok dengan '{keyword}' di sheet {alias.SheetName}.");
                 else
-                    sb.AppendLine($"âš ï¸ Sheet {alias.SheetName} kosong.");
+                    sb.AppendLine($" Sheet {alias.SheetName} kosong.");
                 return sb.ToString().TrimEnd();
             }
 
-            sb.AppendLine($"Total: {result.OriginalRows:N0} baris â†’ filter {result.RowsAfterFilter:N0} â†’ tampil {result.RowsReturned}");
+            sb.AppendLine($"Total: {result.OriginalRows:N0} baris  filter {result.RowsAfterFilter:N0}  tampil {result.RowsReturned}");
 
             int i = 1;
+            int shown = 0;
             foreach (var row in result.Data.Take(20))
             {
+                // Early break kalau approaching cap
+                if (sb.Length > 850) break;
+
                 sb.AppendLine();
-                sb.AppendLine($"**#{i}**");
+                sb.AppendLine($"#{i}");
                 foreach (var kv in row)
                 {
                     if (kv.Value == null) continue;
                     var s = kv.Value.ToString()?.Trim();
                     if (string.IsNullOrWhiteSpace(s) || s == "null" || s.Equals("nan", StringComparison.OrdinalIgnoreCase))
                         continue;
-                    // Skip kolom dummy dari dedup / unnamed
                     if (kv.Key.StartsWith("_col_") || kv.Key == "_unnamed") continue;
-                    // Skip kolom duplikat hasil dedup (ending _2, _3, dll.)
                     if (System.Text.RegularExpressions.Regex.IsMatch(kv.Key, @"_\d+$")) continue;
-                    // Clean excessive whitespace in value
                     s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", " ").Trim();
-                    sb.AppendLine($"  â€¢ {kv.Key}: {s}");
+                    if (s.Length > 80) s = s.Substring(0, 77) + "...";
+                    sb.AppendLine($"  {kv.Key}: {s}");
+                    if (sb.Length > 900) break;
                 }
-                i++;
+                i++; shown++;
+                if (sb.Length > 900) break;
             }
 
-            if (result.RowsReturned > 20)
+            if (shown < result.Data.Count)
             {
                 sb.AppendLine();
-                sb.AppendLine($"_...(+{result.RowsReturned - 20} baris lainnya)_");
+                sb.AppendLine($"...(+{result.Data.Count - shown} baris lagi, ketik pertanyaan lebih spesifik)");
             }
 
             return sb.ToString().TrimEnd();
@@ -783,7 +834,7 @@ namespace StokBarangMAUI.Services
                         // Value bisa 0.5 (=50%) atau 50 atau 1 (=100%)
                         var pct = d <= 1.5 ? d * 100 : d;
                         if (progressPct == null || pct < progressPct.Value)
-                            progressPct = pct; // worst-case (min) — kalau salah satu kategori 0%, dianggap belum
+                            progressPct = pct; // worst-case (min)  kalau salah satu kategori 0%, dianggap belum
                     }
                 }
             }
@@ -809,7 +860,7 @@ namespace StokBarangMAUI.Services
         {
             var sb = new StringBuilder();
             var title = alias.Name ?? alias.SheetName ?? "Data";
-            sb.AppendLine($"ðŸ“Š **{title}**");
+            sb.AppendLine($" **{title}**");
             if (!string.IsNullOrEmpty(alias.Description))
                 sb.AppendLine($"_{alias.Description}_");
             sb.AppendLine();
@@ -824,7 +875,7 @@ namespace StokBarangMAUI.Services
             }
 
             sb.AppendLine();
-            sb.AppendLine("ðŸ’¡ Tinggal ketik salah satu di atas, atau kombinasikan sendiri (mis. `cek progres site 0244 kemarin`).");
+            sb.AppendLine(" Tinggal ketik salah satu di atas, atau kombinasikan sendiri (mis. `cek progres site 0244 kemarin`).");
             return sb.ToString().TrimEnd();
         }
 
@@ -840,8 +891,8 @@ namespace StokBarangMAUI.Services
             var today = DateTime.Today;
             var cultureID = new System.Globalization.CultureInfo("id-ID");
 
-            // Format tanggal di sheet Progress biasanya "Senin, 13 April" â€” kita tidak tahu pasti tahunnya.
-            // Pakai string matching ke format Indonesia. Kalau user bilang "kemarin" â†’ target text = "Minggu, 10 Mei"
+            // Format tanggal di sheet Progress biasanya "Senin, 13 April"  kita tidak tahu pasti tahunnya.
+            // Pakai string matching ke format Indonesia. Kalau user bilang "kemarin"  target text = "Minggu, 10 Mei"
             // Untuk 7 hari terakhir, kita pakai OR list (beberapa format).
 
             DateTime[]? dates = null;
@@ -858,7 +909,7 @@ namespace StokBarangMAUI.Services
             if (dates == null) return null;
 
             // Build list of string patterns to match (day+date format)
-            // Sheet biasa pakai "Senin, 13 April" â€” nama hari full + tgl + bulan
+            // Sheet biasa pakai "Senin, 13 April"  nama hari full + tgl + bulan
             var patterns = new List<string>();
             foreach (var d in dates)
             {
@@ -871,7 +922,7 @@ namespace StokBarangMAUI.Services
                 patterns.Add(d.ToString("yyyy-MM-dd"));
             }
 
-            // Return sebagai list â†’ filter pakai OR "isin" + partial match
+            // Return sebagai list  filter pakai OR "isin" + partial match
             return patterns;
         }
 
@@ -901,10 +952,10 @@ namespace StokBarangMAUI.Services
         }
 
         /// <summary>
-        /// Parse "site 0244" â†’ column=SITE ID, value=0244.
-        /// Parse "rute brebes" â†’ column=RUTE, value=brebes.
-        /// Parse "kabel" (no qualifier) â†’ column=__any__, value=kabel.
-        /// Parse "" â†’ no keyword.
+        /// Parse "site 0244"  column=SITE ID, value=0244.
+        /// Parse "rute brebes"  column=RUTE, value=brebes.
+        /// Parse "kabel" (no qualifier)  column=__any__, value=kabel.
+        /// Parse ""  no keyword.
         /// </summary>
         private static (string? column, string? value) ParseSearchKeyword(string text)
         {
@@ -950,7 +1001,7 @@ namespace StokBarangMAUI.Services
             return ("__any__", t);
         }
 
-        // â”€â”€ End alias handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //  End alias handling 
 
         private static bool ContainsDriveKeyword(string lower)
         {
@@ -1037,7 +1088,7 @@ namespace StokBarangMAUI.Services
 
         /// <summary>
         /// Split "file name[#sheet tab][@h2][@s3]" into components.
-        /// @hN â†’ header_rows. @sN â†’ header_row_start. Default 1, 1.
+        /// @hN  header_rows. @sN  header_row_start. Default 1, 1.
         /// </summary>
         private static (string file, string? sheet, int headerRows, int headerRowStart) ParseFileSheetHeader(string input)
         {
@@ -1107,23 +1158,23 @@ namespace StokBarangMAUI.Services
         private static string TypeIcon(string type)
         {
             var t = type.ToLowerInvariant();
-            if (t.Contains("folder")) return "ðŸ“";
-            if (t.Contains("sheet") || t.Contains("spreadsheet")) return "ðŸ“Š";
-            if (t.Contains("excel")) return "ðŸ“—";
-            if (t.Contains("csv")) return "ðŸ“„";
-            return "ðŸ“Ž";
+            if (t.Contains("folder")) return "";
+            if (t.Contains("sheet") || t.Contains("spreadsheet")) return "";
+            if (t.Contains("excel")) return "";
+            if (t.Contains("csv")) return "";
+            return "";
         }
 
         private string BuildNoFilesMessage(string nameQuery)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("ðŸ“­ Tidak ada file di Drive yang ter-share ke service account.");
+            sb.AppendLine(" Tidak ada file di Drive yang ter-share ke service account.");
             if (!string.IsNullOrWhiteSpace(nameQuery))
                 sb.AppendLine($"   (dengan nama mengandung: *{nameQuery}*)");
             sb.AppendLine();
-            sb.AppendLine("ðŸ’¡ **Cara pakai:**");
+            sb.AppendLine(" **Cara pakai:**");
             sb.AppendLine("1. Buka Google Drive kamu");
-            sb.AppendLine("2. Klik kanan folder/file â†’ **Share**");
+            sb.AppendLine("2. Klik kanan folder/file  **Share**");
             sb.AppendLine("3. Paste email service account (ketik `drive status` untuk lihat)");
             sb.AppendLine("4. Permission: **Viewer**");
             sb.AppendLine("5. Tunggu ~1 menit, coba lagi");
@@ -1132,34 +1183,341 @@ namespace StokBarangMAUI.Services
 
         private static string BuildDisabledHint()
         {
-            return "ðŸ”Œ **Google Drive Reader belum aktif.**\n\n" +
-                   "Buka **AI Settings** â†’ **Google Drive Reader** â†’ toggle ON & isi URL server.\n\n" +
+            return " **Google Drive Reader belum aktif.**\n\n" +
+                   "Buka **AI Settings**  **Google Drive Reader**  toggle ON & isi URL server.\n\n" +
                    "Default URL: `http://localhost:20129` (untuk laptop yang sama).\n\n" +
                    "Kalau dari HP, pakai IP laptop atau Cloudflare tunnel.";
         }
 
+        // ── Multi-step clarification (site yang belum dikerjakan, dll) ──
+
+        /// <summary>
+        /// Detect queries yang butuh clarification (stok 2-step, site yang belum, dll).
+        /// State JSON: {"flow":"stok","step":"gudang"} atau {"flow":"site_outstanding","step":"segment"}
+        /// </summary>
+        private (bool handled, string? response) TryMultiStepQuery(string lower)
+        {
+            // === STOK flow (2-step: gudang -> barang) ===
+            // Trigger harus spesifik biar tidak bentrok dengan alias "cek stok" yang single-step
+            if (Regex.IsMatch(lower, @"^(cek\s+)?stok\s*\?*$")
+                || Regex.IsMatch(lower, @"\bstok\s+(mana|apa|detail|detil)\b")
+                || Regex.IsMatch(lower, @"^stok$"))
+            {
+                Preferences.Set("gdrive_pending_clarif", "{\"flow\":\"stok\",\"step\":\"gudang\"}");
+                return (true, BuildStokGudangMenu());
+            }
+
+            // === SITE flow (belum / done) ===
+            if (Regex.IsMatch(lower, @"\bsite\s+(mana|yang|apa)?\s*(belum|outstanding|blm)\b")
+                || Regex.IsMatch(lower, @"\b(site|span|rute)\s+.{0,20}\s*(belum\s+dikerjakan|belum\s+selesai|outstanding)\b")
+                || Regex.IsMatch(lower, @"^(belum\s+dikerjakan|outstanding|yang\s+belum)$"))
+            {
+                Preferences.Set("gdrive_pending_clarif", "{\"flow\":\"site\",\"step\":\"segment\",\"intent\":\"outstanding\"}");
+                return (true, BuildSegmentMenu("site yang belum dikerjakan"));
+            }
+
+            if (Regex.IsMatch(lower, @"\bsite\s+(mana|yang)?\s*(selesai|done|100|komplit)\b")
+                || Regex.IsMatch(lower, @"^(selesai|done)$"))
+            {
+                Preferences.Set("gdrive_pending_clarif", "{\"flow\":\"site\",\"step\":\"segment\",\"intent\":\"done\"}");
+                return (true, BuildSegmentMenu("site yang sudah selesai"));
+            }
+
+            if (Regex.IsMatch(lower, @"\bprogres(s)?\s+(mana|yang)?\s*(belum|outstanding)\b"))
+            {
+                Preferences.Set("gdrive_pending_clarif", "{\"flow\":\"site\",\"step\":\"segment\",\"intent\":\"outstanding\"}");
+                return (true, BuildSegmentMenu("progres yang belum selesai"));
+            }
+
+            return (false, null);
+        }
+
+        /// <summary>Menu untuk pilih gudang/kota (step 1 stok flow).</summary>
+        private string BuildStokGudangMenu()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Stok di gudang mana?");
+            sb.AppendLine();
+            sb.AppendLine("1. BREBES");
+            sb.AppendLine("2. TASIKMALAYA");
+            sb.AppendLine("3. PURWOKERTO");
+            sb.AppendLine("4. SUKOHARJO");
+            sb.AppendLine("5. SRAGEN");
+            sb.AppendLine("6. GROBOGAN");
+            sb.AppendLine("7. SEMUA");
+            sb.AppendLine();
+            sb.AppendLine("Ketik nama atau angka.");
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Menu untuk pilih barang (step 2 stok flow).</summary>
+        private string BuildStokBarangMenu(string gudang)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Mau cek barang apa di {gudang}?");
+            sb.AppendLine();
+            sb.AppendLine("1. Cable 24C (kabel 24 core)");
+            sb.AppendLine("2. Tiang 7M");
+            sb.AppendLine("3. Tiang 9M");
+            sb.AppendLine("4. Closure 24C");
+            sb.AppendLine("5. ODP 8 Port");
+            sb.AppendLine("6. Strength Clamp 25/50");
+            sb.AppendLine("7. X Frame 80x80");
+            sb.AppendLine("8. SEMUA barang di gudang ini");
+            sb.AppendLine();
+            sb.AppendLine("Ketik nama atau angka.");
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Build menu 7 opsi segment untuk site flow.</summary>
+        private string BuildSegmentMenu(string topic)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Cek {topic} di segment mana?");
+            sb.AppendLine();
+            sb.AppendLine("1. BREBES (Cirebon - Brebes - Tegal - Pekalongan)");
+            sb.AppendLine("2. TASIKMALAYA (Tasikmalaya - Banjar)");
+            sb.AppendLine("3. PURWOKERTO (Banyumas - Cilacap - Kebumen)");
+            sb.AppendLine("4. SUKOHARJO (Klaten - Surakarta - Wonogiri)");
+            sb.AppendLine("5. SRAGEN (Sragen - Karang Anyar)");
+            sb.AppendLine("6. GROBOGAN (Blora)");
+            sb.AppendLine("7. SEMUA (overview)");
+            sb.AppendLine();
+            sb.AppendLine("Ketik nama atau angka.");
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Parse user's answer to segment/gudang number or name. Return normalized segment or null.</summary>
+        private string? ParseSegmentAnswer(string lower)
+        {
+            int? num = null;
+            if (int.TryParse(lower.Trim(), out var n)) num = n;
+
+            if (num == 1 || Regex.IsMatch(lower, @"\bbrebes\b|\btegal\b|\bpekalongan\b|\bcirebon\b|\bindramayu\b")) return "BREBES";
+            if (num == 2 || Regex.IsMatch(lower, @"\btasik(malaya)?\b|\bbanjar\b")) return "TASIKMALAYA";
+            if (num == 3 || Regex.IsMatch(lower, @"\bpurwokerto\b|\bbanyumas\b|\bcilacap\b|\bkebumen\b|\bpurworejo\b")) return "PURWOKERTO";
+            if (num == 4 || Regex.IsMatch(lower, @"\bsukoharjo\b|\bklaten\b|\bsurakarta\b|\bsolo\b|\bwonogiri\b")) return "SUKOHARJO";
+            if (num == 5 || Regex.IsMatch(lower, @"\bsragen\b|\bkarang\s*anyar\b")) return "SRAGEN";
+            if (num == 6 || Regex.IsMatch(lower, @"\bgrobogan\b|\bblora\b")) return "GROBOGAN";
+            if (num == 7 || Regex.IsMatch(lower, @"\b(semua|all|overview|total|semua\s*segment)\b")) return "ALL";
+            return null;
+        }
+
+        /// <summary>Parse user's answer to barang number or name. Return keyword for filter, or null.</summary>
+        private string? ParseBarangAnswer(string lower)
+        {
+            int? num = null;
+            if (int.TryParse(lower.Trim(), out var n)) num = n;
+
+            if (num == 1 || Regex.IsMatch(lower, @"\bcable\s*24|\bkabel\s*24|\b24c\b|\b24\s*core\b")) return "Cable 24C";
+            if (num == 2 || Regex.IsMatch(lower, @"\btiang\s*7|\b7\s*m(eter)?\b")) return "Tiang 7M";
+            if (num == 3 || Regex.IsMatch(lower, @"\btiang\s*9|\b9\s*m(eter)?\b")) return "Tiang 9M";
+            if (num == 4 || Regex.IsMatch(lower, @"\bclosure\b")) return "Closure";
+            if (num == 5 || Regex.IsMatch(lower, @"\bodp\b|\b8\s*port\b")) return "ODP";
+            if (num == 6 || Regex.IsMatch(lower, @"\bstrength\s*clamp\b|\bclamp\b")) return "Strength Clamp";
+            if (num == 7 || Regex.IsMatch(lower, @"\bx\s*frame\b|\bxframe\b|\b80\s*x\s*80\b")) return "X Frame";
+            if (num == 8 || Regex.IsMatch(lower, @"\b(semua|all|total)\b")) return "ALL";
+            return null;
+        }
+
+        /// <summary>Handler routing berdasarkan pending state JSON.</summary>
+        private async Task<(bool handled, string? response)> TryResolveClarificationAsync(string pendingJson, string msg, string lower)
+        {
+            // Parse pending state
+            Dictionary<string, string> state;
+            try
+            {
+                using var doc = JsonDocument.Parse(pendingJson);
+                state = new Dictionary<string, string>();
+                foreach (var p in doc.RootElement.EnumerateObject())
+                    state[p.Name] = p.Value.GetString() ?? "";
+            }
+            catch
+            {
+                return (false, null);
+            }
+
+            var flow = state.GetValueOrDefault("flow", "");
+            var step = state.GetValueOrDefault("step", "");
+
+            // === SITE flow ===
+            if (flow == "site" && step == "segment")
+            {
+                var segment = ParseSegmentAnswer(lower);
+                if (segment == null) return (false, null);
+                Preferences.Remove("gdrive_pending_clarif");
+                return await ExecuteSiteQueryAsync(segment, state.GetValueOrDefault("intent", "outstanding"));
+            }
+
+            // === STOK flow step 1: gudang ===
+            if (flow == "stok" && step == "gudang")
+            {
+                var gudang = ParseSegmentAnswer(lower);
+                if (gudang == null) return (false, null);
+
+                // Next step: tanya barang
+                var nextState = $"{{\"flow\":\"stok\",\"step\":\"barang\",\"gudang\":\"{gudang}\"}}";
+                Preferences.Set("gdrive_pending_clarif", nextState);
+                return (true, BuildStokBarangMenu(gudang));
+            }
+
+            // === STOK flow step 2: barang ===
+            if (flow == "stok" && step == "barang")
+            {
+                var gudang = state.GetValueOrDefault("gudang", "ALL");
+                var barang = ParseBarangAnswer(lower);
+                if (barang == null) return (false, null);
+                Preferences.Remove("gdrive_pending_clarif");
+                return await ExecuteStokQueryAsync(gudang, barang);
+            }
+
+            return (false, null);
+        }
+
+        /// <summary>Execute site outstanding/done query di sheet segment.</summary>
+        private async Task<(bool handled, string? response)> ExecuteSiteQueryAsync(string segment, string intent)
+        {
+            var sheetFileId = _drive.Aliases
+                .FirstOrDefault(a => a.SheetName == "RESUME BY SITE ID" || a.SheetName == "BREBES")?.FileId;
+            if (string.IsNullOrEmpty(sheetFileId))
+                return (true, "Config RESUME Progres FWA tidak ketemu.");
+
+            string targetSheet = segment == "ALL" ? "RESUME BY SITE ID" : segment;
+
+            try
+            {
+                var result = await _drive.SmartFilterAsync(
+                    sheetFileId, targetSheet,
+                    null, intent, null, 50, 2, 1);
+
+                var title = segment == "ALL"
+                    ? $"Site {(intent == "done" ? "sudah selesai" : "belum selesai")} (overview)"
+                    : $"Site {segment} - {(intent == "done" ? "sudah selesai" : "belum selesai")}";
+
+                var fakeAlias = new GDriveAlias { Name = title, SheetName = targetSheet };
+                return (true, FormatAliasResult(fakeAlias, intent == "done" ? "selesai" : "belum", result));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GDriveCmd] ExecuteSite error: {ex.Message}");
+                return (true, $"Gagal query: {ex.Message}");
+            }
+        }
+
+        /// <summary>Execute stok query di sheet Aktual Stok (crosstab).</summary>
+        private async Task<(bool handled, string? response)> ExecuteStokQueryAsync(string gudang, string barang)
+        {
+            var stokAlias = _drive.Aliases.FirstOrDefault(a => a.SheetName == "Aktual Stok");
+            if (stokAlias == null || string.IsNullOrEmpty(stokAlias.FileId))
+                return (true, "Config Aktual Stok tidak ketemu.");
+
+            var hr = stokAlias.HeaderRows ?? 3;
+            var hrs = stokAlias.HeaderRowStart ?? 1;
+
+            try
+            {
+                string? keyword = barang == "ALL" ? null : barang;
+                var result = await _drive.SmartFilterAsync(
+                    stokAlias.FileId, "Aktual Stok",
+                    keyword, null, new List<string> { "STOK GUDANG" }, 20, hr, hrs);
+
+                return (true, FormatStokCrosstab(gudang, barang, result));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GDriveCmd] ExecuteStok error: {ex.Message}");
+                return (true, $"Gagal query stok: {ex.Message}");
+            }
+        }
+
+        /// <summary>Format crosstab result dengan filter kolom ke gudang tertentu.</summary>
+        private string FormatStokCrosstab(string gudang, string barang, SheetFilterResult? result)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Stok {(barang == "ALL" ? "semua barang" : barang)} di {gudang}");
+            sb.AppendLine(new string('-', 30));
+
+            if (result == null || result.Data == null || result.Data.Count == 0)
+            {
+                sb.AppendLine("Tidak ada data.");
+                return sb.ToString().TrimEnd();
+            }
+
+            // Filter columns: only those matching gudang (or all if gudang=ALL)
+            bool matchGudangCol(string colName)
+            {
+                if (gudang == "ALL") return true;
+                var cn = colName.ToUpperInvariant();
+                return cn.Contains(gudang) ||
+                       (gudang == "BREBES" && (cn.Contains("CIREBON") || cn.Contains("TEGAL") || cn.Contains("PEKALONGAN"))) ||
+                       (gudang == "TASIKMALAYA" && cn.Contains("TASIK")) ||
+                       (gudang == "PURWOKERTO" && (cn.Contains("BANYUMAS") || cn.Contains("CILACAP") || cn.Contains("KEBUMEN"))) ||
+                       (gudang == "SUKOHARJO" && (cn.Contains("KLATEN") || cn.Contains("SURAKARTA") || cn.Contains("WONOGIRI"))) ||
+                       (gudang == "SRAGEN" && cn.Contains("KARANG")) ||
+                       (gudang == "GROBOGAN" && cn.Contains("BLORA"));
+            }
+
+            int rowIdx = 0;
+            foreach (var row in result.Data.Take(10))
+            {
+                // First column is material name
+                var materialName = row.FirstOrDefault().Value?.ToString()?.Trim() ?? "?";
+                sb.AppendLine();
+                sb.AppendLine($"- {materialName}");
+
+                foreach (var kv in row.Skip(1))
+                {
+                    if (!matchGudangCol(kv.Key)) continue;
+                    if (kv.Value == null) continue;
+                    var v = kv.Value.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(v) || v == "null" || v.Equals("nan", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    // Shorten long column names
+                    var colShort = kv.Key;
+                    colShort = Regex.Replace(colShort, @"\s*-\s*CIREBON.*SEMARANG", " - BREBES");
+                    colShort = Regex.Replace(colShort, @"\s*-\s*TASIKMALAYA\s*-\s*BANJAR", " - TASIK");
+                    colShort = Regex.Replace(colShort, @"\s*-\s*BANYUMAS.*PURWOREJO", " - PWT");
+                    colShort = Regex.Replace(colShort, @"\s*-\s*SUKOHARJO.*WONOGIRI", " - SKH");
+                    colShort = Regex.Replace(colShort, @"\s*-\s*SRAGEN.*KARANG\s*ANYAR", " - SRAGEN");
+                    colShort = Regex.Replace(colShort, @"\s*-\s*GROBOGAN\s*-\s*BLORA", " - GRBG");
+
+                    sb.AppendLine($"  {colShort}: {v}");
+                }
+                rowIdx++;
+                if (sb.Length > 900) break; // safety for cap
+            }
+
+            if (rowIdx < result.Data.Count)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"(+{result.Data.Count - rowIdx} material lagi)");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
         private static string BuildHelp()
         {
-            return "ðŸ“š **Commands Google Drive** (read-only)\n" +
-                   "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n\n" +
-                   "ðŸ” **Explore:**\n" +
-                   "â€¢ `drive status` â€” cek koneksi & service account\n" +
-                   "â€¢ `drive list` â€” list semua file yang ter-share\n" +
-                   "â€¢ `drive list BOQ` â€” cari file berdasarkan nama\n" +
-                   "â€¢ `isi folder <nama/id>` â€” lihat isi folder\n\n" +
-                   "ðŸ“Š **Baca Spreadsheet:**\n" +
-                   "â€¢ `drive sheet <nama>` â€” list tab di file\n" +
-                   "â€¢ `drive header <nama>` â€” lihat kolom + tipe data\n" +
-                   "â€¢ `drive summary <nama>` â€” statistik kolom\n\n" +
-                   "ðŸŽ¯ **Filter (hemat token!):**\n" +
-                   "â€¢ `drive filter BOQ FWA {\"segment\":\"FWA\",\"limit\":20}`\n" +
-                   "â€¢ `drive filter Report {\"tanggal\":{\"min\":\"2024-01-01\"},\"columns\":[\"Name\",\"Qty\"]}`\n\n" +
-                   "ðŸ’¡ **Tips:**\n" +
-                   "â€¢ Multi-sheet? Tambah `#nama-sheet`. Contoh: `drive header BOQ#Data FWA`\n" +
-                   "â€¢ Header 2 baris (group+sub)? Tambah `@h2`. Contoh: `drive header RESUME Progres FWA#GROBOGAN @h2`\n" +
-                   "â€¢ Contoh lengkap: `drive filter RESUME Progres FWA#GROBOGAN @h2 {\"RUTE\":\"0244\"}`\n" +
-                   "â€¢ Nama file fuzzy â€” partial match otomatis\n" +
-                   "â€¢ Kolom di filter fuzzy-match (tgl = tanggal)";
+            return " **Commands Google Drive** (read-only)\n" +
+                   "\n\n" +
+                   " **Explore:**\n" +
+                   " `drive status`  cek koneksi & service account\n" +
+                   " `drive list`  list semua file yang ter-share\n" +
+                   " `drive list BOQ`  cari file berdasarkan nama\n" +
+                   " `isi folder <nama/id>`  lihat isi folder\n\n" +
+                   " **Baca Spreadsheet:**\n" +
+                   " `drive sheet <nama>`  list tab di file\n" +
+                   " `drive header <nama>`  lihat kolom + tipe data\n" +
+                   " `drive summary <nama>`  statistik kolom\n\n" +
+                   " **Filter (hemat token!):**\n" +
+                   " `drive filter BOQ FWA {\"segment\":\"FWA\",\"limit\":20}`\n" +
+                   " `drive filter Report {\"tanggal\":{\"min\":\"2024-01-01\"},\"columns\":[\"Name\",\"Qty\"]}`\n\n" +
+                   " **Tips:**\n" +
+                   " Multi-sheet? Tambah `#nama-sheet`. Contoh: `drive header BOQ#Data FWA`\n" +
+                   " Header 2 baris (group+sub)? Tambah `@h2`. Contoh: `drive header RESUME Progres FWA#GROBOGAN @h2`\n" +
+                   " Contoh lengkap: `drive filter RESUME Progres FWA#GROBOGAN @h2 {\"RUTE\":\"0244\"}`\n" +
+                   " Nama file fuzzy  partial match otomatis\n" +
+                   " Kolom di filter fuzzy-match (tgl = tanggal)";
         }
     }
 }

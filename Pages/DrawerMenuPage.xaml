@@ -7,7 +7,7 @@
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- ── Header ── -->
+        <!--  Header  -->
         <Grid Grid.Row="0" BackgroundColor="{DynamicResource DrawerHeaderBg}" Padding="20,52,20,20">
             <Grid ColumnDefinitions="*,Auto">
                 <VerticalStackLayout Spacing="3">
@@ -27,13 +27,13 @@
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnClose"/>
                     </Border.GestureRecognizers>
-                    <Label Text="✕" FontSize="14" FontAttributes="Bold"
+                    <Label Text="" FontSize="14" FontAttributes="Bold"
                            TextColor="{DynamicResource TextMuted}" HorizontalOptions="Center"/>
                 </Border>
             </Grid>
         </Grid>
 
-        <!-- ── Nav items ── -->
+        <!--  Nav items  -->
         <ScrollView Grid.Row="1" BackgroundColor="{DynamicResource DrawerBg}">
             <VerticalStackLayout Padding="16,12" Spacing="6">
 
@@ -51,7 +51,7 @@
                         <Border Grid.Column="0" BackgroundColor="#1E3A6E"
                                 StrokeShape="RoundRectangle 10" Stroke="Transparent"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="📋" FontSize="20"
+                            <Label Text="" FontSize="20"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -60,7 +60,7 @@
                             <Label Text="Riwayat keluar-masuk material" FontSize="11"
                                    TextColor="{DynamicResource TextMuted}"/>
                         </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="›" FontSize="22"
+                        <Label Grid.Column="2" Text="" FontSize="22"
                                TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                     </Grid>
                 </Border>
@@ -76,7 +76,7 @@
                         <Border Grid.Column="0" BackgroundColor="#0E4429"
                                 StrokeShape="RoundRectangle 10" Stroke="Transparent"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="📡" FontSize="20"
+                            <Label Text="" FontSize="20"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -85,7 +85,7 @@
                             <Label Text="Progres pemasangan per segment" FontSize="11"
                                    TextColor="{DynamicResource TextMuted}"/>
                         </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="›" FontSize="22"
+                        <Label Grid.Column="2" Text="" FontSize="22"
                                TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                     </Grid>
                 </Border>
@@ -101,7 +101,7 @@
                         <Border Grid.Column="0" BackgroundColor="#3B0764"
                                 StrokeShape="RoundRectangle 10" Stroke="Transparent"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="📦" FontSize="20"
+                            <Label Text="" FontSize="20"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -110,7 +110,7 @@
                             <Label Text="Stok material per homebase / MRF" FontSize="11"
                                    TextColor="{DynamicResource TextMuted}"/>
                         </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="›" FontSize="22"
+                        <Label Grid.Column="2" Text="" FontSize="22"
                                TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                     </Grid>
                 </Border>
@@ -126,7 +126,7 @@
                         <Border Grid.Column="0" BackgroundColor="#431407"
                                 StrokeShape="RoundRectangle 10" Stroke="Transparent"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="🏭" FontSize="20"
+                            <Label Text="" FontSize="20"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -135,7 +135,7 @@
                             <Label Text="Detail stok per wilayah gudang" FontSize="11"
                                    TextColor="{DynamicResource TextMuted}"/>
                         </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="›" FontSize="22"
+                        <Label Grid.Column="2" Text="" FontSize="22"
                                TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                     </Grid>
                 </Border>
@@ -151,7 +151,7 @@
                         <Border Grid.Column="0" BackgroundColor="#1E40AF"
                                 StrokeShape="RoundRectangle 10" Stroke="Transparent"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="✏️" FontSize="20"
+                            <Label Text="" FontSize="20"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -160,7 +160,7 @@
                             <Label Text="Surat Jalan + Progress" FontSize="11"
                                    TextColor="{DynamicResource TextMuted}"/>
                         </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="›" FontSize="22"
+                        <Label Grid.Column="2" Text="" FontSize="22"
                                TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                     </Grid>
                 </Border>
@@ -176,7 +176,7 @@
                         <Border Grid.Column="0" BackgroundColor="#7C2D12"
                                 StrokeShape="RoundRectangle 10" Stroke="Transparent"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="📸" FontSize="20"
+                            <Label Text="" FontSize="20"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -185,7 +185,7 @@
                             <Label Text="Foto + caption (multi-foto carousel)" FontSize="11"
                                    TextColor="{DynamicResource TextMuted}"/>
                         </VerticalStackLayout>
-                        <Label Grid.Column="2" Text="›" FontSize="22"
+                        <Label Grid.Column="2" Text="" FontSize="22"
                                TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                     </Grid>
                 </Border>
@@ -193,7 +193,7 @@
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- ── Bottom actions ── -->
+        <!--  Bottom actions  -->
         <VerticalStackLayout Grid.Row="2" BackgroundColor="{DynamicResource DrawerBottomBg}"
                              Padding="16,12" Spacing="8">
             <BoxView HeightRequest="1" Color="{DynamicResource DrawerItemBorder}" Margin="0,0,0,4"/>
@@ -206,7 +206,7 @@
                     <TapGestureRecognizer Tapped="OnBackToProjects"/>
                 </Border.GestureRecognizers>
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-                    <Label Text="🏠" FontSize="18" VerticalOptions="Center"/>
+                    <Label Text="" FontSize="18" VerticalOptions="Center"/>
                     <Label Grid.Column="1" Text="Ganti Project"
                            FontSize="14" FontAttributes="Bold"
                            TextColor="{DynamicResource TextPrimary}" VerticalOptions="Center"/>
@@ -221,7 +221,7 @@
                     <TapGestureRecognizer Tapped="OnNavAbout"/>
                 </Border.GestureRecognizers>
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                    <Label Text="ℹ️" FontSize="18" VerticalOptions="Center"/>
+                    <Label Text="" FontSize="18" VerticalOptions="Center"/>
                     <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
                         <Label Text="About Aplikasi"
                                FontSize="14" FontAttributes="Bold"
@@ -229,7 +229,7 @@
                         <Label Text="Versi, config GitHub, diagnostics"
                                FontSize="11" TextColor="{DynamicResource TextMuted}"/>
                     </VerticalStackLayout>
-                    <Label Grid.Column="2" Text="›" FontSize="22"
+                    <Label Grid.Column="2" Text="" FontSize="22"
                            TextColor="{DynamicResource BorderClr}" VerticalOptions="Center"/>
                 </Grid>
             </Border>

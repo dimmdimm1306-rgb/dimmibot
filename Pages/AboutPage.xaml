@@ -17,12 +17,12 @@
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnBackClicked"/>
                     </Border.GestureRecognizers>
-                    <Label Text="←" FontSize="24" FontAttributes="Bold" TextColor="White"
+                    <Label Text="" FontSize="24" FontAttributes="Bold" TextColor="White"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                 </Border>
 
                 <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                    <Label Text="ℹ️ About Aplikasi" TextColor="White"
+                    <Label Text=" About Aplikasi" TextColor="White"
                            FontSize="18" FontAttributes="Bold"/>
                     <Label Text="Info versi, config, dan diagnostics" TextColor="{DynamicResource HeaderSubtitle}"
                            FontSize="11"/>
@@ -34,7 +34,7 @@
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnRefresh"/>
                     </Border.GestureRecognizers>
-                    <Label Text="⟳" FontSize="20" FontAttributes="Bold" TextColor="White"
+                    <Label Text="" FontSize="20" FontAttributes="Bold" TextColor="White"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                 </Border>
             </Grid>
@@ -48,7 +48,7 @@
                 <Border BackgroundColor="#1E3A6E"
                         StrokeShape="RoundRectangle 14" Padding="16">
                     <VerticalStackLayout Spacing="6">
-                        <Label Text="📱 APLIKASI" TextColor="#93C5FD" FontSize="10" FontAttributes="Bold"/>
+                        <Label Text=" APLIKASI" TextColor="#93C5FD" FontSize="10" FontAttributes="Bold"/>
                         <Label x:Name="LblAppName" Text="StokBarangMAUI" TextColor="White"
                                FontSize="20" FontAttributes="Bold"/>
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="2">
@@ -68,7 +68,7 @@
                         Padding="14">
                     <VerticalStackLayout Spacing="10">
                         <Grid ColumnDefinitions="*,Auto">
-                            <Label Grid.Column="0" Text="🌐 Remote Config (GitHub)"
+                            <Label Grid.Column="0" Text=" Remote Config (GitHub)"
                                    TextColor="{DynamicResource TextPrimary}"
                                    FontSize="14" FontAttributes="Bold" VerticalOptions="Center"/>
                             <Border Grid.Column="1" BackgroundColor="#6366F1"
@@ -76,7 +76,7 @@
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnFetchGithub"/>
                                 </Border.GestureRecognizers>
-                                <Label Text="⬇ Fetch" TextColor="White" FontSize="11" FontAttributes="Bold"/>
+                                <Label Text=" Fetch" TextColor="White" FontSize="11" FontAttributes="Bold"/>
                             </Border>
                         </Grid>
 
@@ -117,7 +117,7 @@
                             <Label Grid.Row="5" Grid.Column="1" x:Name="LblDriveEnabled" Text="-" TextColor="{DynamicResource TextPrimary}" FontSize="12"/>
                         </Grid>
 
-                        <Label Text="💡 Tap alamat untuk copy ke clipboard"
+                        <Label Text=" Tap alamat untuk copy ke clipboard"
                                TextColor="{DynamicResource TextMuted}" FontSize="10"/>
                     </VerticalStackLayout>
                 </Border>
@@ -129,7 +129,7 @@
                         Padding="14">
                     <VerticalStackLayout Spacing="10">
                         <Grid ColumnDefinitions="*,Auto">
-                            <Label Grid.Column="0" Text="🩺 Live Diagnostics"
+                            <Label Grid.Column="0" Text=" Live Diagnostics"
                                    TextColor="{DynamicResource TextPrimary}"
                                    FontSize="14" FontAttributes="Bold" VerticalOptions="Center"/>
                             <Border Grid.Column="1" BackgroundColor="#10B981"
@@ -137,11 +137,11 @@
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnRunDiagnostics"/>
                                 </Border.GestureRecognizers>
-                                <Label Text="▶ Run" TextColor="White" FontSize="11" FontAttributes="Bold"/>
+                                <Label Text=" Run" TextColor="White" FontSize="11" FontAttributes="Bold"/>
                             </Border>
                         </Grid>
 
-                        <Label x:Name="LblDiagnostics" Text="Klik ▶ Run untuk test koneksi"
+                        <Label x:Name="LblDiagnostics" Text="Klik  Run untuk test koneksi"
                                TextColor="{DynamicResource TextSecond}" FontSize="12"
                                LineBreakMode="WordWrap"/>
                     </VerticalStackLayout>
@@ -153,7 +153,7 @@
                         Stroke="{DynamicResource BorderClr}"
                         Padding="14">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="💾 Local Preferences"
+                        <Label Text=" Local Preferences"
                                TextColor="{DynamicResource TextPrimary}"
                                FontSize="14" FontAttributes="Bold"/>
 
@@ -176,7 +176,7 @@
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnResetPreferences"/>
                             </Border.GestureRecognizers>
-                            <Label Text="🗑 Reset Local Preferences (pakai config GitHub)" 
+                            <Label Text=" Reset Local Preferences (pakai config GitHub)" 
                                    TextColor="White" FontSize="12" FontAttributes="Bold"
                                    HorizontalOptions="Center"/>
                         </Border>
@@ -189,7 +189,7 @@
                         Stroke="{DynamicResource BorderClr}"
                         Padding="14">
                     <VerticalStackLayout Spacing="8">
-                        <Label Text="📟 Device"
+                        <Label Text=" Device"
                                TextColor="{DynamicResource TextPrimary}"
                                FontSize="14" FontAttributes="Bold"/>
                         <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">

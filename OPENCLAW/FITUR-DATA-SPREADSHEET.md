@@ -9,27 +9,35 @@ Tambahkan di file `.env`:
 
 ```env
 DATA_SHEET_ID=1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg
-DATA_SHEET_NAME=Sheet1
+# Multi-tab: comma-separated. Override DATA_SHEET_NAME.
+DATA_SHEET_TABS=Surat Jalan,Progress,Stok,Aktual Stok
+DATA_SHEET_NAME=Progress
 DATA_UPDATE_INTERVAL=86400000
+
+# Reference (belum dipakai aktif, untuk dokumentasi/konteks)
+RESUME_SHEET_ID=1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_
+SJ_DRIVE_FOLDER_ID=1LCfHKCK5hm_f4iqyOXuUo5o4xtBgmMAE
 ```
 
 ### Penjelasan:
 - `DATA_SHEET_ID`: ID spreadsheet yang berisi data (dari URL spreadsheet)
-- `DATA_SHEET_NAME`: Nama sheet/tab (default: Sheet1)
+- `DATA_SHEET_TABS`: Daftar tab yang dibaca, dipisah koma. Kalau kosong, fallback ke `DATA_SHEET_NAME`.
+- `DATA_SHEET_NAME`: (legacy) Nama tab tunggal, dipakai kalau `DATA_SHEET_TABS` kosong.
 - `DATA_UPDATE_INTERVAL`: Interval update dalam milidetik (default: 86400000 = 24 jam)
+- `RESUME_SHEET_ID`: Spreadsheet resume (master site list) — belum dipakai aktif, tersimpan untuk referensi.
+- `SJ_DRIVE_FOLDER_ID`: Drive folder untuk foto SJ — belum dipakai aktif.
 
 ## Format Spreadsheet
 
-Bot akan membaca kolom A-I dengan header:
-- **A**: Tanggal
-- **B**: Segment
-- **C**: Rute
-- **D**: Nama Barang
-- **E**: Progress
-- **F**: Keterangan
-- **G**: Homebase
-- **H**: Kab/Kota
-- **I**: Site ID
+Bot membaca tiap tab di `DATA_SHEET_TABS` secara generik (kolom A–Z), baris pertama dianggap header. Hasil search di-group per tab dan tiap baris ditampilkan dengan label header dinamis — jadi tidak ada skema kaku.
+
+Tab default yang dibaca dari spreadsheet utama:
+- **Surat Jalan** (GID 1213940465) — Tanggal, Segment, Nama Barang, QTY, Jenis, NO_SJ, Pengirim, Penerima, Keterangan, Drive
+- **Progress** (GID 1637178585) — Tanggal, Segment, Rute, Nama Barang, Progres, Keterangan, Homebase, Kab/Kota, Site ID
+- **Stok** (GID 1736939395) — Stok MRF
+- **Aktual Stok** (GID 1692657123) — Aktual stok gudang
+
+Catatan: kalau tab name di `.env` salah (case-sensitive!), bot akan log `❌ Tab "X" gagal: ...` saat startup — koreksi nama tab di `.env` sesuai persis dengan tab di Google Sheets.
 
 ## Cara Menggunakan
 
@@ -97,3 +105,4 @@ Bot masih melakukan initial fetch. Tunggu beberapa detik dan coba lagi.
 2. **Format**: Pastikan header di baris pertama sesuai format
 3. **Performance**: Jika data >1000 baris, pertimbangkan untuk filter di spreadsheet atau gunakan query lebih spesifik
 4. **Rate Limit**: Google Sheets API memiliki rate limit, jangan set interval terlalu kecil
+
