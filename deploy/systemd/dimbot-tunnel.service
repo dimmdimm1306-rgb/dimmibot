@@ -1,0 +1,18 @@
+[Unit]
+Description=Cloudflare Named Tunnel for Dimbot (ai.dimmi.online + drive.dimmi.online)
+After=network.target dimbot-ai.service dimbot-drive.service
+Wants=dimbot-ai.service dimbot-drive.service
+
+[Service]
+Type=simple
+User=dimbot
+Group=dimbot
+WorkingDirectory=/home/dimbot
+ExecStart=/usr/local/bin/cloudflared --config /home/dimbot/.cloudflared/config.yml tunnel run dimbot-prod
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/dimbot/logs/tunnel.log
+StandardError=append:/home/dimbot/logs/tunnel.log
+
+[Install]
+WantedBy=multi-user.target

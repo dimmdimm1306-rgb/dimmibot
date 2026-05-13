@@ -1,0 +1,9 @@
+tunnel: fcd7baee-1860-4aa3-b04d-50b7d8f37aaa
+credentials-file: /home/dimbot/.cloudflared/fcd7baee-1860-4aa3-b04d-50b7d8f37aaa.json
+
+ingress:
+  - hostname: ai.dimmi.online
+    service: http://localhost:8080
+  - hostname: drive.dimmi.online
+    service: http://localhost:20129
+  - service: http_status:404

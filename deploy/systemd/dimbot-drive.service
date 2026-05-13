@@ -1,0 +1,28 @@
+[Unit]
+Description=Dimbot GDrive Reader (FastAPI + MCP)
+After=network.target
+
+[Service]
+Type=simple
+User=dimbot
+Group=dimbot
+WorkingDirectory=/home/dimbot/drive-reader
+Environment="GOOGLE_APPLICATION_CREDENTIALS=/home/dimbot/drive-reader/credentials/gdrive-credentials.json"
+Environment="PYTHONIOENCODING=utf-8"
+Environment="GDRIVE_PORT=20129"
+ExecStart=/home/dimbot/drive-reader/venv/bin/python -m mcp_gdrive_filter.http_server
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/dimbot/logs/drive-reader.log
+StandardError=append:/home/dimbot/logs/drive-reader.log
+LimitNOFILE=65536
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/dimbot
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

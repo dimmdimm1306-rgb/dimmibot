@@ -1,0 +1,26 @@
+[Unit]
+Description=Dimbot AI Proxy (OpenClaw)
+After=network.target
+
+[Service]
+Type=simple
+User=dimbot
+Group=dimbot
+WorkingDirectory=/home/dimbot/ai-server
+EnvironmentFile=/home/dimbot/ai-server/.env
+ExecStart=/usr/bin/node src/api-server.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/dimbot/logs/ai-server.log
+StandardError=append:/home/dimbot/logs/ai-server.log
+LimitNOFILE=65536
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/dimbot
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target

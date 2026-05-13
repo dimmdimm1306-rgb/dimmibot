@@ -1,0 +1,17 @@
+[Unit]
+Description=Cloudflare Tunnel for Dimbot Drive Reader
+After=network.target dimbot-drive.service
+Requires=dimbot-drive.service
+
+[Service]
+Type=simple
+User=dimbot
+Group=dimbot
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --url http://localhost:20129
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/dimbot/logs/tunnel-drive.log
+StandardError=append:/home/dimbot/logs/tunnel-drive.log
+
+[Install]
+WantedBy=multi-user.target
