@@ -79,6 +79,10 @@ namespace StokBarangMAUI.Services
             // === Detect multi-step queries (site belum / stok / dll) ===
             if (_drive.IsEnabled)
             {
+                // Direct city query: "cek pekerjaan di [kota]" / "yang belum di [kota]"
+                var cityResult = await TryDirectCityWorkQueryAsync(lower);
+                if (cityResult.handled) return (true, CapResponse(cityResult.response));
+
                 var multiStepResult = TryMultiStepQuery(lower);
                 if (multiStepResult.handled) return (true, CapResponse(multiStepResult.response));
             }
@@ -1192,6 +1196,60 @@ namespace StokBarangMAUI.Services
         // ── Multi-step clarification (site yang belum dikerjakan, dll) ──
 
         /// <summary>
+        /// Direct city work query: "cek pekerjaan di brebes", "yang belum di sragen", "pekerjaan belum di klaten"
+        /// Langsung execute tanpa multi-step kalau kota bisa di-resolve.
+        /// </summary>
+        private async Task<(bool handled, string? response)> TryDirectCityWorkQueryAsync(string lower)
+        {
+            // Pattern: "cek pekerjaan di [kota]" / "pekerjaan belum di [kota]" / "yang belum di [kota]"
+            var m = Regex.Match(lower,
+                @"\b(cek\s+)?(pekerjaan|kerja(an)?|rute|site)\s*(yang\s+)?(belum\s*)?(di|daerah|kota|kab)\s+(?<city>[a-z\s]{3,25})",
+                RegexOptions.IgnoreCase);
+            if (!m.Success)
+            {
+                m = Regex.Match(lower,
+                    @"\b(yang\s+)?belum(\s+dikerjakan|\s+selesai)?\s+(di|daerah|kota)\s+(?<city>[a-z\s]{3,25})",
+                    RegexOptions.IgnoreCase);
+            }
+            if (!m.Success)
+            {
+                // "pekerjaan [kota]" tanpa "di"
+                m = Regex.Match(lower,
+                    @"\b(cek\s+)?(pekerjaan|kerja(an)?)\s+(belum\s+)?(di\s+)?(?<city>brebes|tasik(malaya)?|purwokerto|sukoharjo|klaten|surakarta|solo|sragen|grobogan|blora|tegal|banyumas|cilacap)",
+                    RegexOptions.IgnoreCase);
+            }
+            if (!m.Success) return (false, null);
+
+            var city = m.Groups["city"].Value.Trim().TrimEnd('?', '!', '.', ',').Trim();
+            var segment = MapCityToSegment(city);
+            if (segment == null) return (false, null);
+
+            // Determine intent: default "outstanding" (belum), unless "selesai/done" in message
+            var intent = Regex.IsMatch(lower, @"\b(selesai|done|sudah|100)\b") ? "done" : "outstanding";
+
+            return await ExecuteSiteQueryAsync(segment, intent);
+        }
+
+        /// <summary>Map city name (lowercase) to segment name used in sheet.</summary>
+        private static string? MapCityToSegment(string city)
+        {
+            var c = city.ToLowerInvariant().Trim();
+            if (Regex.IsMatch(c, @"\bbrebes\b|\btegal\b|\bpekalongan\b|\bcirebon\b|\bindramayu\b")) return "BREBES";
+            if (Regex.IsMatch(c, @"\btasik(malaya)?\b|\bbanjar\b")) return "TASIKMALAYA";
+            if (Regex.IsMatch(c, @"\bpurwokerto\b|\bbanyumas\b|\bcilacap\b|\bkebumen\b|\bpurworejo\b")) return "PURWOKERTO";
+            if (Regex.IsMatch(c, @"\bsukoharjo\b|\bklaten\b|\bsurakarta\b|\bsolo\b|\bwonogiri\b")) return "SUKOHARJO";
+            if (Regex.IsMatch(c, @"\bsragen\b|\bkarang\s*anyar\b")) return "SRAGEN";
+            if (Regex.IsMatch(c, @"\bgrobogan\b|\bblora\b")) return "GROBOGAN";
+            if (Regex.IsMatch(c, @"\b(semua|all)\b")) return "ALL";
+            // Fallback: coba exact match uppercase
+            var upper = c.ToUpperInvariant();
+            var known = new[] { "BREBES", "TASIKMALAYA", "PURWOKERTO", "SUKOHARJO", "SRAGEN", "GROBOGAN" };
+            foreach (var k in known)
+                if (upper.Contains(k)) return k;
+            return null;
+        }
+
+        /// <summary>
         /// Detect queries yang butuh clarification (stok 2-step, site yang belum, dll).
         /// State JSON: {"flow":"stok","step":"gudang"} atau {"flow":"site_outstanding","step":"segment"}
         /// </summary>
@@ -1374,34 +1432,150 @@ namespace StokBarangMAUI.Services
             return (false, null);
         }
 
-        /// <summary>Execute site outstanding/done query di sheet segment.</summary>
+        /// <summary>Execute site outstanding/done query di sheet RESUME BY SITE ID.</summary>
         private async Task<(bool handled, string? response)> ExecuteSiteQueryAsync(string segment, string intent)
         {
             var sheetFileId = _drive.Aliases
                 .FirstOrDefault(a => a.SheetName == "RESUME BY SITE ID" || a.SheetName == "BREBES")?.FileId;
             if (string.IsNullOrEmpty(sheetFileId))
-                return (true, "Config RESUME Progres FWA tidak ketemu.");
-
-            string targetSheet = segment == "ALL" ? "RESUME BY SITE ID" : segment;
+                return (true, "⚠️ Config RESUME Progres FWA tidak ketemu.");
 
             try
             {
-                var result = await _drive.SmartFilterAsync(
-                    sheetFileId, targetSheet,
-                    null, intent, null, 50, 2, 1);
+                // Fetch dari RESUME BY SITE ID dengan kolom yang relevan
+                var columns = new[]
+                {
+                    "Rute", "KAB/KOTA",
+                    "Penarikan Kabel 24 core adss - Plan",
+                    "Penarikan Kabel 24 core adss - Progress",
+                    "Penanaman Tiang 7m 24Core - Plan",
+                    "Penanaman Tiang 7m 24Core - Progress",
+                    "Penanaman Tiang 9m 24Core - Plan",
+                    "Penanaman Tiang 9m 24Core - Progress"
+                };
 
-                var title = segment == "ALL"
-                    ? $"Site {(intent == "done" ? "sudah selesai" : "belum selesai")} (overview)"
-                    : $"Site {segment} - {(intent == "done" ? "sudah selesai" : "belum selesai")}";
+                // Filter by KAB/KOTA kalau segment bukan ALL
+                IDictionary<string, object>? filters = null;
+                if (segment != "ALL")
+                {
+                    // Segment name = kota (BREBES, SRAGEN, dll)
+                    filters = new Dictionary<string, object> { { "KAB/KOTA", segment } };
+                }
 
-                var fakeAlias = new GDriveAlias { Name = title, SheetName = targetSheet };
-                return (true, FormatAliasResult(fakeAlias, intent == "done" ? "selesai" : "belum", result));
+                var result = await _drive.FilterSheetAsync(
+                    sheetFileId,
+                    filters: filters,
+                    columns: columns,
+                    sheetName: "RESUME BY SITE ID",
+                    limit: 200,
+                    headerRows: 2,
+                    headerRowStart: 1);
+
+                if (result?.Data == null || result.Data.Count == 0)
+                    return (true, $"📭 Tidak ada data di RESUME BY SITE ID{(segment != "ALL" ? $" untuk {segment}" : "")}.");
+
+                // Client-side filter: belum dikerjakan = semua Progress == 0
+                var filtered = new List<Dictionary<string, object>>();
+                foreach (var row in result.Data)
+                {
+                    var progKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Progress");
+                    var progT7 = GetNumericValue(row, "Penanaman Tiang 7m 24Core - Progress");
+                    var progT9 = GetNumericValue(row, "Penanaman Tiang 9m 24Core - Progress");
+
+                    bool belumDikerjakan = progKabel <= 0 && progT7 <= 0 && progT9 <= 0;
+                    bool sudahDikerjakan = progKabel > 0 || progT7 > 0 || progT9 > 0;
+
+                    if (intent == "done" && sudahDikerjakan)
+                        filtered.Add(row);
+                    else if (intent != "done" && belumDikerjakan)
+                        filtered.Add(row);
+                }
+
+                // Format output rapi
+                return (true, FormatSiteWorkResult(segment, intent, filtered, result.Data.Count));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[GDriveCmd] ExecuteSite error: {ex.Message}");
-                return (true, $"Gagal query: {ex.Message}");
+                return (true, $"❌ Gagal query: {ex.Message}");
             }
+        }
+
+        /// <summary>Get numeric value from row dict, return 0 if null/empty/NaN.</summary>
+        private static double GetNumericValue(Dictionary<string, object> row, string key)
+        {
+            if (!row.TryGetValue(key, out var val) || val == null) return 0;
+            var s = val.ToString()?.Trim();
+            if (string.IsNullOrWhiteSpace(s) || s == "null" || s.Equals("nan", StringComparison.OrdinalIgnoreCase))
+                return 0;
+            if (double.TryParse(s.Replace(",", "."),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var d))
+                return d;
+            return 0;
+        }
+
+        /// <summary>Format hasil query pekerjaan belum/sudah dikerjakan — rapi, ringkas.</summary>
+        private static string FormatSiteWorkResult(string segment, string intent, List<Dictionary<string, object>> rows, int totalRows)
+        {
+            var sb = new StringBuilder();
+            var statusLabel = intent == "done" ? "sudah dikerjakan ✅" : "belum dikerjakan 🔴";
+            var title = segment == "ALL"
+                ? $"Pekerjaan {statusLabel}"
+                : $"Pekerjaan di {segment} — {statusLabel}";
+
+            sb.AppendLine($"📋 **{title}**");
+            sb.AppendLine($"({rows.Count} dari {totalRows} rute)");
+            sb.AppendLine();
+
+            if (rows.Count == 0)
+            {
+                if (intent == "done")
+                    sb.AppendLine("Belum ada rute yang dikerjakan.");
+                else
+                    sb.AppendLine("✅ Semua rute sudah dikerjakan!");
+                return sb.ToString().TrimEnd();
+            }
+
+            // Header tabel
+            sb.AppendLine("```");
+            sb.AppendLine($"{"Rute",-30} {"Kota",-12} {"Kabel(m)",-9} {"T7",-4} {"T9",-4}");
+            sb.AppendLine(new string('─', 62));
+
+            int shown = 0;
+            foreach (var row in rows.Take(25))
+            {
+                var rute = GetStringValue(row, "Rute");
+                var kota = GetStringValue(row, "KAB/KOTA");
+                var planKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Plan");
+                var planT7 = GetNumericValue(row, "Penanaman Tiang 7m 24Core - Plan");
+                var planT9 = GetNumericValue(row, "Penanaman Tiang 9m 24Core - Plan");
+
+                // Truncate rute name kalau kepanjangan
+                if (rute.Length > 28) rute = rute.Substring(0, 25) + "...";
+                if (kota.Length > 11) kota = kota.Substring(0, 8) + "...";
+
+                sb.AppendLine($"{rute,-30} {kota,-12} {planKabel,8:N0} {planT7,4:N0} {planT9,4:N0}");
+                shown++;
+            }
+
+            sb.AppendLine("```");
+
+            if (rows.Count > shown)
+                sb.AppendLine($"...+{rows.Count - shown} rute lagi");
+
+            sb.AppendLine();
+            sb.AppendLine("💡 Kabel(m) = Plan penarikan kabel, T7/T9 = Plan tiang 7m/9m");
+
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Get string value from row dict safely.</summary>
+        private static string GetStringValue(Dictionary<string, object> row, string key)
+        {
+            if (!row.TryGetValue(key, out var val) || val == null) return "-";
+            var s = val.ToString()?.Trim();
+            return string.IsNullOrWhiteSpace(s) || s == "null" ? "-" : s;
         }
 
         /// <summary>Execute stok query di sheet Aktual Stok (crosstab).</summary>

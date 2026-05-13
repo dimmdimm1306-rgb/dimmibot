@@ -675,6 +675,14 @@ namespace StokBarangMAUI.Services
             {
                 // Check for data refresh command
                 var lowerMsg = userMessage.ToLower().Trim();
+
+                // === /help atau /bantu  tampilkan semua keyword yang tersedia ===
+                if (lowerMsg == "/help" || lowerMsg == "/bantu" || lowerMsg == "bantu" || lowerMsg == "help" ||
+                    lowerMsg == "/bantuan" || lowerMsg == "bantuan" || lowerMsg == "/menu" || lowerMsg == "menu")
+                {
+                    return BuildHelpMenu();
+                }
+
                 if (lowerMsg == "refresh data" || lowerMsg == "reload data" || lowerMsg == "update data" || lowerMsg == "muat ulang data")
                 {
                     _cachedContext = "";
@@ -1231,6 +1239,57 @@ namespace StokBarangMAUI.Services
                 "nousresearch/hermes-3-llama-3.1-405b:free",
                 "qwen/qwen3-coder:free"
             };
+        }
+
+        /// <summary>
+        /// Menu bantuan lengkap — semua keyword yang bisa diketik user.
+        /// Dipanggil saat user ketik /help, /bantu, /menu, dll.
+        /// </summary>
+        private static string BuildHelpMenu()
+        {
+            return " **BANTUAN BOT — Kata Kunci yang Bisa Dipakai**\n\n" +
+                   "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                   " **CEK PROGRESS PEKERJAAN**\n" +
+                   "  `cek progress segment 1`\n" +
+                   "  `progress total project`\n" +
+                   "  `berapa persen kabel terpasang?`\n" +
+                   "  `cek pekerjaan di Surakarta`\n" +
+                   "  `site mana yang belum di Brebes`\n" +
+                   "  `progress kemarin` / `progress 7 hari`\n" +
+                   "  `site 0244` / `span 0244` / `rute sragen`\n\n" +
+                   " **CEK STOK & MATERIAL**\n" +
+                   "  `stok kabel 24c`\n" +
+                   "  `stok di brebes`\n" +
+                   "  `kebutuhan material segment 1`\n" +
+                   "  `material apa yang masih kurang?`\n" +
+                   "  `gudang mana yang surplus?`\n\n" +
+                   " **SURAT JALAN**\n" +
+                   "  `SJ terbaru`\n" +
+                   "  `barang masuk minggu ini`\n" +
+                   "  `surat jalan keluar hari ini`\n\n" +
+                   "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                   " **AKSES GOOGLE DRIVE (Spreadsheet)**\n\n" +
+                   " *Explore file:*\n" +
+                   "  `drive list`  semua file yang ter-share\n" +
+                   "  `drive list BOQ`  cari file by nama\n" +
+                   "  `isi folder <nama>`  lihat isi folder\n" +
+                   "  `drive status`  cek koneksi server\n\n" +
+                   " *Baca spreadsheet:*\n" +
+                   "  `drive sheet <nama file>`  list tab/sheet\n" +
+                   "  `drive header <nama file>`  lihat kolom\n" +
+                   "  `drive summary <nama file>`  statistik\n\n" +
+                   " *Filter data (hemat token!):*\n" +
+                   "  `drive filter <nama> {\"kolom\":\"nilai\"}`\n" +
+                   "  Contoh: `drive filter RESUME#GROBOGAN @h2 {\"RUTE\":\"0244\"}`\n\n" +
+                   " *Tips Drive:*\n" +
+                   "  • Tambah `#nama-sheet` untuk pilih tab\n" +
+                   "  • Tambah `@h2` kalau header 2 baris\n" +
+                   "  • Nama file fuzzy (partial match otomatis)\n\n" +
+                   "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                   " **LAINNYA**\n" +
+                   "  `refresh data`  muat ulang data terbaru\n" +
+                   "  `/help` atau `/bantu`  tampilkan menu ini\n\n" +
+                   " Atau tanya apa aja soal fiber optik, project FTTH, teknis lapangan — aku jawab!";
         }
     }
 
