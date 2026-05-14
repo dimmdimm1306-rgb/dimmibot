@@ -118,6 +118,7 @@ namespace StokBarangMAUI.Services.AiChat
             { "PEKALONGAN", "BREBES" }, { "INDRAMAYU", "BREBES" }, { "SEMARANG", "BREBES" },
             // TASIKMALAYA
             { "TASIKMALAYA", "TASIKMALAYA" }, { "TASIK", "TASIKMALAYA" }, { "BANJAR", "TASIKMALAYA" },
+            { "CIAMIS", "TASIKMALAYA" }, { "PANGANDARAN", "TASIKMALAYA" }, { "GARUT", "TASIKMALAYA" },
             // PURWOKERTO
             { "PURWOKERTO", "PURWOKERTO" }, { "BANYUMAS", "PURWOKERTO" },
             { "CILACAP", "PURWOKERTO" }, { "KEBUMEN", "PURWOKERTO" }, { "PURWOREJO", "PURWOKERTO" },

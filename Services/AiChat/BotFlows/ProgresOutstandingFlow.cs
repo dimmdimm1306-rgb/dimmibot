@@ -54,14 +54,16 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 }
 
                 // Multi-segment menu
+                var segOrder = bySegment.OrderByDescending(x => x.Value.Count).Select(x => x.Key).ToList();
                 BotState.Save(nameof(BotIntent.ProgresOutstanding), "pickSegment",
                     new Dictionary<string, string>
                     {
                         ["total"] = outstanding.Count.ToString(),
                         ["mode"]  = "belum",
+                        ["segments"] = string.Join("|", segOrder),
                     });
 
-                return FormatSegmentMenu(bySegment, outstanding.Count);
+                return FormatSegmentMenu(bySegment, outstanding.Count, segOrder);
             }
             catch (Exception ex)
             {
@@ -78,7 +80,8 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             // Step: pilih segment dari menu
             if (step == "pickSegment")
             {
-                var seg = ResolveSegmentChoice(lower);
+                var displayedSegs = (state.Get("segments") ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries);
+                var seg = ResolveSegmentChoice(lower, displayedSegs);
                 if (seg == null) return null;
 
                 try
@@ -231,7 +234,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
         // ── Formatters ──────────────────────────────────────────────
 
         private static BotResponse FormatSegmentMenu(
-            Dictionary<string, List<Dictionary<string, object>>> bySegment, int total)
+            Dictionary<string, List<Dictionary<string, object>>> bySegment, int total, List<string> segOrder)
         {
             var sb = new StringBuilder();
             sb.AppendLine($"🔴 Belum dikerjakan (<30%) — {total} rute di {bySegment.Count} segment:");
@@ -239,12 +242,12 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
             int i = 1;
             var sugg = new List<string>();
-            // Width untuk align: nomor (2) + segment (12) + count
-            foreach (var kv in bySegment.OrderByDescending(x => x.Value.Count))
+            foreach (var segName in segOrder)
             {
+                var count = bySegment[segName].Count;
                 sb.AppendLine(BotFormatters.Row3(
-                    $"{i}. {kv.Key}", 18,
-                    $"{kv.Value.Count}", 4,
+                    $"{i}. {segName}", 18,
+                    $"{count}", 4,
                     "rute", 5));
                 sugg.Add(i.ToString());
                 i++;
@@ -332,10 +335,30 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             return sb.ToString().TrimEnd();
         }
 
-        private static string? ResolveSegmentChoice(string input)
+        private static string? ResolveSegmentChoice(string input, string[]? displayed = null)
         {
-            if (int.TryParse(input, out var num) && num >= 1 && num <= DataSchema.Segments.Length)
-                return DataSchema.Segments[num - 1];
+            // Pilih nomor sesuai list yang ditampilkan
+            if (int.TryParse(input.Trim(), out var num))
+            {
+                if (displayed != null && displayed.Length > 0)
+                {
+                    if (num >= 1 && num <= displayed.Length) return displayed[num - 1];
+                }
+                if (num >= 1 && num <= DataSchema.Segments.Length)
+                    return DataSchema.Segments[num - 1];
+            }
+
+            // "lainnya"
+            var t = input.Trim().ToLowerInvariant();
+            if (t == "lainnya" || t == "other")
+            {
+                if (displayed != null)
+                {
+                    var lain = displayed.FirstOrDefault(s => s.Equals("LAINNYA", StringComparison.OrdinalIgnoreCase));
+                    if (lain != null) return lain;
+                }
+            }
+
             return DataSchema.ResolveSegmentFromCity(input);
         }
     }
