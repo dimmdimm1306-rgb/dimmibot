@@ -68,8 +68,9 @@ namespace StokBarangMAUI.Services.AiChat
             }
 
             // ── TIME QUERY ────────────────────────────────────────────
-            // "hari apa" / "tanggal berapa" / "jam berapa" / "bulan apa" / "tahun berapa"
-            if (Regex.IsMatch(lower, @"\b(hari\s+apa|tanggal\s+berapa|jam\s+berapa|pukul\s+berapa|bulan\s+(apa|sekarang)|tahun\s+(berapa|sekarang)|sekarang\s+(jam|tanggal|hari))\b") ||
+            // Pure time questions only. JANGAN match kalau ada subject lain (progres/cuaca/sj/dll).
+            // "hari apa", "hari apa sekarang", "tanggal berapa", "jam berapa", dll
+            if (Regex.IsMatch(lower, @"\b(hari\s+(apa|ini\s+(apa|tanggal))|tanggal\s+(apa|berapa)|tgl\s+(apa|berapa)|jam\s+berapa|pukul\s+berapa|bulan\s+(apa|berapa|sekarang)|tahun\s+(apa|berapa|sekarang)|sekarang\s+(jam|tanggal|tgl|hari|bulan|tahun))\b") ||
                 Regex.IsMatch(lower, @"^\s*(jam|hari|tanggal|tgl|bulan|tahun|waktu)\s*(berapa|apa|sekarang)?\s*\??\s*$"))
             {
                 return IntentMatch.Of(BotIntent.TimeQuery,

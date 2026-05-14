@@ -896,6 +896,18 @@ namespace StokBarangMAUI.Services
         private string BuildSystemPrompt(string context)
         {
             var sb = new StringBuilder();
+
+            // Inject WAKTU SAAT INI di awal supaya LLM gak halusinasi tanggal
+            var wibNow = DateTime.UtcNow.AddHours(7);
+            var idCulture = new System.Globalization.CultureInfo("id-ID");
+            sb.AppendLine("WAKTU SAAT INI (WIB UTC+7) — WAJIB PAKAI INI, JANGAN HALUSINASI TANGGAL:");
+            sb.AppendLine($"- Hari: {wibNow.ToString("dddd", idCulture)}");
+            sb.AppendLine($"- Tanggal: {wibNow.ToString("dd MMMM yyyy", idCulture)}");
+            sb.AppendLine($"- Jam: {wibNow:HH:mm} WIB");
+            sb.AppendLine($"- ISO: {wibNow:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine("- Kalau ditanya tanggal/hari/jam/bulan/tahun: WAJIB pakai data di atas. JANGAN PERNAH sebut tanggal lain (misal '27 Oktober 2023' atau tanggal training data).");
+            sb.AppendLine();
+
             sb.AppendLine("Kamu adalah AI Agent cerdas bernama 'Claw' yang ada di dalam aplikasi StokBarangMAUI.");
             sb.AppendLine("Aplikasi ini untuk manajemen proyek FTTH (Fiber To The Home)  tracking material, progress, surat jalan, stok gudang.");
             sb.AppendLine();

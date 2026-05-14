@@ -7,10 +7,12 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
     /// <summary>
     /// Flow 1c: Progres by tanggal (kemarin, hari ini, tanggal X, tanggal X bulan).
     /// Pattern A/C: fetch → format. Kalau banyak segment, group.
+    /// Support pagination via state pending: ketik `lanjut` untuk page next.
     /// </summary>
     public class ProgresDateFlow : IBotFlow
     {
         private readonly McpClient _mcp;
+        private const int PAGE_SIZE = 25;
 
         public ProgresDateFlow(McpClient mcp) { _mcp = mcp; }
 
@@ -70,11 +72,12 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
             try
             {
-                var result = await _mcp.SearchProgressAsync(keyword, dateIntent, 100);
+                // Limit naik dari 100 → 300 supaya cukup untuk semua segment per hari
+                var result = await _mcp.SearchProgressAsync(keyword, dateIntent, 300);
                 if (result?.Data == null || result.Data.Count == 0)
                     return BotResponse.Text_($"📅 Tidak ada progres untuk `{label}`.\n\n💡 Coba tanggal lain.");
 
-                return BotResponse.Text_(FormatDateResult(label, result.Data));
+                return BuildPagedResponse(label, result.Data, page: 0, dateIntent, keyword);
             }
             catch (Exception ex)
             {
@@ -82,13 +85,75 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             }
         }
 
-        public Task<BotResponse?> ResumeAsync(string userMessage, BotPendingState state)
-            => Task.FromResult<BotResponse?>(null);
-
-        private static string FormatDateResult(string label, List<Dictionary<string, object>> rows)
+        public async Task<BotResponse?> ResumeAsync(string userMessage, BotPendingState state)
         {
-            // Group by (tanggal | segment | rute) — material di-rangkap jadi list
-            var grouped = rows
+            if (state.Step != "paginate") return null;
+
+            var lower = userMessage.Trim().ToLowerInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(lower,
+                @"^(lanjut|lanjutkan|next|berikut(nya)?|more|lainnya)\s*$"))
+                return null;
+
+            int page = state.GetInt("page", 0) + 1;
+            var label = state.Get("label") ?? "tanggal";
+            var dateIntent = state.Get("dateIntent");
+            var keyword = state.Get("keyword");
+
+            try
+            {
+                var result = await _mcp.SearchProgressAsync(keyword, dateIntent, 300);
+                if (result?.Data == null || result.Data.Count == 0)
+                {
+                    BotState.Clear();
+                    return BotResponse.Text_("📭 Data tidak tersedia lagi.");
+                }
+                return BuildPagedResponse(label, result.Data, page, dateIntent, keyword);
+            }
+            catch (Exception ex)
+            {
+                return BotResponse.Text_($"❌ {ex.Message}");
+            }
+        }
+
+        // ── Helpers ─────────────────────────────────────────────────
+
+        private static BotResponse BuildPagedResponse(string label, List<Dictionary<string, object>> rows,
+            int page, string? dateIntent, string? keyword)
+        {
+            var grouped = GroupActivities(rows);
+            int totalPages = (int)Math.Ceiling(grouped.Count / (double)PAGE_SIZE);
+            if (totalPages == 0) totalPages = 1;
+            if (page >= totalPages)
+            {
+                BotState.Clear();
+                return BotResponse.Text_("📭 Sudah semua aktivitas ditampilkan.");
+            }
+
+            var slice = grouped.Skip(page * PAGE_SIZE).Take(PAGE_SIZE).ToList();
+            var text = FormatPage(label, slice, page, totalPages, grouped.Count, rows.Count);
+
+            // Save state kalau masih ada page next
+            bool hasMore = page < totalPages - 1;
+            if (hasMore)
+            {
+                BotState.Save(nameof(BotIntent.ProgresDate), "paginate",
+                    new Dictionary<string, string>
+                    {
+                        ["label"] = label,
+                        ["page"] = page.ToString(),
+                        ["dateIntent"] = dateIntent ?? "",
+                        ["keyword"] = keyword ?? "",
+                    });
+                return new BotResponse { Text = text, HasPendingState = true };
+            }
+
+            BotState.Clear();
+            return BotResponse.Text_(text);
+        }
+
+        private static List<GroupedActivity> GroupActivities(List<Dictionary<string, object>> rows)
+        {
+            return rows
                 .Select(r => new
                 {
                     Tanggal = BotFormatters.FindCol(r, "Tanggal"),
@@ -102,28 +167,32 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     Ket     = BotFormatters.FindCol(r, "Keterangan"),
                 })
                 .GroupBy(x => $"{x.Tanggal}|{x.Segment}|{x.Rute}")
-                .Select(g => new
+                .Select(g => new GroupedActivity
                 {
-                    g.First().Tanggal,
-                    g.First().Segment,
-                    g.First().Rute,
-                    g.First().Site,
-                    g.First().Homebase,
-                    g.First().Kab,
+                    Tanggal = g.First().Tanggal,
+                    Segment = g.First().Segment,
+                    Rute = g.First().Rute,
+                    Site = g.First().Site,
+                    Homebase = g.First().Homebase,
+                    Kab = g.First().Kab,
                     Materials = g.Select(x => (x.Barang, x.Progres, x.Ket)).Distinct().ToList(),
                 })
                 .ToList();
+        }
 
+        private static string FormatPage(string label, List<GroupedActivity> activities,
+            int page, int totalPages, int totalActivities, int totalRows)
+        {
             var sb = new StringBuilder();
             sb.AppendLine($"📅 PROGRES `{label.ToUpperInvariant()}`");
-            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━");
-            sb.AppendLine($"📊 {grouped.Count} aktivitas · {rows.Count} entri material");
+            sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━");
+            sb.Append($"📊 {totalActivities} aktivitas · {totalRows} entri material");
+            if (totalPages > 1) sb.Append($" · Halaman {page + 1}/{totalPages}");
+            sb.AppendLine();
             sb.AppendLine();
 
-            int shown = 0;
-            foreach (var g in grouped.Take(15))
+            foreach (var g in activities)
             {
-                // Header rute
                 sb.AppendLine($"📌 {BotFormatters.Trunc(g.Rute, 50)}");
 
                 // Meta line
@@ -141,8 +210,8 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     sb.AppendLine($"  📍 {string.Join(" · ", loc)}");
                 }
 
-                // Materials — sejajar dengan PadR/PadL
-                var mats = g.Materials.Where(m => m.Barang != "-").ToList();
+                // Materials sejajar
+                var mats = g.Materials.Where(m => m.Item1 != "-").ToList();
                 if (mats.Count > 0)
                 {
                     foreach (var (barang, progres, ket) in mats)
@@ -154,15 +223,25 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                         sb.AppendLine(line);
                     }
                 }
-
                 sb.AppendLine();
-                shown++;
             }
 
-            if (grouped.Count > shown)
-                sb.AppendLine($"📄 +{grouped.Count - shown} aktivitas lagi");
+            int remaining = totalActivities - (page + 1) * PAGE_SIZE;
+            if (remaining > 0)
+                sb.AppendLine($"📄 +{remaining} aktivitas lagi · ketik `lanjut` untuk berikutnya");
 
             return sb.ToString().TrimEnd();
+        }
+
+        private class GroupedActivity
+        {
+            public string Tanggal { get; set; } = "-";
+            public string Segment { get; set; } = "-";
+            public string Rute { get; set; } = "-";
+            public string Site { get; set; } = "-";
+            public string Homebase { get; set; } = "-";
+            public string Kab { get; set; } = "-";
+            public List<(string, string, string)> Materials { get; set; } = new();
         }
 
         private static DateTime GetWibNow()

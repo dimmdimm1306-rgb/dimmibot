@@ -220,20 +220,33 @@ namespace StokBarangMAUI.Pages
         /// - Long-press → context menu (Copy, Select All, Share) 
         /// - Double-tap → select word
         /// - Drag handle → expand selection
+        ///
+        /// Untuk tabular content, bungkus dengan horizontal ScrollView supaya
+        /// kolom panjang bisa di-swipe (gak kepotong / gak bikin word-wrap pecah).
         /// </summary>
         private View BuildSelectableText(string message, Color textColor)
         {
-            // Auto-detect: kalau message punya tabular content (banyak spaces berturut),
-            // pakai monospace biar kolom sejajar. Kalau tidak, font default.
             bool isTabular = HasTabularContent(message);
 
-            return new StokBarangMAUI.Controls.SelectableLabel
+            var label = new StokBarangMAUI.Controls.SelectableLabel
             {
                 Text = message,
                 TextColor = textColor,
                 FontSize = 13,
                 FontFamily = isTabular ? "Monospace" : null,
-                LineBreakMode = LineBreakMode.WordWrap,
+                LineBreakMode = isTabular ? LineBreakMode.NoWrap : LineBreakMode.WordWrap,
+            };
+
+            if (!isTabular) return label;
+
+            // Tabular → horizontal scroll. Lebih besar fontSize sedikit untuk monospace
+            // supaya rendering crispy di high-DPI.
+            return new ScrollView
+            {
+                Orientation = ScrollOrientation.Horizontal,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Default,
+                Content = label,
+                // ScrollView akan adapt ke width parent; content boleh lebih lebar
             };
         }
 

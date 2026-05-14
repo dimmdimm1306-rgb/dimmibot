@@ -14,7 +14,15 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
     /// </summary>
     public class WeatherFlow : IBotFlow
     {
-        private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
+        private static readonly HttpClient _http = CreateClient();
+
+        private static HttpClient CreateClient()
+        {
+            var c = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+            c.DefaultRequestHeaders.Add("User-Agent", "FTTH-StokBarang-MAUI/2.9 (cuaca-bot)");
+            c.DefaultRequestHeaders.Add("Accept", "application/json");
+            return c;
+        }
 
         public BotIntent Handles => BotIntent.Weather;
         public BotPattern Pattern => BotPattern.SingleShot;
@@ -55,15 +63,23 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
         {
             try
             {
+                Console.WriteLine($"[Weather] Fetching for city='{city}'");
+
                 // 1. Geocode kota → lat/lon (Open-Meteo geocoding API)
                 var geoUrl = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(city)}&count=1&language=id&format=json";
+                Console.WriteLine($"[Weather] Geocoding: {geoUrl}");
+
                 var geoResp = await _http.GetAsync(geoUrl);
                 if (!geoResp.IsSuccessStatusCode)
-                    return BotResponse.Text_($"❌ Gagal cari lokasi `{city}`. Coba lagi.");
+                {
+                    Console.WriteLine($"[Weather] Geocode HTTP {(int)geoResp.StatusCode}");
+                    return BotResponse.Text_($"❌ Gagal cari lokasi `{city}` (HTTP {(int)geoResp.StatusCode}). Coba lagi.");
+                }
 
                 var geoJson = await geoResp.Content.ReadAsStringAsync();
                 using var geoDoc = JsonDocument.Parse(geoJson);
                 if (!geoDoc.RootElement.TryGetProperty("results", out var results) ||
+                    results.ValueKind != JsonValueKind.Array ||
                     results.GetArrayLength() == 0)
                 {
                     return BotResponse.Text_($"🔍 Kota `{city}` tidak ketemu. Coba nama lain misal `Jakarta`, `Surabaya`.");
@@ -75,15 +91,25 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 var nameFound = first.TryGetProperty("name", out var n) ? n.GetString() : city;
                 var admin = first.TryGetProperty("admin1", out var a) ? a.GetString() : null;
                 var country = first.TryGetProperty("country", out var c) ? c.GetString() : null;
+                Console.WriteLine($"[Weather] Geocoded: {nameFound} ({lat},{lon})");
 
                 // 2. Fetch forecast (current + daily)
-                var fcUrl = $"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}" +
+                // Pakai InvariantCulture supaya decimal pakai titik bukan koma
+                var latStr = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var lonStr = lon.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                var fcUrl = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}" +
                             $"&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m" +
                             $"&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max" +
                             $"&timezone=Asia%2FJakarta&forecast_days=2";
+                Console.WriteLine($"[Weather] Forecast: {fcUrl}");
+
                 var fcResp = await _http.GetAsync(fcUrl);
                 if (!fcResp.IsSuccessStatusCode)
-                    return BotResponse.Text_("❌ Gagal ambil cuaca. Coba lagi nanti.");
+                {
+                    var errBody = await fcResp.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[Weather] Forecast HTTP {(int)fcResp.StatusCode}: {errBody}");
+                    return BotResponse.Text_($"❌ Cuaca server error (HTTP {(int)fcResp.StatusCode}). Coba `cuaca {city}` lagi 1-2 menit lagi.");
+                }
 
                 var fcJson = await fcResp.Content.ReadAsStringAsync();
                 using var fcDoc = JsonDocument.Parse(fcJson);
@@ -92,13 +118,20 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
                 return BotResponse.Text_(FormatWeather(nameFound, admin, country, current, daily));
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException ex)
             {
-                return BotResponse.Text_("⏱️ Timeout — server cuaca lambat. Coba lagi.");
+                Console.WriteLine($"[Weather] Timeout: {ex.Message}");
+                return BotResponse.Text_("⏱️ Timeout — server cuaca lambat atau koneksi internet HP lemah. Coba lagi nanti.");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"[Weather] HTTP error: {ex.Message}");
+                return BotResponse.Text_($"📡 Tidak bisa akses server cuaca. Cek koneksi internet HP. ({ex.Message})");
             }
             catch (Exception ex)
             {
-                return BotResponse.Text_($"❌ Error cuaca: {ex.Message}");
+                Console.WriteLine($"[Weather] Unexpected: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+                return BotResponse.Text_($"❌ Error cuaca: {ex.GetType().Name} — {ex.Message}");
             }
         }
 
