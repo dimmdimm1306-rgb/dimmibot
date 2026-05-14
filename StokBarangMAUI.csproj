@@ -24,8 +24,8 @@
 		<ApplicationId>com.companyname.stokbarangmaui</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>3.0</ApplicationDisplayVersion>
-		<ApplicationVersion>13</ApplicationVersion>
+		<ApplicationDisplayVersion>3.1</ApplicationDisplayVersion>
+		<ApplicationVersion>14</ApplicationVersion>
 
 		<AndroidSdkDirectory>C:\Users\ASUS\AppData\Local\Android\Sdk</AndroidSdkDirectory>
 		<JavaSdkDirectory>C:\Program Files\Android\Android Studio\jbr</JavaSdkDirectory>

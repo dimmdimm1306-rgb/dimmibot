@@ -48,7 +48,12 @@ namespace StokBarangMAUI.Services.AiChat
 
         public static readonly string[] MingguIniWords =
         {
-            "minggu ini", "7 hari", "seminggu", "weekly",
+            "minggu ini", "7 hari", "seminggu", "weekly", "minggu kemarin", "minggu lalu",
+        };
+
+        public static readonly string[] BulanIniWords =
+        {
+            "bulan ini", "30 hari", "sebulan", "monthly", "bulan kemarin", "bulan lalu",
         };
 
         public static readonly Dictionary<string, string> IndonesianMonths = new(StringComparer.OrdinalIgnoreCase)

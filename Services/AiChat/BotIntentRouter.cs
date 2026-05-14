@@ -259,6 +259,7 @@ namespace StokBarangMAUI.Services.AiChat
             return BotTokens.ContainsAny(text, BotTokens.HariIniWords) ||
                    BotTokens.ContainsAny(text, BotTokens.KemarinWords) ||
                    BotTokens.ContainsAny(text, BotTokens.MingguIniWords) ||
+                   BotTokens.ContainsAny(text, BotTokens.BulanIniWords) ||
                    BotTokens.FindMonth(text) != null ||
                    Regex.IsMatch(text, @"\btanggal\s+\d", RegexOptions.IgnoreCase) ||
                    Regex.IsMatch(text, @"\btgl\s+\d", RegexOptions.IgnoreCase);
@@ -270,6 +271,7 @@ namespace StokBarangMAUI.Services.AiChat
             if (BotTokens.ContainsAny(text, BotTokens.HariIniWords)) ctx["dateIntent"] = "date_today";
             else if (BotTokens.ContainsAny(text, BotTokens.KemarinWords)) ctx["dateIntent"] = "date_yesterday";
             else if (BotTokens.ContainsAny(text, BotTokens.MingguIniWords)) ctx["dateIntent"] = "date_week";
+            else if (BotTokens.ContainsAny(text, BotTokens.BulanIniWords)) ctx["dateIntent"] = "date_month";
 
             var month = BotTokens.FindMonth(text);
             if (month != null) ctx["month"] = month;
