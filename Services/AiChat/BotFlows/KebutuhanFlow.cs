@@ -39,12 +39,17 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 {
                     sb.AppendLine("🚨 MATERIAL KEKURANGAN");
                     sb.AppendLine();
+
+                    // Header tabel: Material | Homebase | Kurang
+                    BotFormatters.AppendTable(sb,
+                        new[] { "Material", "Homebase", "Kurang" },
+                        labelWidth: 18,
+                        numWidths: new[] { 14, 8 });
+
                     int found = 0;
                     foreach (var row in result.Data)
                     {
                         var homebase = BotFormatters.FindCol(row, "Homebase");
-                        // Cari kolom yang mengandung "Kekurangan" atau "Kek" dengan value > 0
-                        var shortages = new List<string>();
                         foreach (var kv in row)
                         {
                             var key = kv.Key.ToLowerInvariant();
@@ -53,20 +58,22 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                             if (val > 0)
                             {
                                 var matName = kv.Key.Split('-', '(')[0].Trim();
-                                shortages.Add($"{matName}: {BotFormatters.FormatNum(val)}");
+                                sb.AppendLine(BotFormatters.TableRow(
+                                    "⚠️ " + BotFormatters.Trunc(matName, 16), 18,
+                                    (BotFormatters.Trunc(homebase, 14), 14),
+                                    (BotFormatters.FormatNum(val), 8)));
+                                found++;
+                                if (found >= 25) break;
                             }
                         }
-                        if (shortages.Count > 0)
-                        {
-                            sb.AppendLine($"📍 {homebase}");
-                            foreach (var s in shortages.Take(5))
-                                sb.AppendLine($"   ⚠️ {s}");
-                            sb.AppendLine();
-                            found++;
-                        }
+                        if (found >= 25) break;
                     }
+
                     if (found == 0)
                         return BotResponse.Text_("✅ Semua material tercukupi. Tidak ada kekurangan.");
+
+                    sb.AppendLine();
+                    sb.AppendLine($"📊 Total {found} material kurang.");
                 }
                 else
                 {
@@ -80,7 +87,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                         var segment = BotFormatters.FindCol(row, "Segment");
                         sb.AppendLine($"📍 {homebase}" + (segment != "-" ? $" ({segment})" : ""));
 
-                        // Show key materials: Kabel, T7, T9
+                        // Show key materials: Kabel 24C, T7, T9
                         var k24Keb = BotFormatters.FindNum(row, "K24C", "Keb");
                         var k24Ter = BotFormatters.FindNum(row, "K24C", "Ter");
                         var t7Keb = BotFormatters.FindNum(row, "T7", "Keb");
@@ -88,12 +95,32 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                         var t9Keb = BotFormatters.FindNum(row, "T9", "Keb");
                         var t9Ter = BotFormatters.FindNum(row, "T9", "Ter");
 
+                        // Kalau semua kosong, skip
+                        if (k24Keb == 0 && t7Keb == 0 && t9Keb == 0 &&
+                            k24Ter == 0 && t7Ter == 0 && t9Ter == 0)
+                        {
+                            sb.AppendLine();
+                            continue;
+                        }
+
+                        // Header
+                        BotFormatters.AppendTable(sb,
+                            new[] { "Material", "Kebutuhan", "Terpasang" },
+                            labelWidth: 12,
+                            numWidths: new[] { 10, 10 });
+
                         if (k24Keb > 0 || k24Ter > 0)
-                            sb.AppendLine($"   Kabel 24C: Keb {BotFormatters.FormatNum(k24Keb)} · Ter {BotFormatters.FormatNum(k24Ter)}");
+                            sb.AppendLine(BotFormatters.TableRow("Kabel 24C", 12,
+                                (BotFormatters.FormatNum(k24Keb), 10),
+                                (BotFormatters.FormatNum(k24Ter), 10)));
                         if (t7Keb > 0 || t7Ter > 0)
-                            sb.AppendLine($"   Tiang 7M:  Keb {BotFormatters.FormatNum(t7Keb)} · Ter {BotFormatters.FormatNum(t7Ter)}");
+                            sb.AppendLine(BotFormatters.TableRow("Tiang 7M", 12,
+                                (BotFormatters.FormatNum(t7Keb), 10),
+                                (BotFormatters.FormatNum(t7Ter), 10)));
                         if (t9Keb > 0 || t9Ter > 0)
-                            sb.AppendLine($"   Tiang 9M:  Keb {BotFormatters.FormatNum(t9Keb)} · Ter {BotFormatters.FormatNum(t9Ter)}");
+                            sb.AppendLine(BotFormatters.TableRow("Tiang 9M", 12,
+                                (BotFormatters.FormatNum(t9Keb), 10),
+                                (BotFormatters.FormatNum(t9Ter), 10)));
                         sb.AppendLine();
                     }
                 }

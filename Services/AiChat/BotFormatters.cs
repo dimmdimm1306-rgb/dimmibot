@@ -144,6 +144,37 @@ namespace StokBarangMAUI.Services.AiChat
         public static string Row4(string c1, int w1, string c2, int w2, string c3, int w3, string c4, int w4)
             => $"{PadR(c1, w1)}  {PadL(c2, w2)}  {PadL(c3, w3)}  {PadL(c4, w4)}";
 
+        // ── Table builder (header + separator + rows) ───────────────
+
+        /// <summary>
+        /// Build tabular block: Label kiri-rata, kolom angka kanan-rata.
+        /// labelWidth = lebar kolom label, numWidths = lebar kolom angka.
+        /// header[0] = label header, header[1..] = num headers.
+        /// </summary>
+        public static StringBuilder AppendTable(StringBuilder sb,
+            string[] headers, int labelWidth, int[] numWidths)
+        {
+            // Header row
+            var hdr = PadR(headers[0], labelWidth);
+            for (int i = 1; i < headers.Length && i - 1 < numWidths.Length; i++)
+                hdr += "  " + PadL(headers[i], numWidths[i - 1]);
+            sb.AppendLine(hdr);
+
+            // Separator
+            int total = labelWidth;
+            foreach (var w in numWidths) total += 2 + w;
+            sb.AppendLine(new string('─', total));
+            return sb;
+        }
+
+        public static string TableRow(string label, int labelWidth, params (string val, int width)[] cols)
+        {
+            var s = PadR(label, labelWidth);
+            foreach (var (v, w) in cols)
+                s += "  " + PadL(v, w);
+            return s;
+        }
+
         // ── Section dividers ──────────────────────────────────────────
 
         public const string DividerLine = "━━━━━━━━━━━━━━━━━━━━━━━";

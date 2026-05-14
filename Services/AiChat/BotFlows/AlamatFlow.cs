@@ -55,11 +55,13 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             if (string.IsNullOrEmpty(filter))
             {
                 sb.AppendLine("🏢 ALAMAT SEMUA GUDANG");
+                sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━");
                 sb.AppendLine();
             }
             else
             {
                 sb.AppendLine($"🏢 ALAMAT GUDANG {filter.ToUpperInvariant()}");
+                sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━");
                 sb.AppendLine();
             }
 
@@ -73,10 +75,13 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
                 if (gudang == "-" && alamat == "-") continue;
 
-                if (shown > 0) sb.AppendLine();
+                if (shown > 0)
+                {
+                    sb.AppendLine();
+                }
                 sb.AppendLine($"📍 {gudang}");
-                if (segment != "-" && segment.Length > 1) sb.AppendLine($"   Segment: {segment}");
-                if (alamat != "-") sb.AppendLine($"   {alamat}");
+                if (segment != "-" && segment.Length > 1) sb.AppendLine($"   🗂  Segment: {segment}");
+                if (alamat != "-") sb.AppendLine($"   🏠  {alamat}");
                 shown++;
             }
 

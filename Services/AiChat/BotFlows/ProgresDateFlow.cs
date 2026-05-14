@@ -115,37 +115,44 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 .ToList();
 
             var sb = new StringBuilder();
-            sb.AppendLine($"📅 Progres `{label}` — {grouped.Count} aktivitas ({rows.Count} entri)");
+            sb.AppendLine($"📅 PROGRES `{label.ToUpperInvariant()}`");
+            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━");
+            sb.AppendLine($"📊 {grouped.Count} aktivitas · {rows.Count} entri material");
             sb.AppendLine();
 
             int shown = 0;
             foreach (var g in grouped.Take(15))
             {
-                sb.AppendLine($"📌 {BotFormatters.Trunc(g.Rute, 40)}");
+                // Header rute
+                sb.AppendLine($"📌 {BotFormatters.Trunc(g.Rute, 50)}");
 
-                // Meta line: tanggal + segment + lokasi
+                // Meta line
                 var meta = new List<string>();
-                if (g.Tanggal != "-") meta.Add(g.Tanggal);
-                if (g.Segment != "-" && g.Segment.Length < 30) meta.Add(g.Segment);
-                else if (g.Segment != "-") meta.Add(BotFormatters.Trunc(g.Segment, 30));
-                if (g.Site != "-") meta.Add($"Site {g.Site}");
-                if (meta.Count > 0) sb.AppendLine($"   📅 {string.Join(" · ", meta)}");
+                if (g.Tanggal != "-") meta.Add($"📅 {g.Tanggal}");
+                if (g.Segment != "-") meta.Add($"🗂 {BotFormatters.Trunc(g.Segment, 30)}");
+                if (g.Site != "-") meta.Add($"🆔 {g.Site}");
+                if (meta.Count > 0) sb.AppendLine("  " + string.Join("  ·  ", meta));
 
                 if (g.Homebase != "-" || g.Kab != "-")
                 {
                     var loc = new List<string>();
                     if (g.Homebase != "-") loc.Add(g.Homebase);
                     if (g.Kab != "-") loc.Add(g.Kab);
-                    sb.AppendLine($"   📍 {string.Join(" · ", loc)}");
+                    sb.AppendLine($"  📍 {string.Join(" · ", loc)}");
                 }
 
-                // Materials — list semua material dalam aktivitas itu
-                foreach (var (barang, progres, ket) in g.Materials)
+                // Materials — sejajar dengan PadR/PadL
+                var mats = g.Materials.Where(m => m.Barang != "-").ToList();
+                if (mats.Count > 0)
                 {
-                    if (barang == "-") continue;
-                    var line = $"   📦 {barang}: {progres}";
-                    if (ket != "-" && !string.IsNullOrWhiteSpace(ket)) line += $" ({ket})";
-                    sb.AppendLine(line);
+                    foreach (var (barang, progres, ket) in mats)
+                    {
+                        var matShort = BotFormatters.Trunc(barang, 22);
+                        var line = $"  • {BotFormatters.PadR(matShort, 22)}  {BotFormatters.PadL(progres, 8)}";
+                        if (ket != "-" && !string.IsNullOrWhiteSpace(ket))
+                            line += $"  ({BotFormatters.Trunc(ket, 20)})";
+                        sb.AppendLine(line);
+                    }
                 }
 
                 sb.AppendLine();

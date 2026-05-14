@@ -71,40 +71,84 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             sb.AppendLine($"📜 SURAT JALAN — {rows.Count} hasil" + (!string.IsNullOrEmpty(label) ? $" ({label})" : ""));
             sb.AppendLine();
 
-            int shown = 0;
-            foreach (var row in rows.Take(10))
+            // Detail mode kalau cuma 1-3 hasil — tampilkan full info
+            if (rows.Count <= 3)
             {
-                var tanggal = BotFormatters.FindCol(row, "Tanggal");
-                var segment = BotFormatters.FindCol(row, "Segment");
-                var barang = BotFormatters.FindCol(row, "Nama Barang");
-                var qty = BotFormatters.FindCol(row, "QTY");
-                var jenis = BotFormatters.FindCol(row, "Jenis");
-                var noSj = BotFormatters.FindCol(row, "NO_SJ");
-                var pengirim = BotFormatters.FindCol(row, "PENGIRIM");
-                var penerima = BotFormatters.FindCol(row, "PENERIMA");
-
-                var jenisIcon = jenis.ToUpperInvariant() switch
+                int shown = 0;
+                foreach (var row in rows)
                 {
-                    var j when j.Contains("MASUK") => "📥",
-                    var j when j.Contains("KELUAR") => "📤",
-                    var j when j.Contains("DIBAWA") => "🚚",
-                    _ => "📋"
-                };
+                    if (shown > 0) sb.AppendLine(BotFormatters.ThinDivider);
+                    var tanggal = BotFormatters.FindCol(row, "Tanggal");
+                    var segment = BotFormatters.FindCol(row, "Segment");
+                    var barang = BotFormatters.FindCol(row, "Nama Barang");
+                    var qty = BotFormatters.FindCol(row, "QTY");
+                    var jenis = BotFormatters.FindCol(row, "Jenis");
+                    var noSj = BotFormatters.FindCol(row, "NO_SJ");
+                    var pengirim = BotFormatters.FindCol(row, "PENGIRIM");
+                    var penerima = BotFormatters.FindCol(row, "PENERIMA");
+                    var ket = BotFormatters.FindCol(row, "Keterangan");
 
-                sb.AppendLine($"{jenisIcon} {jenis}");
-                if (noSj != "-") sb.AppendLine($"   No: {noSj}");
-                sb.AppendLine($"   📅 {tanggal} · {segment}");
-                sb.AppendLine($"   📦 {barang} × {qty}");
-                if (pengirim != "-" || penerima != "-")
-                    sb.AppendLine($"   👤 {pengirim} → {penerima}");
-                sb.AppendLine();
-                shown++;
+                    var icon = JenisIcon(jenis);
+                    sb.AppendLine($"{icon} {jenis}" + (noSj != "-" ? $"  ·  {noSj}" : ""));
+                    sb.AppendLine($"📅 {tanggal}  ·  {segment}");
+                    sb.AppendLine($"📦 {barang} × {qty}");
+                    if (pengirim != "-" || penerima != "-")
+                        sb.AppendLine($"👤 {pengirim} → {penerima}");
+                    if (ket != "-" && !string.IsNullOrWhiteSpace(ket))
+                        sb.AppendLine($"📝 {ket}");
+                    shown++;
+                }
+                return sb.ToString().TrimEnd();
             }
 
-            if (rows.Count > shown)
-                sb.AppendLine($"📄 +{rows.Count - shown} SJ lagi");
+            // List mode — sejajar pakai PadR/PadL
+            // Kolom: Icon Tanggal | Jenis | Barang × QTY | NoSJ
+            BotFormatters.AppendTable(sb,
+                new[] { "Tgl/Jenis", "Barang × QTY", "NoSJ" },
+                labelWidth: 18,
+                numWidths: new[] { 24, 10 });
 
+            foreach (var row in rows.Take(20))
+            {
+                var tanggal = BotFormatters.FindCol(row, "Tanggal");
+                var jenis = BotFormatters.FindCol(row, "Jenis");
+                var barang = BotFormatters.FindCol(row, "Nama Barang");
+                var qty = BotFormatters.FindCol(row, "QTY");
+                var noSj = BotFormatters.FindCol(row, "NO_SJ");
+                var icon = JenisIconAscii(jenis);
+
+                var leftCol = $"{icon} {BotFormatters.Trunc(tanggal, 12)}";
+                var midCol = $"{BotFormatters.Trunc(barang, 18)} x{qty}";
+                sb.AppendLine(BotFormatters.TableRow(leftCol, 18,
+                    (BotFormatters.Trunc(midCol, 24), 24),
+                    (BotFormatters.Trunc(noSj, 10), 10)));
+            }
+
+            if (rows.Count > 20)
+                sb.AppendLine($"\n📄 +{rows.Count - 20} SJ lagi");
+
+            sb.AppendLine();
+            sb.AppendLine("📊 ↓ masuk · ↑ keluar · → dibawa");
             return sb.ToString().TrimEnd();
+        }
+
+        private static string JenisIcon(string jenis)
+        {
+            var j = jenis.ToUpperInvariant();
+            if (j.Contains("MASUK")) return "📥";
+            if (j.Contains("KELUAR")) return "📤";
+            if (j.Contains("DIBAWA")) return "🚚";
+            return "📋";
+        }
+
+        // ASCII versions yang gak bikin kolom geser di list view
+        private static string JenisIconAscii(string jenis)
+        {
+            var j = jenis.ToUpperInvariant();
+            if (j.Contains("MASUK")) return "↓";
+            if (j.Contains("KELUAR")) return "↑";
+            if (j.Contains("DIBAWA")) return "→";
+            return "·";
         }
 
         private static string BuildSjMenu()

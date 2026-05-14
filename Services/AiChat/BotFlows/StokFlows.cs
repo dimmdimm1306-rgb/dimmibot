@@ -34,21 +34,38 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     var nama = row.Values.FirstOrDefault()?.ToString()?.Trim() ?? mat;
                     sb.AppendLine($"📦 {nama}");
                     sb.AppendLine();
+
+                    // Header tabel: Gudang | Masuk | Keluar | Sisa
+                    BotFormatters.AppendTable(sb,
+                        new[] { "Gudang", "Masuk", "Keluar", "Sisa" },
+                        labelWidth: 16,
+                        numWidths: new[] { 9, 9, 9 });
+
+                    double totalDit = 0, totalKel = 0;
                     for (int i = 0; i < DataSchema.Segments.Length; i++)
                     {
                         var seg = DataSchema.Segments[i];
                         var dit = FindGudangVal(row, result.Columns, i, false);
                         var kel = FindGudangVal(row, result.Columns, i, true);
                         var sisa = dit - kel;
-                        var icon = sisa > 0 ? "📦" : sisa == 0 ? "⚪" : "🚨";
-                        sb.AppendLine($"  {icon} {seg}: Masuk {BotFormatters.FormatNum(dit)} · Keluar {BotFormatters.FormatNum(kel)} · Sisa {BotFormatters.FormatNum(sisa)}");
+                        totalDit += dit; totalKel += kel;
+                        var prefix = sisa > 0 ? "✓" : sisa == 0 ? "·" : "!";
+
+                        sb.AppendLine(BotFormatters.TableRow(
+                            $"{prefix} {BotFormatters.Trunc(seg, 14)}", 16,
+                            (BotFormatters.FormatNum(dit), 9),
+                            (BotFormatters.FormatNum(kel), 9),
+                            (BotFormatters.FormatNum(sisa), 9)));
                     }
-                    // Grand total
-                    var grandDit = BotFormatters.FindNum(row, "Grand Total", ">>");
-                    var grandSisa = BotFormatters.FindNum(row, "SISA", "GUDANG");
+                    sb.AppendLine(new string('─', 16 + 3 * (2 + 9)));
+                    sb.AppendLine(BotFormatters.TableRow("📊 TOTAL", 16,
+                        (BotFormatters.FormatNum(totalDit), 9),
+                        (BotFormatters.FormatNum(totalKel), 9),
+                        (BotFormatters.FormatNum(totalDit - totalKel), 9)));
                     sb.AppendLine();
-                    sb.AppendLine($"  📊 Total Diterima: {BotFormatters.FormatNum(grandDit)} · Sisa Gudang: {BotFormatters.FormatNum(grandSisa)}");
                 }
+
+                sb.AppendLine("✓ stok ada · · habis · ! minus");
                 return BotResponse.Text_(sb.ToString().TrimEnd());
             }
             catch (Exception ex) { return BotResponse.Text_($"❌ {ex.Message}"); }
@@ -112,11 +129,10 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 sb.AppendLine();
 
                 // Header (sejajar) — Material col tanpa emoji indent (24 char)
-                sb.AppendLine(BotFormatters.PadR("Material", 24) + "  " +
-                              BotFormatters.PadL("Masuk", 8) + "  " +
-                              BotFormatters.PadL("Keluar", 8) + "  " +
-                              BotFormatters.PadL("Sisa", 8));
-                sb.AppendLine("──────────────────────────────────────────────────");
+                BotFormatters.AppendTable(sb,
+                    new[] { "Material", "Masuk", "Keluar", "Sisa" },
+                    labelWidth: 24,
+                    numWidths: new[] { 8, 8, 8 });
 
                 int idx = Array.IndexOf(DataSchema.Segments, seg);
                 if (idx < 0) return BotResponse.Text_($"⚠️ Segment {seg} tidak dikenal.");
@@ -134,17 +150,17 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     var kel = StokFindGudangVal(row, idx, true);
                     var sisa = dit - kel;
 
-                    // Emoji as prefix character (1 col), then space, then 22-wide name
                     var prefix = sisa > 0 ? "✓" : sisa == 0 ? "·" : "!";
                     var matShort = BotFormatters.Trunc(nama, 22);
-                    sb.AppendLine($"{prefix} {BotFormatters.PadR(matShort, 22)}  " +
-                                  BotFormatters.PadL(BotFormatters.FormatNum(dit), 8) + "  " +
-                                  BotFormatters.PadL(BotFormatters.FormatNum(kel), 8) + "  " +
-                                  BotFormatters.PadL(BotFormatters.FormatNum(sisa), 8));
+                    sb.AppendLine(BotFormatters.TableRow(
+                        $"{prefix} {matShort}", 24,
+                        (BotFormatters.FormatNum(dit), 8),
+                        (BotFormatters.FormatNum(kel), 8),
+                        (BotFormatters.FormatNum(sisa), 8)));
                     rowsPrinted++;
                 }
                 sb.AppendLine();
-                sb.AppendLine("📊 Masuk = diterima · Keluar = terpakai · Sisa = masuk-keluar");
+                sb.AppendLine("📊 Masuk = diterima · Keluar = terpakai · Sisa = masuk−keluar");
                 sb.AppendLine("✓ stok ada · · habis · ! minus");
                 return BotResponse.Text_(sb.ToString().TrimEnd());
             }
@@ -202,6 +218,11 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 sb.AppendLine("🚨 STOK KRITIS (Sisa Gudang ≤ 0)");
                 sb.AppendLine();
 
+                BotFormatters.AppendTable(sb,
+                    new[] { "Material", "Sisa" },
+                    labelWidth: 26,
+                    numWidths: new[] { 10 });
+
                 int found = 0;
                 foreach (var row in result.Data)
                 {
@@ -210,7 +231,9 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     var sisa = BotFormatters.FindNum(row, "SISA", "GUDANG");
                     if (sisa <= 0)
                     {
-                        sb.AppendLine($"🚨 {BotFormatters.Trunc(nama, 25)} — Sisa: {BotFormatters.FormatNum(sisa)}");
+                        sb.AppendLine(BotFormatters.TableRow(
+                            "🚨 " + BotFormatters.Trunc(nama, 24), 26,
+                            (BotFormatters.FormatNum(sisa), 10)));
                         found++;
                     }
                 }
@@ -219,7 +242,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     return BotResponse.Text_("✅ Semua material masih ada stok. Tidak ada yang kritis.");
 
                 sb.AppendLine();
-                sb.AppendLine($"Total {found} material kritis. Ketik `stok [nama]` untuk detail.");
+                sb.AppendLine($"📊 Total {found} material kritis. Ketik `stok [nama]` untuk detail per gudang.");
                 return BotResponse.Text_(sb.ToString().TrimEnd());
             }
             catch (Exception ex) { return BotResponse.Text_($"❌ {ex.Message}"); }
