@@ -92,6 +92,58 @@ namespace StokBarangMAUI.Services.AiChat
 
         public static string StatusIconRatio(double r01) => StatusIcon(r01 * 100);
 
+        /// <summary>Status overall berdasarkan threshold yang baru:
+        /// &lt;30% = belum, 30-70% = sedang progres, &gt;=70% = hampir/selesai.
+        /// Input: ratio 0..1 (atau >1 over).</summary>
+        public static (string icon, string label, string status) StatusByOverall(double ratio)
+        {
+            if (ratio >= 1.0) return ("✅", "Selesai", "done");
+            if (ratio >= 0.7) return ("🟢", "Hampir selesai", "almost");
+            if (ratio >= 0.3) return ("🟡", "Sedang progres", "progress");
+            if (ratio > 0)    return ("🟠", "Baru mulai", "started");
+            return ("🔴", "Belum dikerjakan", "not_started");
+        }
+
+        /// <summary>Hitung overall ratio dari 3 kategori (kabel, T7, T9).
+        /// Average dari kategori yang plan > 0.</summary>
+        public static double ComputeOverall(double kPlan, double kProg, double t7Plan, double t7Prog, double t9Plan, double t9Prog)
+        {
+            double sum = 0;
+            int n = 0;
+            if (kPlan > 0)  { sum += kProg / kPlan;  n++; }
+            if (t7Plan > 0) { sum += t7Prog / t7Plan; n++; }
+            if (t9Plan > 0) { sum += t9Prog / t9Plan; n++; }
+            return n > 0 ? sum / n : 0;
+        }
+
+        // ── Padding for column alignment ──────────────────────────────
+
+        /// <summary>Pad string ke kanan sampai panjang width (untuk alignment kolom).</summary>
+        public static string PadR(string s, int width)
+        {
+            s ??= "";
+            if (s.Length >= width) return s.Substring(0, width);
+            return s + new string(' ', width - s.Length);
+        }
+
+        /// <summary>Pad string ke kiri (untuk angka kanan-rata).</summary>
+        public static string PadL(string s, int width)
+        {
+            s ??= "";
+            if (s.Length >= width) return s.Substring(s.Length - width);
+            return new string(' ', width - s.Length) + s;
+        }
+
+        /// <summary>Format kolom: label + value sejajar dengan separator.</summary>
+        public static string Row(string label, int labelWidth, string value)
+            => $"{PadR(label, labelWidth)} {value}";
+
+        public static string Row3(string c1, int w1, string c2, int w2, string c3, int w3)
+            => $"{PadR(c1, w1)}  {PadL(c2, w2)}  {PadL(c3, w3)}";
+
+        public static string Row4(string c1, int w1, string c2, int w2, string c3, int w3, string c4, int w4)
+            => $"{PadR(c1, w1)}  {PadL(c2, w2)}  {PadL(c3, w3)}  {PadL(c4, w4)}";
+
         // ── Section dividers ──────────────────────────────────────────
 
         public const string DividerLine = "━━━━━━━━━━━━━━━━━━━━━━━";

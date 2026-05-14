@@ -1,18 +1,21 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using StokBarangMAUI.Models.Bot;
 using StokBarangMAUI.Services.Mcp;
 
 namespace StokBarangMAUI.Services.AiChat.BotFlows
 {
     /// <summary>
-    /// Flow 1b: Search site/rute di semua 6 segment RESUME.
-    /// Pattern B/C: search → if >3 hits multi-segment → picker → detail.
-    /// Auto-skip picker kalau ≤3 hits atau 1 segment.
+    /// Flow 1b: Search site/rute. Dua mode:
+    ///   - "site 0244" / "rute JC2" → search → langsung detail kalau cuma 1, kalau banyak list pendek
+    ///   - "site di sragen" / "cek site sragen" → list semua site di segment → user pilih → detail
+    ///   - "yang mana belum" sebagai follow-up → filter overall < 30%
     /// </summary>
     public class ProgresSiteSearchFlow : IBotFlow
     {
         private readonly McpClient _mcp;
-        private const int PAGE_SIZE = 5;
+        private const int LIST_PAGE = 15;
+        private const double THRESHOLD_BELUM = 0.30;
 
         public ProgresSiteSearchFlow(McpClient mcp) { _mcp = mcp; }
 
@@ -24,15 +27,36 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             if (!_mcp.IsEnabled)
                 return BotResponse.Text_("⚠️ GDrive Reader belum aktif.");
 
-            ctx.TryGetValue("query", out var query);
-            if (string.IsNullOrWhiteSpace(query))
+            var lower = userMessage.ToLowerInvariant();
+
+            // Detect mode "site di [segment]"
+            var segMatch = Regex.Match(lower,
+                @"\b(?:site|rute|cek\s+site)\s+(?:di|dari|pada)\s+(?<seg>\w+)",
+                RegexOptions.IgnoreCase);
+            if (!segMatch.Success)
             {
-                query = BotTokens.FindSiteOrRuteQuery(userMessage);
-                if (string.IsNullOrWhiteSpace(query))
-                    return BotResponse.Text_("🔍 Ketik site/rute yang mau dicari, misal: `site 0244` atau `rute JC2`");
+                // Atau pattern "cek site [segment]" tanpa "di"
+                segMatch = Regex.Match(lower,
+                    @"^(?:cek\s+)?site\s+(?<seg>brebes|tasik(?:malaya)?|purwokerto|sukoharjo|sragen|grobogan|klaten|solo|surakarta|wonogiri|cilacap|kebumen|banyumas|purworejo|tegal|cirebon|pekalongan|indramayu|semarang|banjar|karanganyar|blora)\b",
+                    RegexOptions.IgnoreCase);
             }
 
-            return await SearchAcrossSegments(query.ToUpperInvariant(), null);
+            if (segMatch.Success)
+            {
+                var segName = DataSchema.ResolveSegmentFromCity(segMatch.Groups["seg"].Value);
+                if (segName != null)
+                    return await ListSitesInSegment(segName);
+            }
+
+            // Mode keyword search
+            ctx.TryGetValue("query", out var query);
+            if (string.IsNullOrWhiteSpace(query))
+                query = BotTokens.FindSiteOrRuteQuery(userMessage);
+
+            if (string.IsNullOrWhiteSpace(query))
+                return BotResponse.Text_("🔍 Ketik site/rute yang dicari, misal:\n  • `site 0244`\n  • `rute JC2`\n  • `cek site di sragen`");
+
+            return await SearchByKeyword(query.ToUpperInvariant());
         }
 
         public async Task<BotResponse?> ResumeAsync(string userMessage, BotPendingState state)
@@ -40,149 +64,256 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             var step = state.Step;
             var lower = userMessage.Trim().ToLowerInvariant();
 
-            if (step == "pickSegment")
+            // From list mode, user picks site
+            if (step == "listShown")
             {
-                var query = state.Get("query") ?? "";
-                var seg = ResolveSegmentChoice(lower);
-                if (seg == null) return null;
+                var seg = state.Get("segment") ?? "";
+                var siteIds = (state.Get("sites") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-                return await SearchAcrossSegments(query, seg);
+                // "yang mana belum" → re-show filtered <30%
+                if (Regex.IsMatch(lower, @"\b(yang\s+(mana|belum)|belum|outstanding|kurang)\b"))
+                {
+                    return await ListSitesInSegment(seg, onlyOutstanding: true);
+                }
+
+                // "yang sedang" / "sedang progres"
+                if (Regex.IsMatch(lower, @"\b(sedang|jalan|progres|on going)\b"))
+                {
+                    return await ListSitesInSegment(seg, onlyMid: true);
+                }
+
+                // "yang selesai" / "done"
+                if (Regex.IsMatch(lower, @"\b(selesai|done|hampir|finish|komplit)\b"))
+                {
+                    return await ListSitesInSegment(seg, onlyDone: true);
+                }
+
+                // Pick by number atau site ID
+                var pickedSite = ResolveSitePick(lower, siteIds);
+                if (pickedSite != null)
+                {
+                    var result = await _mcp.SearchSiteResumeAsync(pickedSite, 5);
+                    var match = result?.Data?.FirstOrDefault();
+                    if (match == null)
+                        return BotResponse.Text_($"🔍 Site `{pickedSite}` tidak ketemu.");
+                    BotState.Clear();
+                    return BotResponse.Text_(FormatSiteDetail(match));
+                }
+                return null;
             }
 
             return null;
         }
 
-        private async Task<BotResponse> SearchAcrossSegments(string query, string? onlySegment)
+        // ── Modes ───────────────────────────────────────────────────
+
+        private async Task<BotResponse> ListSitesInSegment(string segment, bool onlyOutstanding = false, bool onlyMid = false, bool onlyDone = false)
         {
             try
             {
-                var segments = onlySegment != null
-                    ? new[] { onlySegment }
-                    : DataSchema.Segments;
+                // Cari segment file (sheet name = nama segment uppercase)
+                var spec = DataSchema.SegmentSheets.FirstOrDefault(s =>
+                    s.SheetName.Equals(segment, StringComparison.OrdinalIgnoreCase));
+                if (spec == null)
+                    return BotResponse.Text_($"⚠️ Segment {segment} tidak dikenal.");
 
-                var bySegment = new Dictionary<string, List<Dictionary<string, object>>>(StringComparer.OrdinalIgnoreCase);
+                var result = await _mcp.FilterAsync(spec, null, null, 200);
+                var rows = result?.Data ?? new();
 
-                foreach (var seg in segments)
+                // Skip header rows yang gak punya RUTE
+                rows = rows.Where(r =>
                 {
-                    var spec = DataSchema.SegmentSheets.FirstOrDefault(s =>
-                        s.SheetName.Equals(seg, StringComparison.OrdinalIgnoreCase));
-                    if (spec == null) continue;
+                    var rute = BotFormatters.FindCol(r, "RUTE");
+                    return rute != "-" && !string.IsNullOrWhiteSpace(rute);
+                }).ToList();
 
-                    var result = await _mcp.SmartFilterAsync(spec, query, null,
-                        new[] { "RUTE", "No" }, 50);
+                if (onlyOutstanding) rows = rows.Where(r => OverallOf(r) < THRESHOLD_BELUM).ToList();
+                else if (onlyMid)    rows = rows.Where(r => OverallOf(r) >= THRESHOLD_BELUM && OverallOf(r) < 0.7).ToList();
+                else if (onlyDone)   rows = rows.Where(r => OverallOf(r) >= 0.7).ToList();
 
-                    if (result?.Data != null && result.Data.Count > 0)
-                        bySegment[seg] = result.Data;
+                if (rows.Count == 0)
+                {
+                    var label = onlyOutstanding ? "belum (<30%)" : onlyMid ? "sedang progres (30-70%)" : onlyDone ? "hampir/selesai (>70%)" : "data";
+                    return BotResponse.Text_($"📭 Tidak ada {label} di segment {segment}.");
                 }
 
-                var total = bySegment.Values.Sum(v => v.Count);
+                // Save state
+                var siteIdsCsv = string.Join(",", rows.Take(50).Select(r => BotFormatters.FindCol(r, "RUTE")));
+                BotState.Save(nameof(BotIntent.ProgresSiteSearch), "listShown",
+                    new Dictionary<string, string>
+                    {
+                        ["segment"] = segment,
+                        ["sites"] = siteIdsCsv,
+                    });
 
-                if (total == 0)
-                    return BotResponse.Text_($"🔍 Tidak ketemu `{query}` di 6 segment RESUME.\n\n💡 Coba keyword lebih pendek.");
-
-                // Auto-skip: ≤3 total atau 1 segment → langsung detail
-                if (total <= 3 || bySegment.Count == 1)
-                {
-                    var all = bySegment.SelectMany(kv => kv.Value.Select(r => (kv.Key, r))).ToList();
-                    return FormatDetail(query, all);
-                }
-
-                // Multi-segment picker
-                BotState.Save(nameof(BotIntent.ProgresSiteSearch), "pickSegment",
-                    new Dictionary<string, string> { ["query"] = query });
-
-                return FormatPicker(query, bySegment);
+                return FormatSiteList(segment, rows, onlyOutstanding, onlyMid, onlyDone);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[SiteSearch] error: {ex.Message}");
-                return BotResponse.Text_($"❌ Gagal search: {ex.Message}");
-            }
+            catch (Exception ex) { return BotResponse.Text_($"❌ {ex.Message}"); }
         }
 
-        private static BotResponse FormatPicker(string query,
-            Dictionary<string, List<Dictionary<string, object>>> bySegment)
+        private async Task<BotResponse> SearchByKeyword(string query)
         {
+            try
+            {
+                var result = await _mcp.SearchSiteResumeAsync(query, 50);
+                var rows = result?.Data ?? new();
+                if (rows.Count == 0)
+                    return BotResponse.Text_($"🔍 Tidak ketemu `{query}` di RESUME BY SITE ID.");
+
+                if (rows.Count == 1)
+                    return BotResponse.Text_(FormatSiteDetail(rows[0]));
+
+                // Multiple — show list
+                var siteIdsCsv = string.Join(",", rows.Take(50).Select(r => BotFormatters.FindCol(r, "Rute")));
+                BotState.Save(nameof(BotIntent.ProgresSiteSearch), "listShown",
+                    new Dictionary<string, string> { ["sites"] = siteIdsCsv });
+
+                return FormatSearchList(query, rows);
+            }
+            catch (Exception ex) { return BotResponse.Text_($"❌ {ex.Message}"); }
+        }
+
+        // ── Helpers ─────────────────────────────────────────────────
+
+        private static double OverallOf(Dictionary<string, object> row)
+        {
+            var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
+            var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
+            var t7Plan = BotFormatters.FindNum(row, "7m", "Plan");
+            var t7Prog = BotFormatters.FindNum(row, "7m", "Progress");
+            var t9Plan = BotFormatters.FindNum(row, "9m", "Plan");
+            var t9Prog = BotFormatters.FindNum(row, "9m", "Progress");
+            return BotFormatters.ComputeOverall(kPlan, kProg, t7Plan, t7Prog, t9Plan, t9Prog);
+        }
+
+        private static string? ResolveSitePick(string input, string[] candidates)
+        {
+            // Number "1", "2"
+            if (int.TryParse(input.Trim(), out var num) && num >= 1 && num <= candidates.Length)
+                return candidates[num - 1];
+
+            // "site XXX"
+            var m = Regex.Match(input, @"\b(?:site|rute|cek\s+site)\s+(?<q>[a-z0-9][a-z0-9\-_\.]+)", RegexOptions.IgnoreCase);
+            if (m.Success) return m.Groups["q"].Value;
+
+            m = Regex.Match(input, @"\b(?<q>JAW-[A-Z0-9\-]+|JC\d+_\d+|\d{4})\b", RegexOptions.IgnoreCase);
+            if (m.Success) return m.Groups["q"].Value;
+
+            return null;
+        }
+
+        // ── Formatters ──────────────────────────────────────────────
+
+        private static BotResponse FormatSiteList(string segment, List<Dictionary<string, object>> rows,
+            bool only_outstanding, bool only_mid, bool only_done)
+        {
+            string headerLabel;
+            if (only_outstanding) headerLabel = "🔴 Belum (<30%)";
+            else if (only_mid)    headerLabel = "🟡 Sedang (30-70%)";
+            else if (only_done)   headerLabel = "✅ Selesai (>70%)";
+            else                  headerLabel = "📋 Semua";
+
             var sb = new StringBuilder();
-            var total = bySegment.Values.Sum(v => v.Count);
-            sb.AppendLine($"🔎 Ditemukan {total} rute cocok `{query}` di {bySegment.Count} segment:");
+            sb.AppendLine($"{headerLabel} — {segment} ({rows.Count} rute)");
             sb.AppendLine();
 
             int i = 1;
-            var suggestions = new List<string>();
-            foreach (var kv in bySegment.OrderBy(x => x.Key))
+            foreach (var row in rows.Take(LIST_PAGE))
             {
-                sb.AppendLine($"  {i}. {kv.Key} — {kv.Value.Count} rute");
-                // Preview 2 rute
-                foreach (var row in kv.Value.Take(2))
-                {
-                    var rute = BotFormatters.FindCol(row, "RUTE");
-                    sb.AppendLine($"     • {BotFormatters.Trunc(rute, 40)}");
-                }
-                if (kv.Value.Count > 2)
-                    sb.AppendLine($"     • ...+{kv.Value.Count - 2} lagi");
-                sb.AppendLine();
-                suggestions.Add(i.ToString());
+                var rute = BotFormatters.FindCol(row, "RUTE");
+                var kab = BotFormatters.FindCol(row, "KAB");
+                var ruteShort = BotFormatters.Trunc(rute, 40);
+                var kabShort = kab != "-" ? BotFormatters.Trunc(kab, 14) : "";
+                sb.AppendLine($"{i,2}. {ruteShort,-40}  {kabShort}");
                 i++;
             }
 
-            sb.AppendLine("Pilih segment (ketik angka atau nama):");
-            return BotResponse.Menu(sb.ToString().TrimEnd(), suggestions);
+            if (rows.Count > LIST_PAGE)
+                sb.AppendLine($"\n📄 +{rows.Count - LIST_PAGE} rute lagi");
+
+            sb.AppendLine();
+            sb.AppendLine("👉 Ketik nomor atau `site [ID]` untuk detail progres.");
+            sb.AppendLine("📊 Filter: `yang belum`, `yang sedang`, `yang selesai`");
+            return new BotResponse { Text = sb.ToString().TrimEnd(), HasPendingState = true };
         }
 
-        private static BotResponse FormatDetail(string query,
-            List<(string segment, Dictionary<string, object> row)> matches)
+        private static BotResponse FormatSearchList(string query, List<Dictionary<string, object>> rows)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"📍 Progres: `{query}`");
-            sb.AppendLine($"Ditemukan {matches.Count} rute");
+            sb.AppendLine($"🔎 Hasil cari `{query}` — {rows.Count} rute");
             sb.AppendLine();
 
-            string? currentSeg = null;
-            foreach (var (seg, row) in matches.Take(PAGE_SIZE * 3)) // max 15
+            int i = 1;
+            foreach (var row in rows.Take(LIST_PAGE))
             {
-                if (seg != currentSeg)
-                {
-                    if (currentSeg != null) sb.AppendLine();
-                    sb.AppendLine(BotFormatters.SectionHeader(seg));
-                    currentSeg = seg;
-                }
-
-                var rute = BotFormatters.FindCol(row, "RUTE");
-                var kota = BotFormatters.FindCol(row, "KAB");
-
-                var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
-                var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
-                var t7Plan = BotFormatters.FindNum(row, "7m", "Plan");
-                var t7Prog = BotFormatters.FindNum(row, "7m", "Progress");
-                var t9Plan = BotFormatters.FindNum(row, "9m", "Plan");
-                var t9Prog = BotFormatters.FindNum(row, "9m", "Progress");
-
-                var kPct = kPlan > 0 ? kProg / kPlan * 100 : 0;
-                var t7Pct = t7Plan > 0 ? t7Prog / t7Plan * 100 : 0;
-                var t9Pct = t9Plan > 0 ? t9Prog / t9Plan * 100 : 0;
-
-                sb.AppendLine();
-                sb.AppendLine($"📌 {BotFormatters.Trunc(rute, 50)}");
-                if (kota != "-") sb.AppendLine($"   Kota: {kota}");
-                sb.AppendLine($"   {BotFormatters.StatusIcon(kPct)} Kabel: {kProg:N0}/{kPlan:N0} m ({kPct:N0}%)");
-                sb.AppendLine($"   {BotFormatters.StatusIcon(t7Pct)} T7: {t7Prog:N0}/{t7Plan:N0} ({t7Pct:N0}%)");
-                sb.AppendLine($"   {BotFormatters.StatusIcon(t9Pct)} T9: {t9Prog:N0}/{t9Plan:N0} ({t9Pct:N0}%)");
+                var siteId = BotFormatters.FindCol(row, "SITE ID");
+                var rute = BotFormatters.FindCol(row, "Rute");
+                var kab = BotFormatters.FindCol(row, "KAB");
+                var siteShort = siteId != "-" ? BotFormatters.Trunc(siteId, 22) : "-";
+                var ruteShort = BotFormatters.Trunc(rute, 32);
+                sb.AppendLine($"{i,2}. {siteShort,-22}  {ruteShort}");
+                i++;
             }
-
-            if (matches.Count > PAGE_SIZE * 3)
-                sb.AppendLine($"\n📄 +{matches.Count - PAGE_SIZE * 3} rute lagi");
+            if (rows.Count > LIST_PAGE)
+                sb.AppendLine($"\n📄 +{rows.Count - LIST_PAGE} lagi");
 
             sb.AppendLine();
-            sb.AppendLine("Legend: ✅ selesai · 🟡 jalan · 🔴 belum");
-            return BotResponse.Text_(sb.ToString().TrimEnd());
+            sb.AppendLine("👉 Ketik nomor untuk lihat detail.");
+            return new BotResponse { Text = sb.ToString().TrimEnd(), HasPendingState = true };
         }
 
-        private static string? ResolveSegmentChoice(string input)
+        private static string FormatSiteDetail(Dictionary<string, object> row)
         {
-            if (int.TryParse(input, out var num) && num >= 1 && num <= DataSchema.Segments.Length)
-                return DataSchema.Segments[num - 1];
-            return DataSchema.ResolveSegmentFromCity(input);
+            var siteId = BotFormatters.FindCol(row, "SITE ID");
+            if (siteId == "-") siteId = BotFormatters.FindCol(row, "No");
+            var rute = BotFormatters.FindCol(row, "Rute");
+            if (rute == "-") rute = BotFormatters.FindCol(row, "RUTE");
+            var kota = BotFormatters.FindCol(row, "KAB");
+
+            var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
+            var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
+            var t7Plan = BotFormatters.FindNum(row, "7m", "Plan");
+            var t7Prog = BotFormatters.FindNum(row, "7m", "Progress");
+            var t9Plan = BotFormatters.FindNum(row, "9m", "Plan");
+            var t9Prog = BotFormatters.FindNum(row, "9m", "Progress");
+
+            var overall = BotFormatters.ComputeOverall(kPlan, kProg, t7Plan, t7Prog, t9Plan, t9Prog);
+            var (icon, label, _) = BotFormatters.StatusByOverall(overall);
+
+            var kPct = kPlan > 0 ? kProg / kPlan : 0;
+            var t7Pct = t7Plan > 0 ? t7Prog / t7Plan : 0;
+            var t9Pct = t9Plan > 0 ? t9Prog / t9Plan : 0;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("📍 Site Detail");
+            sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━");
+            if (siteId != "-") sb.AppendLine($"🆔 {siteId}");
+            sb.AppendLine($"📌 {rute}");
+            if (kota != "-") sb.AppendLine($"📍 {kota}");
+            sb.AppendLine();
+            sb.AppendLine($"{icon} Status: {label} ({BotFormatters.FormatPct(overall)})");
+            sb.AppendLine();
+
+            var lblW = 8; var numW = 8;
+            sb.AppendLine(BotFormatters.PadR("Kategori", lblW) + "  " +
+                          BotFormatters.PadL("Plan", numW) + "  " +
+                          BotFormatters.PadL("Progress", numW) + "  " +
+                          BotFormatters.PadL("%", 5));
+            sb.AppendLine("─────────────────────────────────────");
+            sb.AppendLine(BotFormatters.PadR("Kabel", lblW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatNum(kPlan), numW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatNum(kProg), numW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatPct(kPct), 5));
+            sb.AppendLine(BotFormatters.PadR("Tiang 7m", lblW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatNum(t7Plan), numW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatNum(t7Prog), numW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatPct(t7Pct), 5));
+            sb.AppendLine(BotFormatters.PadR("Tiang 9m", lblW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatNum(t9Plan), numW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatNum(t9Prog), numW) + "  " +
+                          BotFormatters.PadL(BotFormatters.FormatPct(t9Pct), 5));
+
+            return sb.ToString().TrimEnd();
         }
     }
 }

@@ -93,7 +93,14 @@ namespace StokBarangMAUI.Services.AiChat
 
                 // Save state kalau flow expect lanjutan
                 if (resp.HasPendingState)
-                    BotState.Save(match.Intent.ToString(), step: "next", ctx: match.Context);
+                {
+                    var saved = BotState.Load();
+                    if (saved == null ||
+                        !saved.FlowName.Equals(match.Intent.ToString(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        BotState.Save(match.Intent.ToString(), step: "next", ctx: match.Context);
+                    }
+                }
                 else
                     BotState.Clear();
 

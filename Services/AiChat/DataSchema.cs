@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace StokBarangMAUI.Services.AiChat
 {
     /// <summary>
@@ -129,10 +131,68 @@ namespace StokBarangMAUI.Services.AiChat
         };
 
         public static string? ResolveSegmentFromCity(string city)
+            => ResolveSegmentFromText(city);
+
+        public static string? ResolveSegmentFromText(string text)
         {
-            if (string.IsNullOrWhiteSpace(city)) return null;
-            var k = city.Trim().ToUpperInvariant();
-            return KotaToSegment.TryGetValue(k, out var seg) ? seg : null;
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            var normalized = NormalizeLocationText(text);
+            if (normalized.Length == 0) return null;
+
+            foreach (var kv in KotaToSegment)
+            {
+                if (NormalizeLocationText(kv.Key).Equals(normalized, StringComparison.OrdinalIgnoreCase))
+                    return kv.Value;
+            }
+
+            foreach (var kv in KotaToSegment.OrderByDescending(x => x.Key.Length))
+            {
+                var key = NormalizeLocationText(kv.Key);
+                if (ContainsWholePhrase(normalized, key))
+                    return kv.Value;
+            }
+
+            return null;
+        }
+
+        public static string? ResolveSegmentChoice(string input, IEnumerable<string>? displayedSegments = null)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return null;
+
+            var choices = displayedSegments?.Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? new();
+            if (int.TryParse(input.Trim(), out var num))
+            {
+                if (choices.Count > 0 && num >= 1 && num <= choices.Count)
+                    return choices[num - 1];
+
+                if (num >= 1 && num <= Segments.Length)
+                    return Segments[num - 1];
+            }
+
+            if (input.Equals("lainnya", StringComparison.OrdinalIgnoreCase) ||
+                input.Equals("other", StringComparison.OrdinalIgnoreCase))
+            {
+                var other = choices.FirstOrDefault(s => s.Equals("LAINNYA", StringComparison.OrdinalIgnoreCase));
+                if (other != null) return other;
+            }
+
+            return ResolveSegmentFromText(input);
+        }
+
+        private static string NormalizeLocationText(string text)
+        {
+            var normalized = Regex.Replace(text.ToUpperInvariant(), @"[^A-Z0-9]+", " ");
+            return Regex.Replace(normalized, @"\s+", " ").Trim();
+        }
+
+        private static bool ContainsWholePhrase(string text, string phrase)
+        {
+            if (phrase.Length == 0) return false;
+            return text.Equals(phrase, StringComparison.OrdinalIgnoreCase) ||
+                   text.StartsWith(phrase + " ", StringComparison.OrdinalIgnoreCase) ||
+                   text.EndsWith(" " + phrase, StringComparison.OrdinalIgnoreCase) ||
+                   text.Contains(" " + phrase + " ", StringComparison.OrdinalIgnoreCase);
         }
     }
 
