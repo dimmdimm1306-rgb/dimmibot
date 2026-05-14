@@ -29,7 +29,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             {
                 // Fetch SEMUA rute (bukan cuma yang outstanding di server) supaya kita
                 // bisa apply threshold 30% sendiri di client.
-                var result = await _mcp.SearchSiteResumeAsync("", 200);
+                var result = await _mcp.ReadAllResumeBySiteAsync(300);
                 if (result?.Data == null || result.Data.Count == 0)
                     return BotResponse.Text_("📭 Data RESUME BY SITE ID kosong.");
 
@@ -83,7 +83,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
                 try
                 {
-                    var result = await _mcp.SearchSiteResumeAsync("", 200);
+                    var result = await _mcp.ReadAllResumeBySiteAsync(300);
                     if (result?.Data == null) return BotResponse.Text_("📭 Data kosong.");
 
                     var outstanding = result.Data
@@ -114,7 +114,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 {
                     try
                     {
-                        var result = await _mcp.SearchSiteResumeAsync("", 200);
+                        var result = await _mcp.ReadAllResumeBySiteAsync(300);
                         if (result?.Data == null) return BotResponse.Text_("📭 Data kosong.");
 
                         var match = result.Data.FirstOrDefault(r =>
@@ -140,7 +140,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                     if (string.IsNullOrEmpty(segNow)) return null;
                     try
                     {
-                        var result = await _mcp.SearchSiteResumeAsync("", 200);
+                        var result = await _mcp.ReadAllResumeBySiteAsync(300);
                         var outstanding = (result?.Data ?? new()).Where(r => OverallOf(r) < THRESHOLD_BELUM).ToList();
                         var bySegment = GroupBySegment(outstanding);
                         if (!bySegment.TryGetValue(segNow, out var rows))

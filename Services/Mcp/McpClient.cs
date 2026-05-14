@@ -48,8 +48,12 @@ namespace StokBarangMAUI.Services.Mcp
             => SmartFilterAsync(DataSchema.ResumeBySite, keyword, null,
                 new[] { "SITE ID", "Rute", "KAB/KOTA" }, limit);
 
+        /// <summary>Read SEMUA rute di RESUME BY SITE ID (no filter, untuk client-side analysis).</summary>
+        public Task<SheetFilterResult?> ReadAllResumeBySiteAsync(int limit = 300)
+            => FilterAsync(DataSchema.ResumeBySite, null, null, limit);
+
         /// <summary>Filter rute outstanding (% ada yang &lt; 100) di RESUME BY SITE ID.</summary>
-        public Task<SheetFilterResult?> ResumeBySiteOutstandingAsync(int limit = 200)
+        public Task<SheetFilterResult?> ResumeBySiteOutstandingAsync(int limit = 500)
             => SmartFilterAsync(DataSchema.ResumeBySite, null, "outstanding", null, limit);
 
         /// <summary>Filter rute selesai (semua % >= 100) di RESUME BY SITE ID.</summary>
