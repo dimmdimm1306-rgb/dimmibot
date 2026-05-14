@@ -49,6 +49,33 @@ namespace StokBarangMAUI.Services.AiChat
                 return IntentMatch.Of(BotIntent.AlamatGudang, ctx);
             }
 
+            // ── WEATHER ───────────────────────────────────────────────
+            if (Regex.IsMatch(lower, @"\b(cuaca|weather|hujan|panas|dingin|udara|temperatur)\b"))
+            {
+                var ctx = new Dictionary<string, string>();
+                // Detect "cuaca [kota]"
+                var m = Regex.Match(lower,
+                    @"\b(cuaca|weather)\s+(?:di\s+)?(?<city>[a-z][a-z\s]{2,30})",
+                    RegexOptions.IgnoreCase);
+                if (m.Success)
+                {
+                    var city = m.Groups["city"].Value.Trim().TrimEnd('?', '!', '.', ',');
+                    // Filter out time words
+                    if (!Regex.IsMatch(city, @"\b(hari\s*ini|sekarang|today|kemarin|besok|nanti)\b", RegexOptions.IgnoreCase))
+                        ctx["city"] = city;
+                }
+                return IntentMatch.Of(BotIntent.Weather, ctx);
+            }
+
+            // ── TIME QUERY ────────────────────────────────────────────
+            // "hari apa" / "tanggal berapa" / "jam berapa" / "bulan apa" / "tahun berapa"
+            if (Regex.IsMatch(lower, @"\b(hari\s+apa|tanggal\s+berapa|jam\s+berapa|pukul\s+berapa|bulan\s+(apa|sekarang)|tahun\s+(berapa|sekarang)|sekarang\s+(jam|tanggal|hari))\b") ||
+                Regex.IsMatch(lower, @"^\s*(jam|hari|tanggal|tgl|bulan|tahun|waktu)\s*(berapa|apa|sekarang)?\s*\??\s*$"))
+            {
+                return IntentMatch.Of(BotIntent.TimeQuery,
+                    new Dictionary<string, string> { ["subQuery"] = lower });
+            }
+
             // ── PROGRES ──────────────────────────────────────────────
             if (BotTokens.ContainsAny(lower, BotTokens.ProgresWords))
             {

@@ -70,7 +70,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
             try
             {
-                var result = await _mcp.SearchProgressAsync(keyword, dateIntent, 50);
+                var result = await _mcp.SearchProgressAsync(keyword, dateIntent, 100);
                 if (result?.Data == null || result.Data.Count == 0)
                     return BotResponse.Text_($"📅 Tidak ada progres untuk `{label}`.\n\n💡 Coba tanggal lain.");
 
@@ -87,33 +87,73 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
         private static string FormatDateResult(string label, List<Dictionary<string, object>> rows)
         {
+            // Group by (tanggal | segment | rute) — material di-rangkap jadi list
+            var grouped = rows
+                .Select(r => new
+                {
+                    Tanggal = BotFormatters.FindCol(r, "Tanggal"),
+                    Segment = BotFormatters.FindCol(r, "Segment"),
+                    Rute    = BotFormatters.FindCol(r, "Rute"),
+                    Site    = BotFormatters.FindCol(r, "SITE"),
+                    Homebase= BotFormatters.FindCol(r, "Homebase"),
+                    Kab     = BotFormatters.FindCol(r, "KAB"),
+                    Barang  = BotFormatters.FindCol(r, "Nama Barang"),
+                    Progres = BotFormatters.FindCol(r, "Progres"),
+                    Ket     = BotFormatters.FindCol(r, "Keterangan"),
+                })
+                .GroupBy(x => $"{x.Tanggal}|{x.Segment}|{x.Rute}")
+                .Select(g => new
+                {
+                    g.First().Tanggal,
+                    g.First().Segment,
+                    g.First().Rute,
+                    g.First().Site,
+                    g.First().Homebase,
+                    g.First().Kab,
+                    Materials = g.Select(x => (x.Barang, x.Progres, x.Ket)).Distinct().ToList(),
+                })
+                .ToList();
+
             var sb = new StringBuilder();
-            sb.AppendLine($"📅 Progres `{label}` — {rows.Count} entry");
+            sb.AppendLine($"📅 Progres `{label}` — {grouped.Count} aktivitas ({rows.Count} entri)");
             sb.AppendLine();
 
             int shown = 0;
-            foreach (var row in rows.Take(15))
+            foreach (var g in grouped.Take(15))
             {
-                var tanggal = BotFormatters.FindCol(row, "Tanggal");
-                var rute = BotFormatters.FindCol(row, "Rute");
-                var barang = BotFormatters.FindCol(row, "Nama Barang");
-                var progres = BotFormatters.FindCol(row, "Progres");
-                var ket = BotFormatters.FindCol(row, "Keterangan");
-                var segment = BotFormatters.FindCol(row, "Segment");
-                var site = BotFormatters.FindCol(row, "SITE");
+                sb.AppendLine($"📌 {BotFormatters.Trunc(g.Rute, 40)}");
 
-                sb.AppendLine($"📌 {BotFormatters.Trunc(rute, 40)}");
+                // Meta line: tanggal + segment + lokasi
                 var meta = new List<string>();
-                if (segment != "-") meta.Add(segment);
-                if (site != "-") meta.Add($"Site {site}");
-                if (meta.Count > 0) sb.AppendLine($"   {string.Join(" · ", meta)}");
-                sb.AppendLine($"   📦 {barang}: {progres}" + (ket != "-" ? $" ({ket})" : ""));
+                if (g.Tanggal != "-") meta.Add(g.Tanggal);
+                if (g.Segment != "-" && g.Segment.Length < 30) meta.Add(g.Segment);
+                else if (g.Segment != "-") meta.Add(BotFormatters.Trunc(g.Segment, 30));
+                if (g.Site != "-") meta.Add($"Site {g.Site}");
+                if (meta.Count > 0) sb.AppendLine($"   📅 {string.Join(" · ", meta)}");
+
+                if (g.Homebase != "-" || g.Kab != "-")
+                {
+                    var loc = new List<string>();
+                    if (g.Homebase != "-") loc.Add(g.Homebase);
+                    if (g.Kab != "-") loc.Add(g.Kab);
+                    sb.AppendLine($"   📍 {string.Join(" · ", loc)}");
+                }
+
+                // Materials — list semua material dalam aktivitas itu
+                foreach (var (barang, progres, ket) in g.Materials)
+                {
+                    if (barang == "-") continue;
+                    var line = $"   📦 {barang}: {progres}";
+                    if (ket != "-" && !string.IsNullOrWhiteSpace(ket)) line += $" ({ket})";
+                    sb.AppendLine(line);
+                }
+
                 sb.AppendLine();
                 shown++;
             }
 
-            if (rows.Count > shown)
-                sb.AppendLine($"📄 +{rows.Count - shown} entry lagi");
+            if (grouped.Count > shown)
+                sb.AppendLine($"📄 +{grouped.Count - shown} aktivitas lagi");
 
             return sb.ToString().TrimEnd();
         }

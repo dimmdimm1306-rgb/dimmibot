@@ -37,6 +37,8 @@ namespace StokBarangMAUI.Models.Bot
         Refresh,                // "refresh data"
         Cancel,                 // "batal", "cancel"
         DiniHari,               // "hari ini" tapi jam 00-05 WIB
+        Weather,                // "cuaca"
+        TimeQuery,              // "jam berapa", "hari apa", "tanggal berapa"
         Unknown,                // gak match apa-apa, pasrah ke LLM
     }
 

@@ -38,6 +38,8 @@ namespace StokBarangMAUI.Services.AiChat
                 [BotIntent.SuratJalanNomor] = new SuratJalanFlow(mcp, BotIntent.SuratJalanNomor),
                 [BotIntent.SuratJalanOrang] = new SuratJalanFlow(mcp, BotIntent.SuratJalanOrang),
                 [BotIntent.SuratJalanMenu] = new SuratJalanFlow(mcp, BotIntent.SuratJalanMenu),
+                [BotIntent.Weather] = new WeatherFlow(),
+                [BotIntent.TimeQuery] = new TimeQueryFlow(),
                 [BotIntent.ChatGeneral] = new LlmFallbackFlow(mcp),
                 [BotIntent.Unknown] = new LlmFallbackFlow(mcp),
             };
