@@ -2,6 +2,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Handlers;
 using StokBarangMAUI.Pages;
 using StokBarangMAUI.Services;
+using StokBarangMAUI.Services.AiChat;
+using StokBarangMAUI.Services.Mcp;
 using StokBarangMAUI.Controls;
 
 namespace StokBarangMAUI;
@@ -22,6 +24,7 @@ public static class MauiProgram
             {
 #if ANDROID
                 handlers.AddHandler<WebView, StokBarangMAUI.Platforms.Android.CustomWebViewHandler>();
+                StokBarangMAUI.Platforms.Android.SelectableLabelHandler.Configure(handlers);
 #endif
             });
 
@@ -40,6 +43,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<OpenClawBotService>();
         builder.Services.AddSingleton<GDriveReaderService>();
         builder.Services.AddSingleton<GDriveCommandHandler>();
+        builder.Services.AddSingleton<McpClient>();
+        builder.Services.AddSingleton<BotEngine>();
         builder.Services.AddSingleton<AiChatService>();
         builder.Services.AddTransient<MainPage>();
 

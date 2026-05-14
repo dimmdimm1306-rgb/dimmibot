@@ -665,15 +665,35 @@ namespace StokBarangMAUI.Services
 
         public async Task<string> SendMessageAsync(string userMessage)
         {
-            // API key is optional for local servers
-            // if (string.IsNullOrEmpty(_apiKey))
-            // {
-            //     return " API Key belum diset. Buka Settings () dan masukkan API key dari openrouter.ai dulu ya!";
-            // }
-
             try
             {
-                // Check for data refresh command
+                // ══════════════════════════════════════════════════════════
+                // NEW: BotEngine handles all structured queries (Pattern A-D).
+                // Kalau BotEngine return non-null, langsung return — skip LLM.
+                // Kalau null, fallback ke flow lama (akan di-phase-out).
+                // ══════════════════════════════════════════════════════════
+                try
+                {
+                    var botEngine = ((App)Application.Current!).Handler!.MauiContext!
+                        .Services.GetService<AiChat.BotEngine>();
+                    if (botEngine != null)
+                    {
+                        var botResp = await botEngine.TryHandleAsync(userMessage);
+                        if (botResp != null && !string.IsNullOrEmpty(botResp.Text))
+                        {
+                            Console.WriteLine($"[BotEngine] Handled: {botResp.EstimatedTokens} tokens, pending={botResp.HasPendingState}");
+                            return botResp.Text;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[BotEngine] Error (fallback to legacy): {ex.Message}");
+                }
+
+                // ══════════════════════════════════════════════════════════
+                // LEGACY flow (akan di-phase-out setelah semua flow migrated)
+                // ══════════════════════════════════════════════════════════
                 var lowerMsg = userMessage.ToLower().Trim();
 
                 // === /help atau /bantu  tampilkan semua keyword yang tersedia ===
@@ -681,6 +701,24 @@ namespace StokBarangMAUI.Services
                     lowerMsg == "/bantuan" || lowerMsg == "bantuan" || lowerMsg == "/menu" || lowerMsg == "menu")
                 {
                     return BuildHelpMenu();
+                }
+
+                // === Time-aware "hari ini" intercept (jam 00:00–04:59 WIB = dini hari) ===
+                if (System.Text.RegularExpressions.Regex.IsMatch(lowerMsg,
+                    @"\b(hari\s*ini|today|progres\s+hari\s*ini|progress\s+hari\s*ini)\b"))
+                {
+                    var wibNow = GetWibNow();
+                    if (wibNow.Hour >= 0 && wibNow.Hour < 5)
+                    {
+                        var cultureID = new System.Globalization.CultureInfo("id-ID");
+                        var kemarin = wibNow.AddDays(-1);
+                        return $"🌙 Masih dini hari nih, jam {wibNow:HH:mm} WIB.\n\n" +
+                               $"Progress biasanya diinput mulai jam 5 pagi, jadi data 'hari ini' belum ada.\n\n" +
+                               $"Kamu mungkin maksud kemarin → {kemarin.ToString("dddd, dd MMMM yyyy", cultureID)}\n\n" +
+                               $"Coba ketik:\n" +
+                               $"  • `progres kemarin`\n" +
+                               $"  • `tanggal {kemarin:dd}` atau `tanggal {kemarin.Day} {kemarin.ToString("MMMM", cultureID)}`";
+                    }
                 }
 
                 if (lowerMsg == "refresh data" || lowerMsg == "reload data" || lowerMsg == "update data" || lowerMsg == "muat ulang data")
@@ -1242,6 +1280,23 @@ namespace StokBarangMAUI.Services
         }
 
         /// <summary>
+        /// Get current time in WIB (UTC+7). HP bisa set timezone apa aja, tapi bisnis project ini pakai WIB.
+        /// </summary>
+        private static DateTime GetWibNow()
+        {
+            try
+            {
+                var utc = DateTime.UtcNow;
+                // WIB = UTC+7 (no DST)
+                return utc.AddHours(7);
+            }
+            catch
+            {
+                return DateTime.Now;
+            }
+        }
+
+        /// <summary>
         /// Menu bantuan lengkap — semua keyword yang bisa diketik user.
         /// Dipanggil saat user ketik /help, /bantu, /menu, dll.
         /// </summary>
@@ -1256,7 +1311,8 @@ namespace StokBarangMAUI.Services
                    "  `cek pekerjaan di Surakarta`\n" +
                    "  `site mana yang belum di Brebes`\n" +
                    "  `progress kemarin` / `progress 7 hari`\n" +
-                   "  `site 0244` / `span 0244` / `rute sragen`\n\n" +
+                   "  `site 0244` / `span 0244` / `rute sragen`\n" +
+                   "  `tanggal 17` / `tanggal 17 mei`\n\n" +
                    " **CEK STOK & MATERIAL**\n" +
                    "  `stok kabel 24c`\n" +
                    "  `stok di brebes`\n" +
