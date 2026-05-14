@@ -38,7 +38,7 @@ namespace StokBarangMAUI.Services
         /// Cek apakah message user adalah command drive. Return true + isi response kalau ya.
         /// Return false kalau bukan command drive (lanjut ke LLM flow biasa).
         // Max chars untuk response (biar hemat token & ga spam layar)
-        private const int MAX_RESPONSE_CHARS = 1000;
+        private const int MAX_RESPONSE_CHARS = 1500;
 
         /// <summary>Cap response string dan tambah "... (trimmed)" kalau overflow.</summary>
         private static string CapResponse(string? s)
@@ -86,6 +86,10 @@ namespace StokBarangMAUI.Services
                 // Site/rute progress from RESUME sheets (search across all 6 segments)
                 var siteProgressResult = await TrySiteProgressFromResumeAsync(lower);
                 if (siteProgressResult.handled) return (true, CapResponse(siteProgressResult.response));
+
+                // Date-based progress query ("cek tanggal 17", "tanggal 17 mei", "progres kemarin")
+                var dateResult = await TryDateProgressQueryAsync(lower);
+                if (dateResult.handled) return (true, CapResponse(dateResult.response));
 
                 var multiStepResult = TryMultiStepQuery(lower);
                 if (multiStepResult.handled) return (true, CapResponse(multiStepResult.response));
@@ -1197,7 +1201,7 @@ namespace StokBarangMAUI.Services
                    "Kalau dari HP, pakai IP laptop atau Cloudflare tunnel.";
         }
 
-        // ── Multi-step clarification (site yang belum dikerjakan, dll) ──
+        // -- Multi-step clarification (site yang belum dikerjakan, dll) --
 
         /// <summary>
         /// Search site/rute progress across all 6 RESUME segment sheets.
@@ -1205,6 +1209,8 @@ namespace StokBarangMAUI.Services
         /// </summary>
         private async Task<(bool handled, string? response)> TrySiteProgressFromResumeAsync(string lower)
         {
+            Console.WriteLine($"[SiteProgres] Start: lower='{lower}'");
+
             // Match patterns — broad to catch various user inputs
             var m = Regex.Match(lower,
                 @"\b(cek\s+)?(progres(s)?|progress)\s+(site|rute)\s+(?<q>[a-z0-9\-_\.]+)",
@@ -1217,91 +1223,140 @@ namespace StokBarangMAUI.Services
             if (!m.Success)
             {
                 // "cek 0244" or "progres 0244" (site ID pattern without "site" keyword)
-                m = Regex.Match(lower, @"\b(cek|progres(s)?|progress|search|cari)\s+(?<q>JAW-[A-Z0-9\-]+|[0-9]{4})", RegexOptions.IgnoreCase);
+                m = Regex.Match(lower, @"\b(cek|progres(s)?|progress|search|cari)\s+(?<q>JAW-[A-Z0-9\-]+|jc\s*\d+[a-z]?|[0-9]{3,})", RegexOptions.IgnoreCase);
             }
-            if (!m.Success) return (false, null);
+            if (!m.Success)
+            {
+                Console.WriteLine("[SiteProgres] No regex match → fall through");
+                return (false, null);
+            }
 
-            var query = m.Groups["q"].Value.Trim().ToUpperInvariant();
-            var searchType = m.Value.Contains("rute") ? "RUTE" : "SITE";
+            var query = m.Groups["q"].Value.Trim().ToUpperInvariant().Replace(" ", "");
+            Console.WriteLine($"[SiteProgres] Matched: query='{query}' matchText='{m.Value}'");
 
+            return await SearchSiteAcrossSegmentsAsync(query);
+        }
+
+        /// <summary>
+        /// Search query across all 6 RESUME segment sheets using server-side keyword filter.
+        /// If >3 matches in >1 segment → ask user to pick segment.
+        /// If 1-3 matches → show detail directly.
+        /// </summary>
+        private async Task<(bool handled, string? response)> SearchSiteAcrossSegmentsAsync(string query, string? onlySegment = null)
+        {
             // Get file ID from aliases or hardcoded fallback
             var resumeAlias = _drive.Aliases.FirstOrDefault(a =>
                 a.SheetName == "RESUME BY SITE ID" || a.SheetName == "BREBES");
-            var fileId = resumeAlias?.FileId ?? "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_"; // RESUME Progres FWA.xlsx
-            var segments = new[] { "BREBES", "TASIKMALAYA", "PURWOKERTO", "SUKOHARJO", "SRAGEN", "GROBOGAN" };
-            var allMatches = new List<(string segment, Dictionary<string, object> row)>();
+            var fileId = resumeAlias?.FileId ?? "1d9GKDxcYGwURcVp-BvSYW4W0YQiNVZt_";
+            Console.WriteLine($"[SiteProgres] fileId={fileId} query='{query}' onlySegment={onlySegment ?? "null"}");
 
-            // Search across all 6 segments
+            var segments = onlySegment != null
+                ? new[] { onlySegment }
+                : new[] { "BREBES", "TASIKMALAYA", "PURWOKERTO", "SUKOHARJO", "SRAGEN", "GROBOGAN" };
+
+            var bySegment = new Dictionary<string, List<Dictionary<string, object>>>();
+
+            // Search each segment server-side via smart_filter (hemat token!)
             foreach (var seg in segments)
             {
                 try
                 {
-                    // Determine search column based on type
-                    var searchCol = searchType == "SITE" ? "No" : "RUTE"; // "No" col sometimes has site-like IDs
-                    // Actually search in RUTE column (contains site IDs in format "XXX;SITE-ID")
-                    var result = await _drive.FilterSheetAsync(
+                    var result = await _drive.SmartFilterAsync(
                         fileId,
-                        filters: null, // get all, filter client-side (fuzzy)
-                        columns: null, // get ALL columns (names vary per segment)
                         sheetName: seg,
-                        limit: 100,
+                        keyword: query,
+                        intent: null,
+                        searchColumns: new[] { "RUTE", "No" },
+                        limit: 50,
                         headerRows: 2,
                         headerRowStart: 1);
 
-                    if (result?.Data == null) continue;
-
-                    foreach (var row in result.Data)
+                    var count = result?.Data?.Count ?? 0;
+                    if (count > 0)
                     {
-                        // Search query in RUTE column and all string values
-                        bool found = false;
-                        foreach (var kv in row)
-                        {
-                            if (kv.Value == null) continue;
-                            var val = kv.Value.ToString()?.ToUpperInvariant() ?? "";
-                            if (val.Contains(query))
-                            {
-                                // Skip if match is in a numeric-only column (%, Plan, Progress)
-                                var colU = kv.Key.ToUpperInvariant();
-                                if (colU.Contains("%") || colU.Contains("PLAN") || colU.Contains("PROGRESS") || colU.Contains("MP"))
-                                    continue;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (found) allMatches.Add((seg, row));
+                        bySegment[seg] = result!.Data!;
+                        Console.WriteLine($"[SiteProgres]   {seg}: {count} matches");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[GDriveCmd] SiteProgress {seg} error: {ex.Message}");
-                    // continue to next segment
+                    Console.WriteLine($"[SiteProgres] {seg} ERROR: {ex.Message}");
                 }
             }
 
-            if (allMatches.Count == 0)
+            var totalMatches = bySegment.Values.Sum(v => v.Count);
+            Console.WriteLine($"[SiteProgres] Total matches: {totalMatches} across {bySegment.Count} segments");
+
+            if (totalMatches == 0)
                 return (true, $"🔍 Tidak ketemu `{query}` di 6 segment RESUME.\n\n💡 Coba keyword lebih pendek, misal: `site 0244` atau `rute JC2`");
 
-            // Format results — show all matches with progress %
+            // If onlySegment was given and only 1 segment matches, show detail always
+            // If >3 matches in >1 segment → show segment picker
+            if (onlySegment == null && totalMatches > 3 && bySegment.Count > 1)
+            {
+                // Save pending state for clarification
+                var sanitizedQuery = query.Replace("\"", "\\\"");
+                var state = $"{{\"flow\":\"siteprogres\",\"step\":\"pick_segment\",\"query\":\"{sanitizedQuery}\"}}";
+                Preferences.Set("gdrive_pending_clarif", state);
+                return (true, BuildSiteSegmentPicker(query, bySegment));
+            }
+
+            // Show all matches directly (flatten)
+            var allMatches = new List<(string segment, Dictionary<string, object> row)>();
+            foreach (var kv in bySegment)
+                foreach (var row in kv.Value)
+                    allMatches.Add((kv.Key, row));
+
             return (true, FormatSiteProgressResult(query, allMatches));
+        }
+
+        /// <summary>Build menu: segment mana yang mau dilihat? (dipakai kalau hasil terlalu banyak).</summary>
+        private static string BuildSiteSegmentPicker(string query, Dictionary<string, List<Dictionary<string, object>>> bySegment)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"🔎 Ditemukan **{bySegment.Values.Sum(v => v.Count)} rute** yang cocok dengan `{query}` di {bySegment.Count} segment.");
+            sb.AppendLine();
+            sb.AppendLine("Pilih segment dulu ya (ketik angkanya atau nama segment):");
+            sb.AppendLine();
+
+            int i = 1;
+            foreach (var kv in bySegment.OrderBy(k => k.Key))
+            {
+                sb.AppendLine($"**{i}. {kv.Key}** — {kv.Value.Count} rute");
+                // Preview first 3 rute names
+                int j = 0;
+                foreach (var row in kv.Value.Take(3))
+                {
+                    var rute = FindFuzzyCol(row, "RUTE");
+                    if (rute.Length > 45) rute = rute.Substring(0, 42) + "...";
+                    sb.AppendLine($"   • {rute}");
+                    j++;
+                }
+                if (kv.Value.Count > 3)
+                    sb.AppendLine($"   • ...(+{kv.Value.Count - 3} lagi)");
+                sb.AppendLine();
+                i++;
+            }
+
+            sb.AppendLine("💡 Ketik `brebes` / `sragen` / dll, atau angkanya (`1`, `2`, ...)");
+            return sb.ToString().TrimEnd();
         }
 
         /// <summary>Format site progress results from RESUME sheets.</summary>
         private static string FormatSiteProgressResult(string query, List<(string segment, Dictionary<string, object> row)> matches)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"📍 **Progres Site/Rute: `{query}`**");
-            sb.AppendLine($"🔎 Ditemukan di {matches.Select(m => m.segment).Distinct().Count()} segment ({matches.Count} rute)");
+            sb.AppendLine($"📍 Progres: {query}");
+            var segList = matches.Select(m => m.segment).Distinct().ToList();
+            sb.AppendLine($"Ditemukan {matches.Count} rute · {segList.Count} segment");
             sb.AppendLine();
 
             int shown = 0;
+            string? currentSeg = null;
             foreach (var (seg, row) in matches.Take(15))
             {
                 var rute = FindFuzzyCol(row, "RUTE");
                 var kota = FindFuzzyCol(row, "KAB");
-
-                var pctKabel = FindFuzzyNum(row, "Kabel", "%");
-                var pctT7 = FindFuzzyNum(row, "7m", "%");
-                var pctT9 = FindFuzzyNum(row, "9m", "%");
 
                 var planKabel = FindFuzzyNum(row, "Kabel", "Plan");
                 var progKabel = FindFuzzyNum(row, "Kabel", "Progress");
@@ -1310,49 +1365,54 @@ namespace StokBarangMAUI.Services
                 var planT9 = FindFuzzyNum(row, "9m", "Plan");
                 var progT9 = FindFuzzyNum(row, "9m", "Progress");
 
-                // Convert ratio to percentage (sheet stores as ratio like 1.22 = 122%)
-                var kabelPct = pctKabel <= 2 ? pctKabel * 100 : pctKabel;
-                var t7Pct = pctT7 <= 2 ? pctT7 * 100 : pctT7;
-                var t9Pct = pctT9 <= 2 ? pctT9 * 100 : pctT9;
+                // Compute % from raw numbers (authoritative) — ignore sheet's own %
+                var kabelPct = planKabel > 0 ? (progKabel / planKabel * 100) : 0;
+                var t7Pct = planT7 > 0 ? (progT7 / planT7 * 100) : 0;
+                var t9Pct = planT9 > 0 ? (progT9 / planT9 * 100) : 0;
 
-                // Status emoji per category
                 var kabelIcon = kabelPct >= 100 ? "✅" : (kabelPct > 0 ? "🟡" : "🔴");
                 var t7Icon = t7Pct >= 100 ? "✅" : (t7Pct > 0 ? "🟡" : "🔴");
                 var t9Icon = t9Pct >= 100 ? "✅" : (t9Pct > 0 ? "🟡" : "🔴");
 
-                // Truncate rute
-                var ruteShort = rute.Length > 35 ? rute.Substring(0, 32) + "..." : rute;
+                if (seg != currentSeg)
+                {
+                    if (currentSeg != null) sb.AppendLine();
+                    sb.AppendLine($"━ Segment {seg} ━");
+                    currentSeg = seg;
+                }
 
-                sb.AppendLine($"━━ **{seg}** ━━");
-                sb.AppendLine($"📌 {ruteShort}");
-                if (!string.IsNullOrEmpty(kota) && kota != "-") sb.AppendLine($"   📍 {kota}");
+                var ruteShort = rute.Length > 50 ? rute.Substring(0, 47) + "..." : rute;
                 sb.AppendLine();
-                sb.AppendLine($"   {kabelIcon} Kabel: {progKabel:N0}/{planKabel:N0}m ({kabelPct:N0}%)");
+                sb.AppendLine($"📌 {ruteShort}");
+                if (!string.IsNullOrEmpty(kota) && kota != "-") sb.AppendLine($"   Kota: {kota}");
+                sb.AppendLine($"   {kabelIcon} Kabel: {progKabel:N0}/{planKabel:N0} m ({kabelPct:N0}%)");
                 sb.AppendLine($"   {t7Icon} Tiang 7m: {progT7:N0}/{planT7:N0} ({t7Pct:N0}%)");
                 sb.AppendLine($"   {t9Icon} Tiang 9m: {progT9:N0}/{planT9:N0} ({t9Pct:N0}%)");
-                sb.AppendLine();
 
                 shown++;
             }
 
             if (matches.Count > shown)
-                sb.AppendLine($"📄 ...+{matches.Count - shown} rute lagi");
+            {
+                sb.AppendLine();
+                sb.AppendLine($"...+{matches.Count - shown} rute lagi");
+            }
 
-            // Summary: berapa yang belum 100%
+            // Hitung rute yang belum 100% (ada kategori yang belum selesai)
             var belum100 = matches.Count(m =>
             {
-                var k = FindFuzzyNum(m.row, "Kabel", "%");
-                var t7 = FindFuzzyNum(m.row, "7m", "%");
-                var t9 = FindFuzzyNum(m.row, "9m", "%");
-                var kPct = k <= 2 ? k * 100 : k;
-                var t7Pct = t7 <= 2 ? t7 * 100 : t7;
-                var t9Pct = t9 <= 2 ? t9 * 100 : t9;
-                return (kPct < 100) || (t7Pct < 100) || (t9Pct < 100);
+                var plK = FindFuzzyNum(m.row, "Kabel", "Plan");
+                var prK = FindFuzzyNum(m.row, "Kabel", "Progress");
+                var pl7 = FindFuzzyNum(m.row, "7m", "Plan");
+                var pr7 = FindFuzzyNum(m.row, "7m", "Progress");
+                var pl9 = FindFuzzyNum(m.row, "9m", "Plan");
+                var pr9 = FindFuzzyNum(m.row, "9m", "Progress");
+                return (plK > 0 && prK < plK) || (pl7 > 0 && pr7 < pl7) || (pl9 > 0 && pr9 < pl9);
             });
 
-            sb.AppendLine($"📊 **{belum100}/{matches.Count}** rute belum 100% di semua kategori");
             sb.AppendLine();
-            sb.AppendLine("💡 ✅=selesai 🟡=sedang jalan 🔴=belum mulai");
+            sb.AppendLine($"📊 {belum100}/{matches.Count} rute belum 100%");
+            sb.AppendLine("Legend: ✅ selesai · 🟡 jalan · 🔴 belum");
 
             return sb.ToString().TrimEnd();
         }
@@ -1380,10 +1440,162 @@ namespace StokBarangMAUI.Services
                 if (k.IndexOf(keyword1, StringComparison.OrdinalIgnoreCase) >= 0 &&
                     k.IndexOf(keyword2, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    return ParseStokNumber(kv.Value?.ToString());
+                    return ParseNumericDirect(kv.Value?.ToString());
                 }
             }
             return 0;
+        }
+
+        /// <summary>Parse numeric value directly (standard format, NOT Indonesian thousand-separator).
+        /// Used for RESUME sheet data where values are plain numbers (2675, 2000, 0.75).</summary>
+        private static double ParseNumericDirect(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s) || s == "null" || s == "-" || s.Equals("nan", StringComparison.OrdinalIgnoreCase))
+                return 0;
+            s = s.Trim();
+            if (double.TryParse(s, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var d))
+                return d;
+            return 0;
+        }
+
+        /// <summary>
+        /// Date-based progress query: "cek tanggal 17", "tanggal 17 mei", "progres 17 mei", "kemarin"
+        /// Search sheet Progress (harian) by date match.
+        /// </summary>
+        private async Task<(bool handled, string? response)> TryDateProgressQueryAsync(string lower)
+        {
+            // Hint: kalau user ketik "tanggal" atau "rentang tanggal" tanpa angka, kasih panduan.
+            if (Regex.IsMatch(lower, @"^\s*(cek\s+|cari\s+)?(rentang\s+)?(tanggal|tgl|date)\s*\??\s*$",
+                RegexOptions.IgnoreCase))
+            {
+                return (true,
+                    "📅 Format tanggal yang bisa dipakai:\n\n" +
+                    "  • `tanggal 17` — cari tanggal 17 (bulan apa aja)\n" +
+                    "  • `tanggal 17 mei` — spesifik tanggal\n" +
+                    "  • `progres 17 mei` — sama\n" +
+                    "  • `progres kemarin` — otomatis kemarin\n" +
+                    "  • `17 mei 2026` — full date\n\n" +
+                    "Bulan bisa: januari, februari, ..., desember");
+            }
+
+            // Patterns:
+            //   "cek tanggal 17", "tanggal 17"
+            //   "tanggal 17 mei", "17 mei 2026"
+            //   "progres tanggal 17"
+            var m = Regex.Match(lower,
+                @"\b(cek\s+|progres(s)?\s+|progress\s+)?(tanggal|tgl)\s+(?<d>\d{1,2})(\s+(?<mon>[a-z]+))?",
+                RegexOptions.IgnoreCase);
+            if (!m.Success)
+            {
+                // "17 mei" / "17 mei 2026"
+                m = Regex.Match(lower,
+                    @"\b(?<d>\d{1,2})\s+(?<mon>jan(uari)?|feb(ruari)?|mar(et)?|apr(il)?|mei|jun(i)?|jul(i)?|agu(stus)?|sep(tember)?|okt(ober)?|nov(ember)?|des(ember)?)\b",
+                    RegexOptions.IgnoreCase);
+            }
+            if (!m.Success) return (false, null);
+
+            var day = m.Groups["d"].Value.Trim().PadLeft(2, '0');
+            var monRaw = m.Groups["mon"].Success ? m.Groups["mon"].Value.Trim().ToLowerInvariant() : "";
+            var monthName = NormalizeIdMonth(monRaw);
+            Console.WriteLine($"[DateProgres] day={day} month='{monthName}' input='{lower}'");
+
+            // Get file_id from aliases (sheet Progress)
+            var progresAlias = _drive.Aliases.FirstOrDefault(a => a.SheetName == "Progress");
+            var fileId = progresAlias?.FileId ?? "1RC2Ylo4DjIAJkNMLe6v0jMnupJMcrP2v5aFTauhhcsg";
+
+            try
+            {
+                // Build search keyword: date string like "13 April" → server does contains match on Tanggal column
+                // We search keyword with just day number to catch "Senin, 13 April"
+                var keyword = string.IsNullOrEmpty(monthName) ? day : $"{day} {monthName}";
+
+                var result = await _drive.SmartFilterAsync(
+                    fileId,
+                    sheetName: "Progress",
+                    keyword: keyword,
+                    intent: null,
+                    searchColumns: new[] { "Tanggal" },
+                    limit: 50,
+                    headerRows: 1,
+                    headerRowStart: 1);
+
+                if (result?.Data == null || result.Data.Count == 0)
+                {
+                    return (true, $"📅 Tidak ada progres di tanggal `{keyword}` pada sheet Progress.\n\n💡 Format: `tanggal 17` atau `tanggal 17 mei`");
+                }
+
+                return (true, FormatDateProgressResult(keyword, result.Data));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DateProgres] error: {ex.Message}");
+                return (true, $"❌ Error cari tanggal: {ex.Message}");
+            }
+        }
+
+        /// <summary>Normalize Indonesian month name to full form used in sheet ("April", "Mei", dll).</summary>
+        private static string NormalizeIdMonth(string mon)
+        {
+            if (string.IsNullOrEmpty(mon)) return "";
+            mon = mon.ToLowerInvariant();
+            if (mon.StartsWith("jan")) return "Januari";
+            if (mon.StartsWith("feb")) return "Februari";
+            if (mon.StartsWith("mar")) return "Maret";
+            if (mon.StartsWith("apr")) return "April";
+            if (mon == "mei") return "Mei";
+            if (mon.StartsWith("jun")) return "Juni";
+            if (mon.StartsWith("jul")) return "Juli";
+            if (mon.StartsWith("agu")) return "Agustus";
+            if (mon.StartsWith("sep")) return "September";
+            if (mon.StartsWith("okt")) return "Oktober";
+            if (mon.StartsWith("nov")) return "November";
+            if (mon.StartsWith("des")) return "Desember";
+            return "";
+        }
+
+        /// <summary>Format hasil query progres harian by tanggal.</summary>
+        private static string FormatDateProgressResult(string dateLabel, List<Dictionary<string, object>> rows)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"📅 **Progres Tanggal `{dateLabel}`**");
+            sb.AppendLine($"📊 {rows.Count} entry");
+            sb.AppendLine();
+
+            int shown = 0;
+            foreach (var row in rows.Take(20))
+            {
+                var tanggal = FindFuzzyCol(row, "Tanggal");
+                var rute = FindFuzzyCol(row, "Rute");
+                if (rute == "-") rute = FindFuzzyCol(row, "RUTE");
+                var barang = FindFuzzyCol(row, "Nama Barang");
+                var progres = FindFuzzyCol(row, "Progres");
+                var ket = FindFuzzyCol(row, "Keterangan");
+                var kota = FindFuzzyCol(row, "KAB");
+                var site = FindFuzzyCol(row, "SITE ID");
+
+                // Compact per row
+                if (rute.Length > 38) rute = rute.Substring(0, 35) + "...";
+
+                sb.AppendLine($"━━ #{shown + 1} ━━");
+                sb.AppendLine($"📌 {rute}");
+                if (barang != "-") sb.AppendLine($"   📦 {barang}: **{progres}**" + (ket != "-" ? $" _{ket}_" : ""));
+                else sb.AppendLine($"   📊 Progres: **{progres}**");
+                if (kota != "-" || site != "-")
+                {
+                    var parts = new List<string>();
+                    if (site != "-") parts.Add($"SITE {site}");
+                    if (kota != "-") parts.Add(kota);
+                    sb.AppendLine($"   📍 {string.Join(" • ", parts)}");
+                }
+                shown++;
+                if (sb.Length > 1800) break;
+            }
+
+            if (rows.Count > shown)
+                sb.AppendLine($"\n📄 ...+{rows.Count - shown} entry lagi");
+
+            return sb.ToString().TrimEnd();
         }
 
         /// <summary>
@@ -1597,6 +1809,17 @@ namespace StokBarangMAUI.Services
                 return await ExecuteSiteQueryAsync(segment, state.GetValueOrDefault("intent", "outstanding"));
             }
 
+            // === SITE PROGRES flow (user picked segment after multi-match search) ===
+            if (flow == "siteprogres" && step == "pick_segment")
+            {
+                var segment = ParseSegmentAnswer(lower);
+                if (segment == null) return (false, null);
+                Preferences.Remove("gdrive_pending_clarif");
+                var savedQuery = state.GetValueOrDefault("query", "");
+                if (string.IsNullOrEmpty(savedQuery)) return (false, null);
+                return await SearchSiteAcrossSegmentsAsync(savedQuery, onlySegment: segment);
+            }
+
             // === STOK flow step 1: gudang ===
             if (flow == "stok" && step == "gudang")
             {
@@ -1714,7 +1937,7 @@ namespace StokBarangMAUI.Services
                 ? $"Pekerjaan {statusLabel}"
                 : $"Pekerjaan di {segment} — {statusLabel}";
 
-            sb.AppendLine($"📋 **{title}**");
+            sb.AppendLine($"📋 {title}");
             sb.AppendLine($"📊 {rows.Count} dari {totalRows} rute");
             sb.AppendLine();
 
@@ -1727,36 +1950,34 @@ namespace StokBarangMAUI.Services
                 return sb.ToString().TrimEnd();
             }
 
-            // Header tabel
-            sb.AppendLine("```");
-            sb.AppendLine($"{"Rute",-30} {"Kota",-12} {"Kabel(m)",-9} {"T7",-4} {"T9",-4}");
-            sb.AppendLine(new string('─', 62));
-
             int shown = 0;
             foreach (var row in rows.Take(25))
             {
                 var rute = GetStringValue(row, "Rute");
+                if (rute == "-") rute = GetStringValue(row, "RUTE");
                 var kota = GetStringValue(row, "KAB/KOTA");
+                if (kota == "-") kota = GetStringValue(row, "KAB - KOTA");
+
                 var planKabel = GetNumericValue(row, "Penarikan Kabel 24 core adss - Plan");
                 var planT7 = GetNumericValue(row, "Penanaman Tiang 7m 24Core - Plan");
+                if (planT7 == 0) planT7 = GetNumericValue(row, "Penanaman Tiang 7m 24 Core - Plan");
                 var planT9 = GetNumericValue(row, "Penanaman Tiang 9m 24Core - Plan");
+                if (planT9 == 0) planT9 = GetNumericValue(row, "Penanaman Tiang 9m 24 Core - Plan");
 
-                // Truncate rute name kalau kepanjangan
-                if (rute.Length > 28) rute = rute.Substring(0, 25) + "...";
-                if (kota.Length > 11) kota = kota.Substring(0, 8) + "...";
+                var ruteShort = rute.Length > 50 ? rute.Substring(0, 47) + "..." : rute;
 
-                sb.AppendLine($"{rute,-30} {kota,-12} {planKabel,8:N0} {planT7,4:N0} {planT9,4:N0}");
+                sb.AppendLine($"📌 {ruteShort}");
+                if (kota != "-") sb.AppendLine($"   Kota: {kota}");
+                sb.AppendLine($"   Plan — Kabel: {planKabel:N0} m · T7: {planT7:N0} · T9: {planT9:N0}");
+                sb.AppendLine();
                 shown++;
             }
 
-            sb.AppendLine("```");
-
             if (rows.Count > shown)
-                sb.AppendLine($"📄 ...+{rows.Count - shown} rute lagi");
+                sb.AppendLine($"...+{rows.Count - shown} rute lagi");
 
             sb.AppendLine();
-            sb.AppendLine("💡 Kabel(m) = Plan penarikan kabel, T7/T9 = Plan tiang 7m/9m");
-            sb.AppendLine("🔎 Ketik `site [ID]` untuk detail spesifik");
+            sb.AppendLine("💡 Ketik `site [ID]` untuk detail progres");
 
             return sb.ToString().TrimEnd();
         }
@@ -1848,13 +2069,9 @@ namespace StokBarangMAUI.Services
 
             // Title
             if (gudang == "ALL")
-            {
-                sb.AppendLine("📦 **STOK MATERIAL — Ringkasan Semua Gudang**");
-            }
+                sb.AppendLine("📦 STOK MATERIAL — Semua Gudang");
             else
-            {
-                sb.AppendLine($"📦 **STOK MATERIAL — Gudang {gudang}**");
-            }
+                sb.AppendLine($"📦 STOK MATERIAL — Gudang {gudang}");
             sb.AppendLine();
 
             // Filter rows by barang if specified
@@ -1874,54 +2091,39 @@ namespace StokBarangMAUI.Services
                 return sb.ToString().TrimEnd();
             }
 
-            // === ALL gudang: show summary table ===
+            // === ALL gudang: daftar per material ===
             if (gudang == "ALL")
             {
-                sb.AppendLine("```");
-                sb.AppendLine(string.Format("{0,-22} {1,9} {2,9} {3,9}", "Material", "Diterima", "Keluar", "Sisa"));
-                sb.AppendLine(new string('─', 52));
-
-                foreach (var row in rows.Take(15))
-                {
-                    var material = GetFirstColValue(row);
-                    if (string.IsNullOrWhiteSpace(material) || material.Length < 3) continue;
-
-                    var diterima = FindColValue(row, result.Columns, "GRAND TOTAL", ">>"); 
-                    var keluar = FindColValue(row, result.Columns, "GRAND TOTAL TERPAKAI", "<<");
-                    var sisa = FindColValue(row, result.Columns, "SISA GUDANG", "SISA");
-
-                    // Shorten material name
-                    var matShort = ShortenMaterial(material);
-                    sb.AppendLine(string.Format("{0,-22} {1,9} {2,9} {3,9}", matShort, FormatNum(diterima), FormatNum(keluar), FormatNum(sisa)));
-                }
-                sb.AppendLine("```");
-                sb.AppendLine();
-
-                // Highlight items with low/zero sisa
                 var lowStock = new List<string>();
                 foreach (var row in rows.Take(15))
                 {
                     var material = GetFirstColValue(row);
                     if (string.IsNullOrWhiteSpace(material) || material.Length < 3) continue;
+
+                    var diterima = FindColValue(row, result.Columns, "GRAND TOTAL", ">>");
+                    var keluar = FindColValue(row, result.Columns, "GRAND TOTAL TERPAKAI", "<<");
                     var sisa = FindColValue(row, result.Columns, "SISA GUDANG", "SISA");
-                    if (sisa <= 0)
-                        lowStock.Add(ShortenMaterial(material));
+
+                    var matShort = ShortenMaterial(material);
+                    var icon = sisa > 0 ? "📦" : "🚨";
+                    sb.AppendLine($"{icon} {matShort}");
+                    sb.AppendLine($"   Diterima: {FormatNum(diterima)} · Keluar: {FormatNum(keluar)} · Sisa: {FormatNum(sisa)}");
+                    sb.AppendLine();
+
+                    if (sisa <= 0) lowStock.Add(matShort);
                 }
+
                 if (lowStock.Count > 0)
                 {
-                    sb.AppendLine($"🚨 **Stok habis:** {string.Join(", ", lowStock)}");
+                    sb.AppendLine($"🚨 Stok habis: {string.Join(", ", lowStock)}");
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("💡 Ketik `stok di brebes` atau `stok kabel 24c` untuk detail per gudang/material");
+                sb.AppendLine("💡 Ketik `stok di brebes` atau `stok kabel 24c` untuk detail");
             }
             else
             {
-                // === Per gudang: show diterima + keluar for that gudang ===
-                sb.AppendLine("```");
-                sb.AppendLine(string.Format("{0,-22} {1,8} {2,8} {3,8}", "Material", "Masuk", "Keluar", "Sisa"));
-                sb.AppendLine(new string('─', 49));
-
+                // === Per gudang: masuk/keluar/sisa per material ===
                 foreach (var row in rows.Take(15))
                 {
                     var material = GetFirstColValue(row);
@@ -1932,13 +2134,13 @@ namespace StokBarangMAUI.Services
                     var sisa = masuk - keluar;
 
                     var matShort = ShortenMaterial(material);
-                    sb.AppendLine(string.Format("{0,-22} {1,8} {2,8} {3,8}", matShort, FormatNum(masuk), FormatNum(keluar), FormatNum(sisa)));
+                    var icon = sisa > 0 ? "📦" : "🚨";
+                    sb.AppendLine($"{icon} {matShort}");
+                    sb.AppendLine($"   Masuk: {FormatNum(masuk)} · Keluar: {FormatNum(keluar)} · Sisa: {FormatNum(sisa)}");
+                    sb.AppendLine();
                 }
-                sb.AppendLine("```");
-                sb.AppendLine();
 
-                // Emoji indicators
-                sb.AppendLine("📊 Masuk = stok diterima, Keluar = stok terpakai");
+                sb.AppendLine("📊 Masuk = stok diterima · Keluar = stok terpakai");
             }
 
             return sb.ToString().TrimEnd();
@@ -1958,7 +2160,7 @@ namespace StokBarangMAUI.Services
                 var cu = kv.Key.ToUpperInvariant();
                 if (cu.Contains(pattern1.ToUpperInvariant()) && cu.Contains(pattern2.ToUpperInvariant()))
                 {
-                    return ParseStokNumber(kv.Value?.ToString());
+                    return ParseStokNumber(kv.Value);
                 }
             }
             // Fallback: try pattern1 only
@@ -1966,7 +2168,7 @@ namespace StokBarangMAUI.Services
             {
                 var cu = kv.Key.ToUpperInvariant();
                 if (cu.Contains(pattern1.ToUpperInvariant()))
-                    return ParseStokNumber(kv.Value?.ToString());
+                    return ParseStokNumber(kv.Value);
             }
             return 0;
         }
@@ -1998,28 +2200,68 @@ namespace StokBarangMAUI.Services
                 {
                     // Before Grand Total = diterima section, after = keluar section
                     if (!isKeluar && !passedGrandTotal)
-                        return ParseStokNumber(kv.Value?.ToString());
+                        return ParseStokNumber(kv.Value);
                     if (isKeluar && passedGrandTotal)
-                        return ParseStokNumber(kv.Value?.ToString());
+                        return ParseStokNumber(kv.Value);
                 }
             }
             return 0;
         }
 
-        /// <summary>Parse stok number: "44.000" or "  44.000 " or "(6.522)" → double.</summary>
-        private static double ParseStokNumber(string? s)
+        /// <summary>
+        /// Parse stok number: "44.000" = 44000 (Indonesian thousand) or "(6.522)" = -6522. 
+        /// Handles both string (with format) and JsonElement/number directly.
+        /// </summary>
+        private static double ParseStokNumber(object? val)
         {
+            if (val == null) return 0;
+
+            // Already numeric — use directly
+            if (val is double d) return d;
+            if (val is float f) return f;
+            if (val is int i) return i;
+            if (val is long l) return l;
+            if (val is decimal dec) return (double)dec;
+            if (val is System.Text.Json.JsonElement je)
+            {
+                if (je.ValueKind == System.Text.Json.JsonValueKind.Number && je.TryGetDouble(out var jd)) return jd;
+                if (je.ValueKind == System.Text.Json.JsonValueKind.Null) return 0;
+                val = je.ToString();
+            }
+
+            var s = val.ToString();
             if (string.IsNullOrWhiteSpace(s) || s == "null" || s == "-" || s.Equals("nan", StringComparison.OrdinalIgnoreCase))
                 return 0;
             s = s.Trim();
             bool negative = s.StartsWith("(") && s.EndsWith(")");
             if (negative) s = s.Trim('(', ')').Trim();
-            // Indonesian number format: "44.000" = 44000, "14.272" = 14272
-            // Remove dots (thousand separator), replace comma with dot for decimal
+
+            // Detect Indonesian thousand format: dot followed by groups of exactly 3 digits
+            // e.g. "44.000" "220.000" "14.272" — NOT "2000.0" or "0.75" (those are decimals)
+            if (s.Contains('.') && !s.Contains(','))
+            {
+                var parts = s.Split('.');
+                bool isThousand = parts.Length >= 2 &&
+                    parts.Skip(1).All(p => p.Length == 3 && p.All(char.IsDigit));
+                if (isThousand)
+                {
+                    var joined = string.Concat(parts);
+                    if (double.TryParse(joined, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out var thousand))
+                        return negative ? -thousand : thousand;
+                }
+            }
+
+            // Direct parse (standard format: "2000", "2000.0", "0.7476")
+            if (double.TryParse(s, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var direct))
+                return negative ? -direct : direct;
+
+            // Indonesian with comma as decimal: "1,25" = 1.25
             s = s.Replace(".", "").Replace(",", ".").Trim();
             if (double.TryParse(s, System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out var d))
-                return negative ? -d : d;
+                System.Globalization.CultureInfo.InvariantCulture, out var d2))
+                return negative ? -d2 : d2;
             return 0;
         }
 

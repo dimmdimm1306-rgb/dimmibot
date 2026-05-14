@@ -223,13 +223,36 @@ namespace StokBarangMAUI.Pages
         /// </summary>
         private View BuildSelectableText(string message, Color textColor)
         {
+            // Auto-detect: kalau message punya tabular content (banyak spaces berturut),
+            // pakai monospace biar kolom sejajar. Kalau tidak, font default.
+            bool isTabular = HasTabularContent(message);
+
             return new StokBarangMAUI.Controls.SelectableLabel
             {
                 Text = message,
                 TextColor = textColor,
                 FontSize = 13,
+                FontFamily = isTabular ? "Monospace" : null,
                 LineBreakMode = LineBreakMode.WordWrap,
             };
+        }
+
+        /// <summary>True kalau message punya pattern tabel (banyak baris dengan multiple spaces).</summary>
+        private static bool HasTabularContent(string message)
+        {
+            if (string.IsNullOrEmpty(message)) return false;
+            int lineCount = 0;
+            foreach (var line in message.Split('\n'))
+            {
+                // Detect "  " (2+ spaces) di tengah baris = kemungkinan column
+                if (line.Length > 12 && line.Contains("  "))
+                {
+                    int idx = line.IndexOf("  ");
+                    if (idx > 3 && idx < line.Length - 3) lineCount++;
+                }
+                if (lineCount >= 3) return true;
+            }
+            return false;
         }
 
         private static readonly System.Text.RegularExpressions.Regex UrlRegex =

@@ -14,7 +14,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
     public class ProgresSiteSearchFlow : IBotFlow
     {
         private readonly McpClient _mcp;
-        private const int LIST_PAGE = 15;
+        private const int LIST_PAGE = 25;
         private const double THRESHOLD_BELUM = 0.30;
 
         public ProgresSiteSearchFlow(McpClient mcp) { _mcp = mcp; }
@@ -69,6 +69,38 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             {
                 var seg = state.Get("segment") ?? "";
                 var siteIds = (state.Get("sites") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+                var offset = state.GetInt("offset", 0);
+
+                // "lanjut" / "next" / "lainnya" → page next
+                if (Regex.IsMatch(lower, @"^(lanjut|lanjutkan|next|lainnya|more|berikut(nya)?)\s*$"))
+                {
+                    var newOffset = offset + LIST_PAGE;
+                    if (newOffset >= siteIds.Length)
+                        return BotResponse.Text_("📭 Sudah semua ditampilkan.");
+
+                    // Need to re-fetch full list & format with new offset
+                    if (!string.IsNullOrEmpty(seg))
+                    {
+                        var spec = DataSchema.SegmentSheets.FirstOrDefault(s =>
+                            s.SheetName.Equals(seg, StringComparison.OrdinalIgnoreCase));
+                        if (spec != null)
+                        {
+                            var r = await _mcp.FilterAsync(spec, null, null, 200);
+                            var rows = (r?.Data ?? new()).Where(x =>
+                                BotFormatters.FindCol(x, "RUTE") != "-" &&
+                                !string.IsNullOrWhiteSpace(BotFormatters.FindCol(x, "RUTE"))).ToList();
+
+                            BotState.Save(nameof(BotIntent.ProgresSiteSearch), "listShown",
+                                new Dictionary<string, string>
+                                {
+                                    ["segment"] = seg,
+                                    ["sites"] = string.Join(",", rows.Take(200).Select(x => BotFormatters.FindCol(x, "RUTE"))),
+                                    ["offset"] = newOffset.ToString(),
+                                });
+                            return FormatSiteList(seg, rows.Skip(newOffset).ToList(), false, false, false, totalAll: rows.Count, baseIdx: newOffset + 1);
+                        }
+                    }
+                }
 
                 // "yang mana belum" → re-show filtered <30%
                 if (Regex.IsMatch(lower, @"\b(yang\s+(mana|belum)|belum|outstanding|kurang)\b"))
@@ -205,7 +237,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
         // ── Formatters ──────────────────────────────────────────────
 
         private static BotResponse FormatSiteList(string segment, List<Dictionary<string, object>> rows,
-            bool only_outstanding, bool only_mid, bool only_done)
+            bool only_outstanding, bool only_mid, bool only_done, int? totalAll = null, int baseIdx = 1)
         {
             string headerLabel;
             if (only_outstanding) headerLabel = "🔴 Belum (<30%)";
@@ -213,23 +245,25 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             else if (only_done)   headerLabel = "✅ Selesai (>70%)";
             else                  headerLabel = "📋 Semua";
 
+            var totalCount = totalAll ?? rows.Count;
             var sb = new StringBuilder();
-            sb.AppendLine($"{headerLabel} — {segment} ({rows.Count} rute)");
+            sb.AppendLine($"{headerLabel} — {segment} ({totalCount} rute)");
             sb.AppendLine();
 
-            int i = 1;
+            int i = baseIdx;
             foreach (var row in rows.Take(LIST_PAGE))
             {
                 var rute = BotFormatters.FindCol(row, "RUTE");
                 var kab = BotFormatters.FindCol(row, "KAB");
-                var ruteShort = BotFormatters.Trunc(rute, 40);
+                var ruteShort = BotFormatters.Trunc(rute, 38);
                 var kabShort = kab != "-" ? BotFormatters.Trunc(kab, 14) : "";
-                sb.AppendLine($"{i,2}. {ruteShort,-40}  {kabShort}");
+                sb.AppendLine($"{i,3}. {ruteShort,-38}  {kabShort}");
                 i++;
             }
 
-            if (rows.Count > LIST_PAGE)
-                sb.AppendLine($"\n📄 +{rows.Count - LIST_PAGE} rute lagi");
+            var remaining = rows.Count > LIST_PAGE ? rows.Count - LIST_PAGE : 0;
+            if (remaining > 0)
+                sb.AppendLine($"\n📄 +{remaining} rute lagi · ketik `lanjut` untuk berikutnya");
 
             sb.AppendLine();
             sb.AppendLine("👉 Ketik nomor atau `site [ID]` untuk detail progres.");

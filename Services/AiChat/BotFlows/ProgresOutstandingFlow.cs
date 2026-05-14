@@ -12,7 +12,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
     public class ProgresOutstandingFlow : IBotFlow
     {
         private readonly McpClient _mcp;
-        private const int LIST_PAGE = 15;
+        private const int LIST_PAGE = 25;
         private const double THRESHOLD_BELUM = 0.30; // <30% = belum
 
         public ProgresOutstandingFlow(McpClient mcp) { _mcp = mcp; }

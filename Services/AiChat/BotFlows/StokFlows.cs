@@ -111,8 +111,8 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 sb.AppendLine($"📦 STOK GUDANG {seg}");
                 sb.AppendLine();
 
-                // Header (sejajar)
-                sb.AppendLine(BotFormatters.PadR("Material", 22) + "  " +
+                // Header (sejajar) — Material col tanpa emoji indent (24 char)
+                sb.AppendLine(BotFormatters.PadR("Material", 24) + "  " +
                               BotFormatters.PadL("Masuk", 8) + "  " +
                               BotFormatters.PadL("Keluar", 8) + "  " +
                               BotFormatters.PadL("Sisa", 8));
@@ -121,25 +121,31 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 int idx = Array.IndexOf(DataSchema.Segments, seg);
                 if (idx < 0) return BotResponse.Text_($"⚠️ Segment {seg} tidak dikenal.");
 
-                foreach (var row in result.Data.Take(20))
+                int rowsPrinted = 0;
+                int maxRows = 25;
+                foreach (var row in result.Data.Take(40))
                 {
                     var nama = row.Values.FirstOrDefault()?.ToString()?.Trim() ?? "";
                     if (string.IsNullOrWhiteSpace(nama) || nama.Length < 3) continue;
                     if (nama.StartsWith("STOK", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (rowsPrinted >= maxRows) break;
 
                     var dit = StokFindGudangVal(row, idx, false);
                     var kel = StokFindGudangVal(row, idx, true);
                     var sisa = dit - kel;
 
-                    var icon = sisa > 0 ? "📦" : sisa == 0 ? "⚪" : "🚨";
-                    var matShort = BotFormatters.Trunc(nama, 20);
-                    sb.AppendLine($"{icon} {BotFormatters.PadR(matShort, 19)}  " +
+                    // Emoji as prefix character (1 col), then space, then 22-wide name
+                    var prefix = sisa > 0 ? "✓" : sisa == 0 ? "·" : "!";
+                    var matShort = BotFormatters.Trunc(nama, 22);
+                    sb.AppendLine($"{prefix} {BotFormatters.PadR(matShort, 22)}  " +
                                   BotFormatters.PadL(BotFormatters.FormatNum(dit), 8) + "  " +
                                   BotFormatters.PadL(BotFormatters.FormatNum(kel), 8) + "  " +
                                   BotFormatters.PadL(BotFormatters.FormatNum(sisa), 8));
+                    rowsPrinted++;
                 }
                 sb.AppendLine();
                 sb.AppendLine("📊 Masuk = diterima · Keluar = terpakai · Sisa = masuk-keluar");
+                sb.AppendLine("✓ stok ada · · habis · ! minus");
                 return BotResponse.Text_(sb.ToString().TrimEnd());
             }
             catch (Exception ex) { return BotResponse.Text_($"❌ {ex.Message}"); }
