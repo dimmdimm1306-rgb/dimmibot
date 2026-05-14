@@ -37,6 +37,7 @@ namespace StokBarangMAUI.Services.AiChat
                 [BotIntent.SuratJalanJenis] = new SuratJalanFlow(mcp, BotIntent.SuratJalanJenis),
                 [BotIntent.SuratJalanNomor] = new SuratJalanFlow(mcp, BotIntent.SuratJalanNomor),
                 [BotIntent.SuratJalanOrang] = new SuratJalanFlow(mcp, BotIntent.SuratJalanOrang),
+                [BotIntent.SuratJalanLatest] = new SuratJalanFlow(mcp, BotIntent.SuratJalanLatest),
                 [BotIntent.SuratJalanMenu] = new SuratJalanFlow(mcp, BotIntent.SuratJalanMenu),
                 [BotIntent.Weather] = new WeatherFlow(),
                 [BotIntent.TimeQuery] = new TimeQueryFlow(),
@@ -136,6 +137,7 @@ namespace StokBarangMAUI.Services.AiChat
                 "  • `kebutuhan brebes` — per homebase\n" +
                 "  • `material kurang` — kekurangan project\n\n" +
                 "📜 SURAT JALAN\n" +
+                "  • `sj terakhir` — 5 SJ paling baru\n" +
                 "  • `sj kemarin` / `sj hari ini`\n" +
                 "  • `sj masuk` / `sj keluar` / `sj dibawa`\n" +
                 "  • `sj-001` — cari nomor SJ\n\n" +

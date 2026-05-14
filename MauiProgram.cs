@@ -4,6 +4,7 @@ using StokBarangMAUI.Pages;
 using StokBarangMAUI.Services;
 using StokBarangMAUI.Services.AiChat;
 using StokBarangMAUI.Services.Mcp;
+using StokBarangMAUI.Services.Notifications;
 using StokBarangMAUI.Controls;
 
 namespace StokBarangMAUI;
@@ -46,6 +47,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<McpClient>();
         builder.Services.AddSingleton<BotEngine>();
         builder.Services.AddSingleton<AiChatService>();
+#if ANDROID
+        builder.Services.AddSingleton<INotificationScheduler, StokBarangMAUI.Platforms.Android.Notifications.AndroidNotificationScheduler>();
+#endif
         builder.Services.AddTransient<MainPage>();
 
 #if DEBUG

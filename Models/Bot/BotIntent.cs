@@ -23,6 +23,7 @@ namespace StokBarangMAUI.Models.Bot
         SuratJalanJenis,        // "sj masuk hari ini"
         SuratJalanNomor,        // "sj-001"
         SuratJalanOrang,        // "sj dari budi"
+        SuratJalanLatest,       // "sj terakhir", "sj terbaru"
 
         // === Pattern D: Vague menu ===
         StokMenu,               // "cek stok"

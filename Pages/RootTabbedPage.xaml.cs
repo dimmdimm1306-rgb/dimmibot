@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StokBarangMAUI.Models;
 using StokBarangMAUI.Pages;
 using StokBarangMAUI.Services;
+using StokBarangMAUI.Services.Notifications;
 #if ANDROID
 using Android.Views;
 using Google.Android.Material.BottomNavigation;
@@ -60,6 +61,24 @@ namespace StokBarangMAUI.Pages
 
             // Sinkronisasi nama project dari config sheet (background, silent)
             _ = SyncProjectNameAsync();
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            // Cek apakah app dibuka dari tap notif → switch ke tab Progress (index 1)
+            try
+            {
+                var target = Preferences.Get(ReminderSchedule.PREF_NAV_TARGET, "");
+                if (target == ReminderSchedule.NAV_TARGET_PROGRESS)
+                {
+                    Preferences.Remove(ReminderSchedule.PREF_NAV_TARGET);
+                    // Tab order: 0=Surat Jalan, 1=Progress, 2=Stok Diterima, 3=Stok Gudang, 4=Input
+                    if (Children.Count > 1)
+                        CurrentPage = Children[1];
+                }
+            }
+            catch { /* ignore */ }
         }
 
         private void OnHandlerChanged(object? sender, EventArgs e)

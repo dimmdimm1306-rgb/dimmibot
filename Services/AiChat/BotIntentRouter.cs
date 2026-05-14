@@ -178,6 +178,10 @@ namespace StokBarangMAUI.Services.AiChat
                     return IntentMatch.Of(BotIntent.SuratJalanNomor,
                         new Dictionary<string, string> { ["nomor"] = noSj.Groups[1].Value });
 
+                // "sj terakhir" / "sj terbaru" — cek dulu sebelum date
+                if (BotTokens.ContainsAny(lower, BotTokens.LatestWords))
+                    return IntentMatch.Of(BotIntent.SuratJalanLatest);
+
                 if (HasDateContext(lower))
                     return IntentMatch.Of(BotIntent.SuratJalanDate, ExtractDateContext(lower));
 

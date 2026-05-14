@@ -1,5 +1,6 @@
 using StokBarangMAUI.Pages;
 using StokBarangMAUI.Services;
+using StokBarangMAUI.Services.Notifications;
 
 namespace StokBarangMAUI;
 
@@ -35,6 +36,24 @@ public partial class App : Application
 
         // cleanup temporary files on startup (fire-and-forget)
         _ = CleanupAsync();
+
+        // Pasang notif harian (idempotent — aman dipanggil tiap launch)
+        _ = ScheduleRemindersAsync();
+    }
+
+    private async Task ScheduleRemindersAsync()
+    {
+        try
+        {
+            var sp = this.Handler?.MauiContext?.Services
+                  ?? Application.Current?.Handler?.MauiContext?.Services;
+            var scheduler = sp?.GetService(typeof(INotificationScheduler)) as INotificationScheduler;
+            if (scheduler == null) return;
+
+            await scheduler.RequestPermissionIfNeededAsync();
+            scheduler.ScheduleDailyReminders();
+        }
+        catch { /* don't crash app on scheduler failure */ }
     }
 
     private async Task CleanupAsync()

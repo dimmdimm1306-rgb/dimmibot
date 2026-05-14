@@ -73,6 +73,11 @@ namespace StokBarangMAUI.Services.AiChat
             "stok", "stock", "material gudang", "stok gudang", "aktual stok", "stok aktual", "inventory",
         };
 
+        public static readonly string[] LatestWords =
+        {
+            "terakhir", "terbaru", "latest", "paling baru", "yang baru", "recent",
+        };
+
         public static readonly string[] KebutuhanWords =
         {
             "kebutuhan", "kebutuhan material", "stok kebutuhan", "vol kebutuhan", "mrf", "planning",

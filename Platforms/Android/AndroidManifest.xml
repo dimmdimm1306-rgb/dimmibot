@@ -22,5 +22,17 @@
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+
+	<!-- Notifications (Android 13+) -->
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+	<!-- Re-pasang alarm setelah boot/update -->
+	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+	<!-- AlarmManager — wakeup lock untuk reminder reliable -->
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+	<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
 	<uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>
