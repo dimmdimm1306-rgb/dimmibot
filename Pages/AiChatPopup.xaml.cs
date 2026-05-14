@@ -9,6 +9,22 @@ namespace StokBarangMAUI.Pages
         private readonly AuthService _authService;
         private System.Timers.Timer? _authCheckTimer;
 
+        // Bubble width adaptif: HP narrow ~80% layar, tablet bisa s/d 1100px
+        private static double MessageMaxWidth
+        {
+            get
+            {
+                try
+                {
+                    var w = DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density;
+                    if (w <= 0) return 680;
+                    var pct = w * 0.85;
+                    return Math.Min(Math.Max(pct, 280), 1100);
+                }
+                catch { return 680; }
+            }
+        }
+
         public AiChatPopup()
         {
             InitializeComponent();
@@ -123,7 +139,6 @@ namespace StokBarangMAUI.Pages
             var res = Application.Current?.Resources;
             var cardBg = TryGetColor(res, "AccentGreenBg", "#064E3B");
             var textClr = TryGetColor(res, "AccentGreenBorder", "#10B981");
-            var linkClr = Colors.White;
 
             var border = new Border
             {
@@ -131,18 +146,11 @@ namespace StokBarangMAUI.Pages
                 StrokeShape = new RoundRectangle { CornerRadius = 12 },
                 Padding = new Thickness(12),
                 HorizontalOptions = LayoutOptions.End,
-                MaximumWidthRequest = 280,
+                MaximumWidthRequest = MessageMaxWidth,
             };
 
-            var label = new Label
-            {
-                FormattedText = BuildFormattedMessage(message, textClr, linkClr),
-                LineBreakMode = LineBreakMode.WordWrap
-            };
-
-            AttachLongPressCopy(border, message);
-
-            border.Content = label;
+            var selectable = BuildSelectableText(message, textClr);
+            border.Content = selectable;
             MessagesContainer.Children.Add(border);
         }
 
@@ -154,7 +162,6 @@ namespace StokBarangMAUI.Pages
             var textClr = TryGetColor(res, "TextPrimary", "#1A1B23");
             var aiBotBg = TryGetColor(res, "AiBotBg", "#6514D6");
             var aiBotBorder = TryGetColor(res, "AiBotBorder", "#7E3DEF");
-            var linkClr = TryGetColor(res, "AccentBlueBorder", "#3B82F6");
 
             // Grid with AI avatar badge + message bubble
             var grid = new Grid
@@ -197,22 +204,32 @@ namespace StokBarangMAUI.Pages
                 StrokeThickness = 1,
                 StrokeShape = new RoundRectangle { CornerRadius = 12 },
                 Padding = new Thickness(12),
-                MaximumWidthRequest = 280,
+                MaximumWidthRequest = MessageMaxWidth,
             };
             Grid.SetColumn(border, 1);
 
-            var label = new Label
-            {
-                FormattedText = BuildFormattedMessage(message, textClr, linkClr),
-                LineBreakMode = LineBreakMode.WordWrap
-            };
-
-            AttachLongPressCopy(border, message);
-
-            border.Content = label;
+            border.Content = BuildSelectableText(message, textClr);
             grid.Children.Add(avatar);
             grid.Children.Add(border);
             MessagesContainer.Children.Add(grid);
+        }
+
+        /// <summary>
+        /// Build a selectable text view. Pakai custom SelectableLabel yang di Android
+        /// ngaktifin setTextIsSelectable(true) di underlying TextView.
+        /// - Long-press → context menu (Copy, Select All, Share) 
+        /// - Double-tap → select word
+        /// - Drag handle → expand selection
+        /// </summary>
+        private View BuildSelectableText(string message, Color textColor)
+        {
+            return new StokBarangMAUI.Controls.SelectableLabel
+            {
+                Text = message,
+                TextColor = textColor,
+                FontSize = 13,
+                LineBreakMode = LineBreakMode.WordWrap,
+            };
         }
 
         private static readonly System.Text.RegularExpressions.Regex UrlRegex =
@@ -336,4 +353,3 @@ namespace StokBarangMAUI.Pages
 
     }
 }
-

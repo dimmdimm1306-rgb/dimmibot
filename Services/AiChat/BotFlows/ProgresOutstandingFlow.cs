@@ -27,7 +27,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
             try
             {
-                var result = await _mcp.ResumeBySiteOutstandingAsync(200);
+                var result = await _mcp.ResumeBySiteOutstandingAsync(500);
                 if (result?.Data == null || result.Data.Count == 0)
                     return BotResponse.Text_("🎉 Semua rute sudah 100%! Mantap!");
 
@@ -45,10 +45,15 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 }
 
                 // Multi-segment: tampilkan summary menu
+                var segmentOrder = bySegment.Keys.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
                 BotState.Save(nameof(BotIntent.ProgresOutstanding), "pickSegment",
-                    new Dictionary<string, string> { ["total"] = result.Data.Count.ToString() });
+                    new Dictionary<string, string>
+                    {
+                        ["total"] = result.RowsAfterFilter.ToString(),
+                        ["segments"] = string.Join("|", segmentOrder)
+                    });
 
-                return FormatSegmentMenu(bySegment, result.Data.Count);
+                return FormatSegmentMenu(bySegment, result.RowsAfterFilter);
             }
             catch (Exception ex)
             {
@@ -65,13 +70,13 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             if (step == "pickSegment")
             {
                 // User pilih segment (angka 1-6 atau nama)
-                var seg = ResolveSegmentChoice(lower);
+                var seg = DataSchema.ResolveSegmentChoice(lower, ParseSegmentOrder(state.Get("segments")));
                 if (seg == null) return null; // gak match → cancel flow
 
                 // Fetch ulang filtered by segment
                 try
                 {
-                    var result = await _mcp.ResumeBySiteOutstandingAsync(200);
+                    var result = await _mcp.ResumeBySiteOutstandingAsync(500);
                     if (result?.Data == null) return BotResponse.Text_("📭 Data kosong.");
 
                     var bySegment = GroupBySegment(result.Data);
@@ -99,7 +104,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 
                     try
                     {
-                        var result = await _mcp.ResumeBySiteOutstandingAsync(200);
+                        var result = await _mcp.ResumeBySiteOutstandingAsync(500);
                         var bySegment = GroupBySegment(result?.Data ?? new());
                         if (!bySegment.TryGetValue(seg, out var rows))
                             return BotResponse.Text_("📭 Habis.");
@@ -135,9 +140,15 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 var seg = DataSchema.ResolveSegmentFromCity(kota);
                 if (seg == null)
                 {
-                    // Fallback: coba dari Rute
+                    // Fallback 1: cari di Rute
                     var rute = BotFormatters.FindCol(row, "Rute");
-                    seg = DataSchema.ResolveSegmentFromCity(rute) ?? "LAINNYA";
+                    seg = DataSchema.ResolveSegmentFromText(rute);
+                }
+                if (seg == null)
+                {
+                    // Fallback 2: cek di SITE ID prefix (mis. "JAW-CJV-..." gak punya, skip)
+                    Console.WriteLine($"[Outstanding] cannot resolve segment for kota='{kota}' rute='{BotFormatters.FindCol(row, "Rute")}'");
+                    seg = "LAINNYA";
                 }
                 if (!result.ContainsKey(seg)) result[seg] = new();
                 result[seg].Add(row);
@@ -171,13 +182,16 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
         {
             var page = rows.Skip(offset).Take(PAGE_SIZE).ToList();
             var sb = new StringBuilder();
-            sb.AppendLine($"🔴 {segment} — belum 100% ({rows.Count} rute, hal {offset / PAGE_SIZE + 1})");
+            sb.AppendLine($"🔴 {segment} — belum 100%");
+            sb.AppendLine($"📊 Total {rows.Count} rute · halaman {offset / PAGE_SIZE + 1}");
             sb.AppendLine();
 
+            int idx = offset + 1;
             foreach (var row in page)
             {
                 var rute = BotFormatters.FindCol(row, "Rute");
                 var kota = BotFormatters.FindCol(row, "KAB");
+                var siteId = BotFormatters.FindCol(row, "SITE ID");
 
                 var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
                 var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
@@ -190,33 +204,31 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 var t7Pct = t7Plan > 0 ? t7Prog / t7Plan * 100 : 0;
                 var t9Pct = t9Plan > 0 ? t9Prog / t9Plan * 100 : 0;
 
-                sb.AppendLine($"📌 {BotFormatters.Trunc(rute, 45)}");
-                if (kota != "-") sb.AppendLine($"   Kota: {kota}");
-                sb.AppendLine($"   {BotFormatters.StatusIcon(kPct)} Kabel: {kProg:N0}/{kPlan:N0} m ({kPct:N0}%)");
-                sb.AppendLine($"   {BotFormatters.StatusIcon(t7Pct)} T7: {t7Prog:N0}/{t7Plan:N0} ({t7Pct:N0}%)");
-                sb.AppendLine($"   {BotFormatters.StatusIcon(t9Pct)} T9: {t9Prog:N0}/{t9Plan:N0} ({t9Pct:N0}%)");
+                sb.AppendLine($"━ #{idx}. {BotFormatters.Trunc(rute, 50)}");
+                if (siteId != "-") sb.Append($"   🆔 {siteId}");
+                if (kota != "-") sb.Append(siteId != "-" ? $" · 📍 {kota}\n" : $"   📍 {kota}\n");
+                else if (siteId != "-") sb.AppendLine();
+                sb.AppendLine($"   {BotFormatters.StatusIcon(kPct)} Kabel  {kProg:N0}/{kPlan:N0} m ({kPct:N0}%)");
+                sb.AppendLine($"   {BotFormatters.StatusIcon(t7Pct)} T7m   {t7Prog:N0}/{t7Plan:N0} btg ({t7Pct:N0}%)");
+                sb.AppendLine($"   {BotFormatters.StatusIcon(t9Pct)} T9m   {t9Prog:N0}/{t9Plan:N0} btg ({t9Pct:N0}%)");
                 sb.AppendLine();
+                idx++;
             }
 
             var remaining = rows.Count - offset - page.Count;
             if (remaining > 0)
             {
-                sb.AppendLine($"📄 +{remaining} lagi. Ketik `lanjut` untuk halaman berikutnya.");
+                sb.AppendLine($"📄 +{remaining} rute lagi · ketik `lanjut` untuk halaman berikutnya");
                 return new BotResponse { Text = sb.ToString().TrimEnd(), HasPendingState = true };
             }
 
-            sb.AppendLine("Legend: ✅ selesai · 🟡 jalan · 🔴 belum");
+            sb.AppendLine("Legenda: ✅ selesai · 🟡 jalan · 🔴 belum");
             return BotResponse.Text_(sb.ToString().TrimEnd());
         }
 
-        private static string? ResolveSegmentChoice(string input)
-        {
-            // Angka 1-6
-            if (int.TryParse(input, out var num) && num >= 1 && num <= DataSchema.Segments.Length)
-                return DataSchema.Segments[num - 1];
-
-            // Nama segment / kota
-            return DataSchema.ResolveSegmentFromCity(input);
-        }
+        private static List<string> ParseSegmentOrder(string? raw)
+            => string.IsNullOrWhiteSpace(raw)
+                ? new List<string>()
+                : raw.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
     }
 }

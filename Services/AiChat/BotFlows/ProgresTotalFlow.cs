@@ -6,7 +6,7 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
 {
     /// <summary>
     /// Flow 1d: Progres total project / per segment.
-    /// Pattern A (single-shot). Baca sheet RESUME (6 segment + grand total).
+    /// Pattern A. Baca sheet RESUME (6 segment + grand total).
     /// </summary>
     public class ProgresTotalFlow : IBotFlow
     {
@@ -44,54 +44,41 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
         private static string FormatResume(string? segFilter, List<Dictionary<string, object>> rows)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("📊 PROGRES PROJECT");
+            sb.AppendLine("📊 PROGRES PROJECT — Per Segment");
             sb.AppendLine();
 
-            double totalKabelPlan = 0, totalKabelProg = 0;
-            double totalT7Plan = 0, totalT7Prog = 0;
-            double totalT9Plan = 0, totalT9Prog = 0;
             int shown = 0;
+            Dictionary<string, object>? grandTotalRow = null;
 
             foreach (var row in rows)
             {
-                var no = BotFormatters.FindCol(row, "No");
-                var rute = BotFormatters.FindCol(row, "Rute");
-                if (rute == "-" || string.IsNullOrWhiteSpace(rute)) continue;
+                var noVal = BotFormatters.GetString(row, "No");
+                var segment = BotFormatters.FindCol(row, "Segment");
 
-                // Skip kalau filter segment dan gak match
-                if (!string.IsNullOrEmpty(segFilter) &&
-                    !rute.Contains(segFilter, StringComparison.OrdinalIgnoreCase))
+                // Skip baris title atau kosong
+                if (segment == "-" || string.IsNullOrWhiteSpace(segment)) continue;
+
+                // Detect grand total row: No berisi "RESUME" string
+                if (noVal.Contains("RESUME", StringComparison.OrdinalIgnoreCase))
+                {
+                    grandTotalRow = row;
                     continue;
+                }
 
-                var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
-                var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
-                var t7Plan = BotFormatters.FindNum(row, "7m", "Plan");
-                var t7Prog = BotFormatters.FindNum(row, "7m", "Progress");
-                var t9Plan = BotFormatters.FindNum(row, "9m", "Plan");
-                var t9Prog = BotFormatters.FindNum(row, "9m", "Progress");
+                // Validate No is numeric (1-6)
+                if (!int.TryParse(noVal, out var segNo)) continue;
+                if (segNo < 1 || segNo > 10) continue;
 
-                totalKabelPlan += kPlan; totalKabelProg += kProg;
-                totalT7Plan += t7Plan; totalT7Prog += t7Prog;
-                totalT9Plan += t9Plan; totalT9Prog += t9Prog;
+                // Filter by segment kalau ada
+                if (!string.IsNullOrEmpty(segFilter))
+                {
+                    var segUpper = segment.ToUpperInvariant();
+                    var resolvedSeg = DataSchema.ResolveSegmentFromText(segment);
+                    if (resolvedSeg != segFilter && !segUpper.Contains(segFilter, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
 
-                var kPct = kPlan > 0 ? kProg / kPlan : 0;
-                var t7Pct = t7Plan > 0 ? t7Prog / t7Plan : 0;
-                var t9Pct = t9Plan > 0 ? t9Prog / t9Plan : 0;
-                var overall = 0.0;
-                int cnt = 0;
-                if (kPlan > 0) { overall += kPct; cnt++; }
-                if (t7Plan > 0) { overall += t7Pct; cnt++; }
-                if (t9Plan > 0) { overall += t9Pct; cnt++; }
-                if (cnt > 0) overall /= cnt;
-
-                var icon = overall >= 1.0 ? "✅" : overall >= 0.5 ? "🟡" : "🔴";
-                var ruteShort = BotFormatters.Trunc(rute, 35);
-
-                sb.AppendLine($"{icon} Seg {no} · {ruteShort}");
-                sb.AppendLine($"   Kabel: {BotFormatters.FormatNum(kProg)}/{BotFormatters.FormatNum(kPlan)} m ({BotFormatters.FormatPct(kPct)})");
-                sb.AppendLine($"   T7: {BotFormatters.FormatNum(t7Prog)}/{BotFormatters.FormatNum(t7Plan)} btg ({BotFormatters.FormatPct(t7Pct)})");
-                sb.AppendLine($"   T9: {BotFormatters.FormatNum(t9Prog)}/{BotFormatters.FormatNum(t9Plan)} btg ({BotFormatters.FormatPct(t9Pct)})");
-                sb.AppendLine();
+                AppendSegment(sb, segNo, segment, row);
                 shown++;
             }
 
@@ -102,16 +89,57 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             }
 
             // Grand total
-            sb.AppendLine(BotFormatters.DividerLine);
-            var gkPct = totalKabelPlan > 0 ? totalKabelProg / totalKabelPlan : 0;
-            var gt7Pct = totalT7Plan > 0 ? totalT7Prog / totalT7Plan : 0;
-            var gt9Pct = totalT9Plan > 0 ? totalT9Prog / totalT9Plan : 0;
-            sb.AppendLine($"📈 TOTAL PROJECT");
-            sb.AppendLine($"   Kabel: {BotFormatters.FormatNum(totalKabelProg)}/{BotFormatters.FormatNum(totalKabelPlan)} m ({BotFormatters.FormatPct(gkPct)})");
-            sb.AppendLine($"   T7: {BotFormatters.FormatNum(totalT7Prog)}/{BotFormatters.FormatNum(totalT7Plan)} btg ({BotFormatters.FormatPct(gt7Pct)})");
-            sb.AppendLine($"   T9: {BotFormatters.FormatNum(totalT9Prog)}/{BotFormatters.FormatNum(totalT9Plan)} btg ({BotFormatters.FormatPct(gt9Pct)})");
+            if (grandTotalRow != null && string.IsNullOrEmpty(segFilter))
+            {
+                sb.AppendLine(BotFormatters.DividerLine);
+                sb.AppendLine("📈 GRAND TOTAL PROJECT");
+                AppendNumbers(sb, grandTotalRow, "   ");
+            }
 
             return sb.ToString().TrimEnd();
+        }
+
+        private static void AppendSegment(StringBuilder sb, int no, string segment, Dictionary<string, object> row)
+        {
+            var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
+            var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
+            var t7Plan = BotFormatters.FindNum(row, "7m", "Plan");
+            var t7Prog = BotFormatters.FindNum(row, "7m", "Progress");
+            var t9Plan = BotFormatters.FindNum(row, "9m", "Plan");
+            var t9Prog = BotFormatters.FindNum(row, "9m", "Progress");
+
+            // Overall: rata-rata 3 kategori (yang plan>0)
+            double overall = 0;
+            int cnt = 0;
+            if (kPlan > 0) { overall += kProg / kPlan; cnt++; }
+            if (t7Plan > 0) { overall += t7Prog / t7Plan; cnt++; }
+            if (t9Plan > 0) { overall += t9Prog / t9Plan; cnt++; }
+            if (cnt > 0) overall /= cnt;
+
+            var icon = overall >= 1.0 ? "✅" : overall >= 0.5 ? "🟡" : "🔴";
+            var segShort = BotFormatters.Trunc(segment, 50);
+
+            sb.AppendLine($"{icon} Seg {no} · {segShort}");
+            AppendNumbers(sb, row, "   ");
+            sb.AppendLine();
+        }
+
+        private static void AppendNumbers(StringBuilder sb, Dictionary<string, object> row, string indent)
+        {
+            var kPlan = BotFormatters.FindNum(row, "Kabel", "Plan");
+            var kProg = BotFormatters.FindNum(row, "Kabel", "Progress");
+            var t7Plan = BotFormatters.FindNum(row, "7m", "Plan");
+            var t7Prog = BotFormatters.FindNum(row, "7m", "Progress");
+            var t9Plan = BotFormatters.FindNum(row, "9m", "Plan");
+            var t9Prog = BotFormatters.FindNum(row, "9m", "Progress");
+
+            var kPct = kPlan > 0 ? kProg / kPlan : 0;
+            var t7Pct = t7Plan > 0 ? t7Prog / t7Plan : 0;
+            var t9Pct = t9Plan > 0 ? t9Prog / t9Plan : 0;
+
+            sb.AppendLine($"{indent}Kabel  {BotFormatters.FormatNum(kProg)}/{BotFormatters.FormatNum(kPlan)} m ({BotFormatters.FormatPct(kPct)})");
+            sb.AppendLine($"{indent}T7m    {BotFormatters.FormatNum(t7Prog)}/{BotFormatters.FormatNum(t7Plan)} btg ({BotFormatters.FormatPct(t7Pct)})");
+            sb.AppendLine($"{indent}T9m    {BotFormatters.FormatNum(t9Prog)}/{BotFormatters.FormatNum(t9Plan)} btg ({BotFormatters.FormatPct(t9Pct)})");
         }
     }
 }
