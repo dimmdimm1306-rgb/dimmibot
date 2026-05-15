@@ -60,18 +60,20 @@ namespace StokBarangMAUI.Services.AiChat
                 if (m.Success)
                 {
                     var city = m.Groups["city"].Value.Trim().TrimEnd('?', '!', '.', ',');
-                    // Filter out time words
-                    if (!Regex.IsMatch(city, @"\b(hari\s*ini|sekarang|today|kemarin|besok|nanti)\b", RegexOptions.IgnoreCase))
+                    city = Regex.Replace(city, @"\b(hari\s*ini|sekarang|today|kemarin|besok|lusa|nanti|prediksi|prakiraan|forecast|gimana|bagaimana|dong|ya)\b", " ", RegexOptions.IgnoreCase);
+                    city = Regex.Replace(city, @"\b(dan|atau)\b", " ", RegexOptions.IgnoreCase);
+                    city = Regex.Replace(city, @"\s+", " ").Trim();
+                    if (!string.IsNullOrWhiteSpace(city))
                         ctx["city"] = city;
                 }
                 return IntentMatch.Of(BotIntent.Weather, ctx);
             }
 
             // ── TIME QUERY ────────────────────────────────────────────
-            // Pure time questions only. JANGAN match kalau ada subject lain (progres/cuaca/sj/dll).
-            // "hari apa", "hari apa sekarang", "tanggal berapa", "jam berapa", dll
-            if (Regex.IsMatch(lower, @"\b(hari\s+(apa|ini\s+(apa|tanggal))|tanggal\s+(apa|berapa)|tgl\s+(apa|berapa)|jam\s+berapa|pukul\s+berapa|bulan\s+(apa|berapa|sekarang)|tahun\s+(apa|berapa|sekarang)|sekarang\s+(jam|tanggal|tgl|hari|bulan|tahun))\b") ||
-                Regex.IsMatch(lower, @"^\s*(jam|hari|tanggal|tgl|bulan|tahun|waktu)\s*(berapa|apa|sekarang)?\s*\??\s*$"))
+            // Pure time/calendar questions only. JANGAN match kalau ada subject lain (progres/cuaca/sj/dll).
+            // "hari apa", "tanggal berapa", "besok tanggal berapa", "hari ini ada event apa", dll
+            if (Regex.IsMatch(lower, @"\b(hari\s+(apa|ini\s+(apa|tanggal|ada|event|agenda))|tanggal\s+(apa|berapa|merah)|tgl\s+(apa|berapa)|jam\s+berapa|pukul\s+berapa|bulan\s+(apa|berapa|sekarang|ini)|tahun\s+(apa|berapa|sekarang|ini)|sekarang\s+(jam|tanggal|tgl|hari|bulan|tahun)|besok\s+(tanggal|hari)|kemarin\s+(tanggal|hari)|lusa\s+(tanggal|hari)|event|agenda|hari\s+besar|libur|cuti|setahun\s+ini)\b") ||
+                Regex.IsMatch(lower, @"^\s*(jam|hari|tanggal|tgl|bulan|tahun|waktu|event|agenda)\s*(berapa|apa|sekarang|ini)?\s*\??\s*$"))
             {
                 return IntentMatch.Of(BotIntent.TimeQuery,
                     new Dictionary<string, string> { ["subQuery"] = lower });

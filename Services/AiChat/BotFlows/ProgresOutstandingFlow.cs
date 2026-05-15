@@ -268,9 +268,13 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             {
                 var siteId = BotFormatters.FindCol(row, "SITE ID");
                 var rute = BotFormatters.FindCol(row, "Rute");
-                if (siteId.Length > 22) siteId = siteId.Substring(0, 22);
-                var ruteShort = BotFormatters.Trunc(rute, 38);
-                sb.AppendLine($"{i,2}. {siteId,-22}  {ruteShort}");
+                var kota = BotFormatters.FindCol(row, "KAB");
+
+                sb.AppendLine($"{i}. 🔴 Belum dikerjakan");
+                if (siteId != "-") sb.AppendLine($"   🆔 Site : {siteId}");
+                sb.AppendLine($"   📌 Rute : {rute}");
+                if (kota != "-") sb.AppendLine($"   📍 Kota : {kota}");
+                sb.AppendLine();
                 i++;
             }
 
@@ -303,36 +307,30 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             var t9Pct = t9Plan > 0 ? t9Prog / t9Plan : 0;
 
             var sb = new StringBuilder();
-            sb.AppendLine($"📍 Site Detail");
-            sb.AppendLine($"━━━━━━━━━━━━━━━━━━━━━━━");
-            sb.AppendLine($"🆔 {siteId}");
-            sb.AppendLine($"📌 {rute}");
-            if (kota != "-") sb.AppendLine($"📍 {kota}");
+            sb.AppendLine("📍 DETAIL PROGRES SITE");
+            sb.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━");
+            if (siteId != "-") sb.AppendLine($"🆔 Site ID : {siteId}");
+            sb.AppendLine($"📌 Rute    : {rute}");
+            if (kota != "-") sb.AppendLine($"📍 Kota    : {kota}");
             sb.AppendLine();
-            sb.AppendLine($"{icon} Status: {label} ({BotFormatters.FormatPct(overall)})");
+            sb.AppendLine($"{icon} Status: {label}");
+            sb.AppendLine($"📊 Overall: {BotFormatters.FormatPct(overall)}");
             sb.AppendLine();
 
-            var lblW = 8;
-            var numW = 8;
-            sb.AppendLine(BotFormatters.PadR("Kategori", lblW) + "  " +
-                          BotFormatters.PadL("Plan", numW) + "  " +
-                          BotFormatters.PadL("Progress", numW) + "  " +
-                          BotFormatters.PadL("%", 5));
-            sb.AppendLine("─────────────────────────────────────");
-            sb.AppendLine(BotFormatters.PadR("Kabel", lblW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatNum(kPlan), numW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatNum(kProg), numW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatPct(kPct), 5));
-            sb.AppendLine(BotFormatters.PadR("Tiang 7m", lblW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatNum(t7Plan), numW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatNum(t7Prog), numW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatPct(t7Pct), 5));
-            sb.AppendLine(BotFormatters.PadR("Tiang 9m", lblW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatNum(t9Plan), numW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatNum(t9Prog), numW) + "  " +
-                          BotFormatters.PadL(BotFormatters.FormatPct(t9Pct), 5));
+            AppendCategory(sb, "🧵 Kabel", kPlan, kProg, kPct, "m");
+            AppendCategory(sb, "🪵 Tiang 7m", t7Plan, t7Prog, t7Pct, "btg");
+            AppendCategory(sb, "🪵 Tiang 9m", t9Plan, t9Prog, t9Pct, "btg");
 
             return sb.ToString().TrimEnd();
+        }
+
+        private static void AppendCategory(StringBuilder sb, string title, double plan, double prog, double pct, string unit)
+        {
+            sb.AppendLine(title);
+            sb.AppendLine($"   Plan     : {BotFormatters.FormatNum(plan)} {unit}");
+            sb.AppendLine($"   Progress : {BotFormatters.FormatNum(prog)} {unit}");
+            sb.AppendLine($"   Persen   : {BotFormatters.FormatPct(pct)}");
+            sb.AppendLine();
         }
 
         private static string? ResolveSegmentChoice(string input, string[]? displayed = null)

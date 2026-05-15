@@ -35,10 +35,14 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
                 int shown = 0;
                 foreach (var row in result.Data.Take(PAGE_SIZE))
                 {
+                    var siteId = BotFormatters.FindCol(row, "SITE ID");
                     var rute = BotFormatters.FindCol(row, "Rute");
                     var kota = BotFormatters.FindCol(row, "KAB");
-                    sb.AppendLine($"✅ {BotFormatters.Trunc(rute, 45)}");
-                    if (kota != "-") sb.AppendLine($"   Kota: {kota}");
+                    sb.AppendLine($"{shown + 1}. ✅ Selesai");
+                    if (siteId != "-") sb.AppendLine($"   🆔 Site : {siteId}");
+                    sb.AppendLine($"   📌 Rute : {rute}");
+                    if (kota != "-") sb.AppendLine($"   📍 Kota : {kota}");
+                    sb.AppendLine();
                     shown++;
                 }
 

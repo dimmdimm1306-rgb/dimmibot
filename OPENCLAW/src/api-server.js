@@ -52,6 +52,103 @@ function normalizeModel(model) {
     return model;
 }
 
+// ── Smart lightweight handlers (0 LLM token) ──────────────────────────
+function makeChatResponse(content, model = 'smart-local') {
+    return {
+        id: 'chatcmpl-local-' + Date.now(),
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
+        usage: { prompt_tokens: 0, completion_tokens: Math.ceil(content.length / 4), total_tokens: Math.ceil(content.length / 4) }
+    };
+}
+
+function getWibNow() {
+    return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+}
+
+function formatWibDateTime() {
+    const now = getWibNow();
+    const day = new Intl.DateTimeFormat('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' }).format(now);
+    const date = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }).format(now);
+    const time = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }).format(now).replace('.', ':');
+    return `📅 Hari ini ${day}, ${date}\n🕐 Jam ${time} WIB`;
+}
+
+function weatherText(code) {
+    const map = {
+        0: ['☀️', 'Cerah'], 1: ['🌤️', 'Cerah berawan'], 2: ['⛅', 'Berawan sebagian'], 3: ['☁️', 'Mendung'],
+        45: ['🌫️', 'Berkabut'], 48: ['🌫️', 'Berkabut'], 51: ['🌦️', 'Gerimis'], 53: ['🌦️', 'Gerimis'], 55: ['🌦️', 'Gerimis'],
+        61: ['🌧️', 'Hujan ringan'], 63: ['🌧️', 'Hujan sedang'], 65: ['🌧️', 'Hujan deras'],
+        80: ['🌦️', 'Hujan ringan setempat'], 81: ['🌧️', 'Hujan setempat'], 82: ['⛈️', 'Hujan deras setempat'],
+        95: ['⛈️', 'Petir'], 96: ['⛈️', 'Petir + hujan es'], 99: ['⛈️', 'Petir + hujan es']
+    };
+    return map[code] || ['🌡️', `Kode cuaca ${code}`];
+}
+
+async function tryHandleSmartQuery(messages) {
+    const last = [...messages].reverse().find(m => m && m.role === 'user' && typeof m.content === 'string');
+    if (!last) return null;
+    const q = last.content.trim();
+    const lower = q.toLowerCase();
+
+    // Date/time direct answer
+    if (/\b(hari\s+apa|tanggal\s+(apa|berapa)|tgl\s+(apa|berapa)|jam\s+berapa|bulan\s+(apa|berapa)|tahun\s+(apa|berapa)|sekarang\s+(hari|tanggal|tgl|jam|bulan|tahun))\b/.test(lower)) {
+        return makeChatResponse(formatWibDateTime());
+    }
+
+    // Weather: cuaca [city] / cuaca di [city]
+    if (/\b(cuaca|weather|hujan|panas|dingin|temperatur)\b/.test(lower)) {
+        let city = (q.match(/(?:cuaca|weather|hujan|panas|dingin|temperatur)\s+(?:di\s+)?(.+)/i) || [])[1] || '';
+        city = city
+            .replace(/\b(hari ini|sekarang|besok|lusa|prediksi|prakiraan|forecast|7 hari|seminggu|minggu ini|nanti|sore|malam|siang|pagi)\b/ig, ' ')
+            .replace(/\b(dan|atau|gimana|bagaimana|dong|ya|nih|kah|\?)\b/ig, ' ')
+            .replace(/[?!.;,]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!city) return makeChatResponse('🌤️ Posisi kamu di kota/kabupaten mana? Contoh: Brebes, Ciamis, Sragen, Jakarta.');
+
+        let geo, fc, loc;
+        try {
+            const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=3&language=id&format=json`;
+            const geoRes = await fetch(geoUrl, { timeout: 12000, headers: { 'user-agent': 'OpenClaw-Weather/1.0' } });
+            geo = await geoRes.json();
+            if (!geo.results || geo.results.length === 0) return makeChatResponse(`🔍 Lokasi \`${city}\` tidak ketemu. Coba nama kabupaten/kota lebih lengkap.`);
+            loc = geo.results.find(x => x.country_code === 'ID') || geo.results[0];
+            const fcUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.latitude}&longitude=${loc.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=Asia%2FJakarta&forecast_days=3`;
+            const fcRes = await fetch(fcUrl, { timeout: 12000, headers: { 'user-agent': 'OpenClaw-Weather/1.0' } });
+            fc = await fcRes.json();
+        } catch (err) {
+            console.error('[SMART] weather fetch failed:', err.message || err);
+            return makeChatResponse(`📡 Server belum bisa mengambil cuaca real-time untuk \`${city}\` sekarang. Coba dari aplikasi HP (WeatherFlow lokal) atau ulangi beberapa menit lagi.`);
+        }
+        const [ic, desc] = weatherText(fc.current.weather_code);
+        let out = `${ic} CUACA ${loc.name.toUpperCase()}\n📍 ${[loc.admin2, loc.admin1, loc.country].filter(Boolean).join(', ')}\n━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        out += `Sekarang: ${desc}\n🌡️ ${fc.current.temperature_2m}°C (terasa ${fc.current.apparent_temperature}°C)\n💧 ${fc.current.relative_humidity_2m}% · 💨 ${fc.current.wind_speed_10m} km/jam · 🌧️ ${fc.current.precipitation} mm\n\n`;
+        out += '📅 Prediksi 3 hari:\n';
+        for (let i = 0; i < Math.min(3, fc.daily.weather_code.length); i++) {
+            const label = i === 0 ? 'Hari ini' : i === 1 ? 'Besok' : 'Lusa';
+            const [dic, dtx] = weatherText(fc.daily.weather_code[i]);
+            out += `${dic} ${label}: ${dtx}\n   Suhu ${fc.daily.temperature_2m_min[i]}-${fc.daily.temperature_2m_max[i]}°C · Hujan ${fc.daily.precipitation_probability_max[i]}% · ${fc.daily.precipitation_sum[i]}mm\n`;
+        }
+        out += '\n💡 Catatan: prediksi cuaca bisa berubah cepat, terutama sore/malam di Indonesia.';
+        return makeChatResponse(out);
+    }
+
+    return null;
+}
+
+function injectServerContext(messages) {
+    const now = formatWibDateTime();
+    const system = {
+        role: 'system',
+        content: `Kamu adalah Claw, AI assistant aplikasi StokBarangMAUI. Jawab dalam Bahasa Indonesia.\nWAKTU SAAT INI (WIB):\n${now}\nKalau ditanya tanggal/hari/jam, pakai waktu ini. Untuk cuaca real-time, jika data sudah tersedia dari tool/server, gunakan data itu; jangan bilang tidak bisa real-time.`
+    };
+    const hasSystem = messages.some(m => m.role === 'system');
+    return hasSystem ? messages : [system, ...messages];
+}
+
 // ── Fallback chain ───────────────────────────────────────────────────
 // Diisi dari env FALLBACK_MODELS (comma-separated). Selalu coba model
 // dari request lebih dulu, lalu walk through chain ini.
@@ -134,6 +231,13 @@ app.post('/v1/chat/completions', async (req, res) => {
             return res.status(400).json({ error: 'Invalid request: messages array required' });
         }
 
+        // Smart 0-token handlers: tanggal/jam/cuaca. Ini bikin dashboard web / raw API
+        // tetap pintar walau bukan lewat BotEngine MAUI.
+        const smart = await tryHandleSmartQuery(messages);
+        if (smart) return res.json(smart);
+
+        const enrichedMessages = injectServerContext(messages);
+
         const requestedModel = (model && model.trim() !== '')
             ? model
             : (process.env.DEFAULT_MODEL || FALLBACK_MODELS[0]);
@@ -147,7 +251,7 @@ app.post('/v1/chat/completions', async (req, res) => {
         for (const m of modelsToTry) {
             try {
                 console.log(`[API] → Trying ${m}`);
-                const completion = await callModel(m, messages, temperature, max_tokens);
+                const completion = await callModel(m, enrichedMessages, temperature, max_tokens);
                 console.log(`[API] ✓ Success from ${m}`);
                 return res.json(completion);
             } catch (err) {

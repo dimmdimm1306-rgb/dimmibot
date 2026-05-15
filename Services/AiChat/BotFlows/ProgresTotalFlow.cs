@@ -119,7 +119,8 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             var icon = overall >= 1.0 ? "✅" : overall >= 0.5 ? "🟡" : "🔴";
             var segShort = BotFormatters.Trunc(segment, 50);
 
-            sb.AppendLine($"{icon} Seg {no} · {segShort}");
+            sb.AppendLine($"{icon} Segment {no}");
+            sb.AppendLine($"   🗂  {segShort}");
             AppendNumbers(sb, row, "   ");
             sb.AppendLine();
         }
@@ -137,9 +138,17 @@ namespace StokBarangMAUI.Services.AiChat.BotFlows
             var t7Pct = t7Plan > 0 ? t7Prog / t7Plan : 0;
             var t9Pct = t9Plan > 0 ? t9Prog / t9Plan : 0;
 
-            sb.AppendLine($"{indent}Kabel  {BotFormatters.FormatNum(kProg)}/{BotFormatters.FormatNum(kPlan)} m ({BotFormatters.FormatPct(kPct)})");
-            sb.AppendLine($"{indent}T7m    {BotFormatters.FormatNum(t7Prog)}/{BotFormatters.FormatNum(t7Plan)} btg ({BotFormatters.FormatPct(t7Pct)})");
-            sb.AppendLine($"{indent}T9m    {BotFormatters.FormatNum(t9Prog)}/{BotFormatters.FormatNum(t9Plan)} btg ({BotFormatters.FormatPct(t9Pct)})");
+            AppendMetric(sb, indent, "🧵 Kabel", kProg, kPlan, "m", kPct);
+            AppendMetric(sb, indent, "🪵 Tiang 7m", t7Prog, t7Plan, "btg", t7Pct);
+            AppendMetric(sb, indent, "🪵 Tiang 9m", t9Prog, t9Plan, "btg", t9Pct);
+        }
+
+        private static void AppendMetric(StringBuilder sb, string indent, string label, double progress, double plan, string unit, double pct)
+        {
+            sb.AppendLine($"{indent}{label}");
+            sb.AppendLine($"{indent}   Progress : {BotFormatters.FormatNum(progress)} {unit}");
+            sb.AppendLine($"{indent}   Plan     : {BotFormatters.FormatNum(plan)} {unit}");
+            sb.AppendLine($"{indent}   Persen   : {BotFormatters.FormatPct(pct)}");
         }
     }
 }
