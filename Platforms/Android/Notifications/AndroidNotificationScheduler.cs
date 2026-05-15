@@ -57,12 +57,15 @@ namespace StokBarangMAUI.Platforms.Android.Notifications
 
                 if (status == global::Android.Content.PM.Permission.Granted) return;
 
-                var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
-                if (activity != null)
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    AndroidX.Core.App.ActivityCompat.RequestPermissions(activity,
-                        new[] { global::Android.Manifest.Permission.PostNotifications }, 1100);
-                }
+                    var activity = Microsoft.Maui.ApplicationModel.Platform.CurrentActivity;
+                    if (activity != null)
+                    {
+                        AndroidX.Core.App.ActivityCompat.RequestPermissions(activity,
+                            new[] { global::Android.Manifest.Permission.PostNotifications }, 1100);
+                    }
+                });
             }
             catch { /* permission request best-effort */ }
             await Task.CompletedTask;

@@ -16,11 +16,13 @@ public partial class App : Application
     private readonly DraftService         _drafts;
     private readonly GoogleOAuthService   _gauth;
     private readonly UploadCoordinator    _upload;
+    private readonly IServiceProvider     _services;
 
     public App(DatabaseService db, GoogleSheetsService sheets,
                StockDatabaseService stockDb, ThemeService theme,
                ProjectService projectService, AuthService auth, DraftService drafts,
-               GoogleOAuthService gauth, UploadCoordinator upload)
+               GoogleOAuthService gauth, UploadCoordinator upload,
+               IServiceProvider services)
     {
         InitializeComponent();
         Theme           = theme;
@@ -33,11 +35,13 @@ public partial class App : Application
         _drafts         = drafts;
         _gauth          = gauth;
         _upload         = upload;
+        _services       = services;
 
         // cleanup temporary files on startup (fire-and-forget)
         _ = CleanupAsync();
 
         // Pasang notif harian (idempotent — aman dipanggil tiap launch)
+        // Delay sedikit supaya Activity sudah ready, jadi Android 13+ permission prompt muncul otomatis.
         _ = ScheduleRemindersAsync();
     }
 
@@ -45,15 +49,17 @@ public partial class App : Application
     {
         try
         {
-            var sp = this.Handler?.MauiContext?.Services
-                  ?? Application.Current?.Handler?.MauiContext?.Services;
-            var scheduler = sp?.GetService(typeof(INotificationScheduler)) as INotificationScheduler;
+            await Task.Delay(1200);
+            var scheduler = _services.GetService(typeof(INotificationScheduler)) as INotificationScheduler;
             if (scheduler == null) return;
 
             await scheduler.RequestPermissionIfNeededAsync();
             scheduler.ScheduleDailyReminders();
         }
-        catch { /* don't crash app on scheduler failure */ }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Notifications] schedule failed: {ex.Message}");
+        }
     }
 
     private async Task CleanupAsync()
