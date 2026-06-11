@@ -26,6 +26,9 @@ namespace StokBarangMAUI.Pages.Stock
             PickerGudang.ItemsSource       = wNames;
             PickerGudangTujuan.ItemsSource = wNames;
             PickerMaterial.ItemsSource     = _materials.Select(m => $"{m.Name} ({m.Unit})").ToList();
+
+            if (_warehouses.Count == 0 || _materials.Count == 0)
+                await DisplayAlert("Data belum lengkap", "Tambahkan gudang dan material sebelum input transaksi.", "OK");
         }
 
         void SetType(string type)
@@ -37,12 +40,20 @@ namespace StokBarangMAUI.Pages.Stock
             BtnKeluar.BackgroundColor   = type == "KELUAR"   ? Color.FromArgb("#DC2626") : inactiveBg;
             BtnTransfer.BackgroundColor = type == "TRANSFER" ? Color.FromArgb("#2563EB") : inactiveBg;
 
-            var masukLabel    = (Label)BtnMasuk.Content;
-            var keluarLabel   = (Label)BtnKeluar.Content;
-            var transferLabel = (Label)BtnTransfer.Content;
+            if (BtnMasuk.Content is not Label masukLabel ||
+                BtnKeluar.Content is not Label keluarLabel ||
+                BtnTransfer.Content is not Label transferLabel)
+            {
+                return;
+            }
+
             masukLabel.TextColor    = type == "MASUK"    ? Colors.White : inactiveText;
             keluarLabel.TextColor   = type == "KELUAR"   ? Colors.White : inactiveText;
             transferLabel.TextColor = type == "TRANSFER" ? Colors.White : inactiveText;
+
+            BtnMasuk.StrokeThickness    = type == "MASUK" ? 0 : 1;
+            BtnKeluar.StrokeThickness   = type == "KELUAR" ? 0 : 1;
+            BtnTransfer.StrokeThickness = type == "TRANSFER" ? 0 : 1;
 
             bool isTransfer = type == "TRANSFER";
             LblGudangTujuan.IsVisible    = isTransfer;
@@ -55,6 +66,7 @@ namespace StokBarangMAUI.Pages.Stock
         void OnTypeKeluar(object? s, EventArgs e)   => SetType("KELUAR");
         void OnTypeTransfer(object? s, EventArgs e) => SetType("TRANSFER");
 
+        async void OnGudangChanged(object? s, EventArgs e) => await UpdateStokInfoAsync();
         async void OnMaterialChanged(object? s, EventArgs e) => await UpdateStokInfoAsync();
 
         async Task UpdateStokInfoAsync()
@@ -110,17 +122,31 @@ namespace StokBarangMAUI.Pages.Stock
                 Date          = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
             };
 
-            var (ok, msg) = await _db.AddTransactionAsync(tx);
-            if (!ok) { await DisplayAlert("Gagal", msg, "OK"); return; }
+            try
+            {
+                BtnSave.IsEnabled = false;
+                BtnSave.Text = "Menyimpan...";
+                var (ok, msg) = await _db.AddTransactionAsync(tx);
+                if (!ok) { await DisplayAlert("Gagal", msg, "OK"); return; }
 
-            await DisplayAlert("Berhasil", msg, "OK");
-            EntryQty.Text    = "";
-            EntryProyek.Text = "";
-            EditorNotes.Text = "";
-            PickerGudang.SelectedIndex       = -1;
-            PickerGudangTujuan.SelectedIndex = -1;
-            PickerMaterial.SelectedIndex     = -1;
-            BorderStokInfo.IsVisible         = false;
+                await DisplayAlert("Berhasil", msg, "OK");
+                EntryQty.Text    = "";
+                EntryProyek.Text = "";
+                EditorNotes.Text = "";
+                PickerGudang.SelectedIndex       = -1;
+                PickerGudangTujuan.SelectedIndex = -1;
+                PickerMaterial.SelectedIndex     = -1;
+                BorderStokInfo.IsVisible         = false;
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Gagal", ex.Message, "OK");
+            }
+            finally
+            {
+                BtnSave.IsEnabled = true;
+                BtnSave.Text = "Simpan Transaksi";
+            }
         }
     }
 }

@@ -20,24 +20,47 @@ namespace StokBarangMAUI.Pages.Stock
 
         async Task LoadStatsAsync()
         {
-            var s = await _db.GetStatsAsync();
-            LblWarehouses.Text = s.TotalWarehouses.ToString();
-            LblMaterials.Text  = s.TotalMaterials.ToString();
-            LblLowStock.Text   = (s.LowStockCount + s.EmptyStockCount).ToString();
-
-            var txToday = s.TodayTransactions;
-            LblSubtitle.Text = $"{s.TotalTransactions} transaksi • {txToday} hari ini";
-
-            if (s.EmptyStockCount > 0 || s.LowStockCount > 0)
+            try
             {
-                AlertBanner.IsVisible = true;
-                LblAlert.Text = $"⚠️  {s.EmptyStockCount} item habis, {s.LowStockCount} item stok kurang — segera lakukan pengadaan!";
+                var s = await _db.GetStatsAsync();
+                CardWarehouses.CardValue = s.TotalWarehouses.ToString();
+                CardWarehouses.CardCaption = "lokasi aktif";
+                CardMaterials.CardValue = s.TotalMaterials.ToString();
+                CardMaterials.CardCaption = "master barang";
+                CardLowStock.CardValue = (s.LowStockCount + s.EmptyStockCount).ToString();
+                CardLowStock.CardCaption = "habis / hampir habis";
+                CardTodayTx.CardValue = s.TodayTransactions.ToString();
+                CardTodayTx.CardCaption = "transaksi";
+
+                LblSubtitle.Text = $"{s.TotalTransactions} transaksi total - {s.TodayTransactions} hari ini";
+
+                if (s.EmptyStockCount > 0 || s.LowStockCount > 0)
+                {
+                    AlertBanner.IsVisible = true;
+                    LblAlert.Text = $"Perhatian: {s.EmptyStockCount} item habis, {s.LowStockCount} item hampir habis. Cek sebelum tim lapangan berangkat.";
+                }
+                else
+                {
+                    AlertBanner.IsVisible = false;
+                }
+
+                var recent = await _db.GetTransactionsAsync(limit: 5);
+                RecentList.ItemsSource = recent;
+                RecentEmpty.IsVisible = recent.Count == 0;
             }
-            else
+            catch (Exception ex)
             {
-                AlertBanner.IsVisible = false;
+                LblSubtitle.Text = "Gagal memuat ringkasan stok.";
+                RecentEmpty.IsVisible = true;
+                await DisplayAlert("Gagal", ex.Message, "OK");
+            }
+            finally
+            {
+                RefreshV.IsRefreshing = false;
             }
         }
+
+        async void OnRefresh(object? s, EventArgs e) => await LoadStatsAsync();
 
         async void OnDashboard(object? s, EventArgs e) =>
             await Navigation.PushAsync(new DashboardPage(_db));

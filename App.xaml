@@ -13,34 +13,40 @@
             <converters:StokColorConverter x:Key="StokColorConverter" />
 
             <!-- Theme-aware semantic colors (defaults = dark; overwritten by ThemeService) -->
-            <Color x:Key="PageBg">#001224</Color>
-            <Color x:Key="CardBg">#001e40</Color>
-            <Color x:Key="CardBg2">#001530</Color>
-            <Color x:Key="TextPrimary">#d5e3ff</Color>
-            <Color x:Key="TextSecond">#a7c8ff</Color>
-            <Color x:Key="TextMuted">#799dd6</Color>
-            <Color x:Key="BorderClr">#1f477b</Color>
-            <Color x:Key="DividerClr">#001e40</Color>
-            <Color x:Key="SearchBg">#001e40</Color>
-            <Color x:Key="HeaderBg">#001224</Color>
-            <Color x:Key="SubHeaderBg">#001224</Color>
+            <Color x:Key="PageBg">#07111F</Color>
+            <Color x:Key="CardBg">#0E1A2B</Color>
+            <Color x:Key="CardBg2">#10243A</Color>
+            <Color x:Key="TextPrimary">#F6FBFF</Color>
+            <Color x:Key="TextSecond">#B8D7EA</Color>
+            <Color x:Key="TextMuted">#7FA1B9</Color>
+            <Color x:Key="BorderClr">#1C3950</Color>
+            <Color x:Key="DividerClr">#123047</Color>
+            <Color x:Key="SearchBg">#0B1B2D</Color>
+            <Color x:Key="HeaderBg">#07111F</Color>
+            <Color x:Key="SubHeaderBg">#0B1B2D</Color>
 
             <!-- Accent colors -->
-            <Color x:Key="AccentBlueBg">#1E3A6E</Color>
-            <Color x:Key="AccentBlueBorder">#2563EB</Color>
-            <Color x:Key="AccentBlue">#1D4ED8</Color>
-            <Color x:Key="AccentGreenBg">#064E3B</Color>
-            <Color x:Key="AccentGreenBorder">#059669</Color>
-            <Color x:Key="AccentRedBg">#7F1D1D</Color>
-            <Color x:Key="AccentRedBorder">#DC2626</Color>
+            <Color x:Key="AccentBlueBg">#0B2A4A</Color>
+            <Color x:Key="AccentBlueBorder">#0EA5E9</Color>
+            <Color x:Key="AccentBlue">#38BDF8</Color>
+            <Color x:Key="AccentGreenBg">#073B31</Color>
+            <Color x:Key="AccentGreenBorder">#10B981</Color>
+            <Color x:Key="AccentRedBg">#4C151D</Color>
+            <Color x:Key="AccentRedBorder">#F43F5E</Color>
 
             <!-- Stat card text -->
-            <Color x:Key="StatBlueText">#93C5FD</Color>
+            <Color x:Key="StatBlueText">#A5F3FC</Color>
             <Color x:Key="StatGreenText">#6EE7B7</Color>
             <Color x:Key="StatRedText">#FCA5A5</Color>
-            <Color x:Key="StatBlueLabel">#60A5FA</Color>
+            <Color x:Key="StatBlueLabel">#67E8F9</Color>
             <Color x:Key="StatGreenLabel">#34D399</Color>
             <Color x:Key="StatRedLabel">#F87171</Color>
+
+            <!-- Stat value colors (numbers in summary cards) - theme aware -->
+            <Color x:Key="StatBlueValue">#22D3EE</Color>
+            <Color x:Key="StatOrangeValue">#FBBF24</Color>
+            <Color x:Key="StatPurpleValue">#C084FC</Color>
+            <Color x:Key="StatGreenValue">#4ADE80</Color>
 
             <!-- Drawer / menu -->
             <Color x:Key="DrawerBg">#0D1117</Color>
@@ -55,9 +61,23 @@
             <Color x:Key="ConsoleText">#94A3B8</Color>
 
             <!-- Header button tints -->
-            <Color x:Key="HeaderBtnBg">#1E293B</Color>
-            <Color x:Key="HeaderBtnBorder">#334155</Color>
-            <Color x:Key="HeaderSubtitle">#93C5FD</Color>
+            <Color x:Key="HeaderBtnBg">#0B2A4A</Color>
+            <Color x:Key="HeaderBtnBorder">#0EA5E9</Color>
+            <Color x:Key="HeaderSubtitle">#A5F3FC</Color>
+
+            <!-- Modern UI tokens -->
+            <Color x:Key="SurfaceRaised">#14243A</Color>
+            <Color x:Key="FiberCyan">#22D3EE</Color>
+            <Color x:Key="FiberBlue">#38BDF8</Color>
+            <Color x:Key="FiberGreen">#34D399</Color>
+            <Color x:Key="SuccessBg">#073B31</Color>
+            <Color x:Key="SuccessText">#6EE7B7</Color>
+            <Color x:Key="WarningBg">#422006</Color>
+            <Color x:Key="WarningText">#FCD34D</Color>
+            <Color x:Key="DangerBg">#4C151D</Color>
+            <Color x:Key="DangerText">#FDA4AF</Color>
+            <Color x:Key="ChipBg">#10243A</Color>
+            <Color x:Key="ChipSelectedBg">#0E7490</Color>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

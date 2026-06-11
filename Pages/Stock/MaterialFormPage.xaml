@@ -1,49 +1,85 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:StokBarangMAUI.Controls"
              x:Class="StokBarangMAUI.Pages.Stock.MaterialFormPage"
              Title="Form Material"
              BackgroundColor="{DynamicResource PageBg}">
 
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="14">
+        <VerticalStackLayout Padding="16" Spacing="16">
 
-            <Label Text="Nama Material" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
-            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
-                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
-                <Entry x:Name="EntryName" Placeholder="Contoh: Kabel 24C" FontSize="15"
-                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
-                       PlaceholderColor="{DynamicResource TextMuted}"/>
+            <Border Style="{StaticResource FiberCard}" BackgroundColor="{DynamicResource CardBg2}">
+                <VerticalStackLayout Padding="16" Spacing="4">
+                    <Label Text="Input Barang" Style="{StaticResource FiberPageTitle}" />
+                    <Label Text="Buat master material yang mudah dicari saat transaksi gudang."
+                           FontSize="13"
+                           TextColor="{DynamicResource TextMuted}" />
+                </VerticalStackLayout>
             </Border>
 
-            <Label Text="Satuan" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
-            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
-                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
-                <Entry x:Name="EntryUnit" Placeholder="pcs / meter / btg / roll" FontSize="15"
-                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
-                       PlaceholderColor="{DynamicResource TextMuted}"/>
-            </Border>
+            <controls:SectionHeader HeaderTitle="Informasi Barang"
+                                    HeaderSubtitle="Nama dan kategori dipakai untuk pencarian cepat." />
 
-            <Label Text="Kategori" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
-            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
-                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
-                <Entry x:Name="EntryCategory" Placeholder="Kabel / Aksesori / Tiang" FontSize="15"
-                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
-                       PlaceholderColor="{DynamicResource TextMuted}"/>
-            </Border>
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Nama Material" Style="{StaticResource FiberMutedText}" />
+                <Border Style="{StaticResource FiberInputShell}">
+                    <Entry x:Name="EntryName"
+                           Placeholder="Contoh: Kabel 24C"
+                           Margin="10,4"
+                           FontSize="15"
+                           TextColor="{DynamicResource TextPrimary}"
+                           PlaceholderColor="{DynamicResource TextMuted}" />
+                </Border>
+            </VerticalStackLayout>
 
-            <Label Text="Stok Minimum (peringatan)" FontSize="13" FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
-            <Border BackgroundColor="{DynamicResource CardBg}" StrokeThickness="1"
-                    Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 8">
-                <Entry x:Name="EntryMinStock" Placeholder="0" Keyboard="Numeric" FontSize="15"
-                       Margin="8,4" TextColor="{DynamicResource TextPrimary}"
-                       PlaceholderColor="{DynamicResource TextMuted}"/>
-            </Border>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <VerticalStackLayout Grid.Column="0" Spacing="8">
+                    <Label Text="Satuan" Style="{StaticResource FiberMutedText}" />
+                    <Border Style="{StaticResource FiberInputShell}">
+                        <Entry x:Name="EntryUnit"
+                               Placeholder="pcs / meter / roll"
+                               Margin="10,4"
+                               FontSize="15"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}" />
+                    </Border>
+                </VerticalStackLayout>
 
-            <Button Text="Simpan" Clicked="OnSimpan"
-                    BackgroundColor="#1E40AF" TextColor="White"
-                    FontSize="16" FontAttributes="Bold"
-                    CornerRadius="10" HeightRequest="50" Margin="0,8,0,0"/>
+                <VerticalStackLayout Grid.Column="1" Spacing="8">
+                    <Label Text="Kategori" Style="{StaticResource FiberMutedText}" />
+                    <Border Style="{StaticResource FiberInputShell}">
+                        <Entry x:Name="EntryCategory"
+                               Placeholder="Kabel / Aksesori"
+                               Margin="10,4"
+                               FontSize="15"
+                               TextColor="{DynamicResource TextPrimary}"
+                               PlaceholderColor="{DynamicResource TextMuted}" />
+                    </Border>
+                </VerticalStackLayout>
+            </Grid>
+
+            <controls:SectionHeader HeaderTitle="Peringatan Stok"
+                                    HeaderSubtitle="Nilai minimum dipakai untuk badge warning di dashboard." />
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Stok Minimum" Style="{StaticResource FiberMutedText}" />
+                <Border Style="{StaticResource FiberInputShell}">
+                    <Entry x:Name="EntryMinStock"
+                           Placeholder="0"
+                           Keyboard="Numeric"
+                           Margin="10,4"
+                           FontSize="15"
+                           TextColor="{DynamicResource TextPrimary}"
+                           PlaceholderColor="{DynamicResource TextMuted}" />
+                </Border>
+            </VerticalStackLayout>
+
+            <Button x:Name="BtnSave"
+                    Text="Simpan Material"
+                    Clicked="OnSimpan"
+                    Style="{StaticResource FiberPrimaryButton}"
+                    Margin="0,4,0,0" />
 
         </VerticalStackLayout>
     </ScrollView>

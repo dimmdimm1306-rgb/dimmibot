@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Controls.SearchFilterBar"
+             x:Name="Root">
+    <Border Style="{StaticResource FiberInputShell}" Padding="4,0">
+        <SearchBar x:Name="Search"
+                   Placeholder="{Binding Placeholder, Source={x:Reference Root}}"
+                   Text="{Binding SearchText, Source={x:Reference Root}}"
+                   TextChanged="OnSearchTextChanged"
+                   FontSize="14"
+                   TextColor="{DynamicResource TextPrimary}"
+                   PlaceholderColor="{DynamicResource TextMuted}"
+                   CancelButtonColor="{DynamicResource TextMuted}"
+                   BackgroundColor="Transparent" />
+    </Border>
+</ContentView>

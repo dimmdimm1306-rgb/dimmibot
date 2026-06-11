@@ -1,93 +1,133 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:StokBarangMAUI.Controls"
              x:Class="StokBarangMAUI.Pages.Stock.DashboardPage"
              Title="Dashboard Stok"
              BackgroundColor="{DynamicResource PageBg}">
 
     <Grid RowDefinitions="Auto,*">
-        <!-- Filter gudang -->
-        <Border Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" StrokeThickness="0" Padding="12,8">
-            <Picker x:Name="PickerGudang" Title="Semua Gudang"
-                    FontSize="14" SelectedIndexChanged="OnGudangChanged"
-                    TextColor="{DynamicResource TextPrimary}" TitleColor="{DynamicResource TextMuted}"/>
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" StrokeThickness="0">
+            <Grid Padding="16,14" RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="8" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
+                    <Label Text="Dashboard Stok" Style="{StaticResource FiberPageTitle}" />
+                    <Label x:Name="LblCountSummary"
+                           Text="Semua gudang"
+                           FontSize="12"
+                           TextColor="{DynamicResource TextSecond}" />
+                </VerticalStackLayout>
+                <Border Grid.Row="0" Grid.Column="1"
+                        BackgroundColor="{DynamicResource AccentBlueBg}"
+                        Stroke="{DynamicResource AccentBlueBorder}"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 8"
+                        Padding="10,0"
+                        VerticalOptions="Center">
+                    <Picker x:Name="PickerGudang"
+                            Title="Semua Gudang"
+                            SelectedIndexChanged="OnGudangChanged"
+                            FontSize="13"
+                            TextColor="{DynamicResource TextPrimary}"
+                            TitleColor="{DynamicResource TextSecond}"
+                            WidthRequest="150" />
+                </Border>
+            </Grid>
         </Border>
 
         <RefreshView Grid.Row="1" x:Name="RefreshV" Refreshing="OnRefresh">
             <ScrollView>
-                <VerticalStackLayout Padding="12" Spacing="12">
+                <VerticalStackLayout Padding="16" Spacing="14">
 
-                    <!-- Stats cards -->
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
-                        <Border Grid.Row="0" Grid.Column="0" BackgroundColor="#064E3B"
-                                StrokeThickness="1" Stroke="#059669" StrokeShape="RoundRectangle 10">
-                            <VerticalStackLayout Padding="14,12" Spacing="2">
-                                <Label Text="✅ Stok OK" FontSize="12" TextColor="#6EE7B7"/>
-                                <Label x:Name="LblOk" Text="–" FontSize="26" FontAttributes="Bold" TextColor="#34D399"/>
-                                <Label Text="item" FontSize="11" TextColor="#6EE7B7"/>
-                            </VerticalStackLayout>
-                        </Border>
-                        <Border Grid.Row="0" Grid.Column="1" BackgroundColor="#451A03"
-                                StrokeThickness="1" Stroke="#D97706" StrokeShape="RoundRectangle 10">
-                            <VerticalStackLayout Padding="14,12" Spacing="2">
-                                <Label Text="⚠️ Stok Kurang" FontSize="12" TextColor="#FCD34D"/>
-                                <Label x:Name="LblLow" Text="–" FontSize="26" FontAttributes="Bold" TextColor="#FBBF24"/>
-                                <Label Text="item" FontSize="11" TextColor="#FCD34D"/>
-                            </VerticalStackLayout>
-                        </Border>
-                        <Border Grid.Row="1" Grid.Column="0" BackgroundColor="#450A0A"
-                                StrokeThickness="1" Stroke="#DC2626" StrokeShape="RoundRectangle 10">
-                            <VerticalStackLayout Padding="14,12" Spacing="2">
-                                <Label Text="❌ Habis" FontSize="12" TextColor="#FCA5A5"/>
-                                <Label x:Name="LblEmpty" Text="–" FontSize="26" FontAttributes="Bold" TextColor="#F87171"/>
-                                <Label Text="item" FontSize="11" TextColor="#FCA5A5"/>
-                            </VerticalStackLayout>
-                        </Border>
-                        <Border Grid.Row="1" Grid.Column="1" BackgroundColor="{DynamicResource CardBg}"
-                                StrokeThickness="1" Stroke="{DynamicResource BorderClr}" StrokeShape="RoundRectangle 10">
-                            <VerticalStackLayout Padding="14,12" Spacing="2">
-                                <Label Text="📦 Total Item" FontSize="12" TextColor="{DynamicResource TextMuted}"/>
-                                <Label x:Name="LblTotal" Text="–" FontSize="26" FontAttributes="Bold" TextColor="#3B82F6"/>
-                                <Label Text="item" FontSize="11" TextColor="{DynamicResource TextMuted}"/>
-                            </VerticalStackLayout>
-                        </Border>
+                        <controls:StatCard x:Name="CardOk"
+                                           Grid.Row="0" Grid.Column="0"
+                                           CardTitle="Stok Aman"
+                                           IconText="OK"
+                                           AccentColor="{DynamicResource FiberGreen}"
+                                           AccentBackground="{DynamicResource SuccessBg}" />
+                        <controls:StatCard x:Name="CardLow"
+                                           Grid.Row="0" Grid.Column="1"
+                                           CardTitle="Hampir Habis"
+                                           IconText="LW"
+                                           AccentColor="{DynamicResource WarningText}"
+                                           AccentBackground="{DynamicResource WarningBg}" />
+                        <controls:StatCard x:Name="CardEmpty"
+                                           Grid.Row="1" Grid.Column="0"
+                                           CardTitle="Habis/Minus"
+                                           IconText="NO"
+                                           AccentColor="{DynamicResource DangerText}"
+                                           AccentBackground="{DynamicResource DangerBg}" />
+                        <controls:StatCard x:Name="CardTotal"
+                                           Grid.Row="1" Grid.Column="1"
+                                           CardTitle="Total Baris"
+                                           IconText="ST"
+                                           AccentColor="{DynamicResource FiberCyan}"
+                                           AccentBackground="{DynamicResource AccentBlueBg}" />
                     </Grid>
 
-                    <!-- Stock list -->
-                    <Label Text="Kondisi Stok Per Material" FontSize="14" FontAttributes="Bold"
-                           TextColor="{DynamicResource TextPrimary}"/>
+                    <controls:SearchFilterBar Placeholder="Cari material, gudang, kategori..."
+                                              SearchTextChanged="OnSearchChanged" />
+
+                    <HorizontalStackLayout Spacing="8">
+                        <Button x:Name="BtnAll" Text="Semua" Clicked="OnFilterAll" Style="{StaticResource FiberSecondaryButton}" />
+                        <Button x:Name="BtnOk" Text="Aman" Clicked="OnFilterOk" Style="{StaticResource FiberSecondaryButton}" />
+                        <Button x:Name="BtnLow" Text="Warning" Clicked="OnFilterLow" Style="{StaticResource FiberSecondaryButton}" />
+                        <Button x:Name="BtnEmpty" Text="Masalah" Clicked="OnFilterEmpty" Style="{StaticResource FiberSecondaryButton}" />
+                    </HorizontalStackLayout>
+
+                    <controls:LoadingView x:Name="LoadingState"
+                                          LoadingText="Memuat kondisi stok..."
+                                          IsVisible="False" />
+
+                    <controls:SectionHeader HeaderTitle="Kondisi Per Material"
+                                            HeaderSubtitle="Urut per gudang agar mudah dicek tim lapangan." />
 
                     <CollectionView x:Name="StockList" SelectionMode="None">
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
-                                <Border BackgroundColor="{DynamicResource CardBg}"
-                                        Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
-                                        StrokeShape="RoundRectangle 10" Margin="0,0,0,8">
-                                    <Grid Padding="14,12" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                <Border Style="{StaticResource FiberCard}" Margin="0,0,0,8">
+                                    <Grid Padding="14,12" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" ColumnSpacing="12" RowSpacing="5">
                                         <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="2">
-                                            <Label Text="{Binding MaterialName}" FontSize="14"
-                                                   FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
-                                            <Label Text="{Binding WarehouseName}" FontSize="12"
-                                                   TextColor="{DynamicResource TextMuted}"/>
+                                            <Label Text="{Binding MaterialName}"
+                                                   FontSize="15"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{DynamicResource TextPrimary}"
+                                                   LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding WarehouseName}"
+                                                   FontSize="12"
+                                                   TextColor="{DynamicResource TextMuted}" />
                                         </VerticalStackLayout>
-                                        <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                        <Border Grid.Row="0" Grid.Column="1"
                                                 BackgroundColor="{Binding StatusBg}"
-                                                StrokeThickness="0" StrokeShape="RoundRectangle 6"
-                                                VerticalOptions="Center" Padding="10,4">
-                                            <Label Text="{Binding StatusText}" FontSize="12"
-                                                   FontAttributes="Bold" TextColor="{Binding StatusColor}"/>
+                                                StrokeThickness="0"
+                                                StrokeShape="RoundRectangle 8"
+                                                Padding="10,5"
+                                                VerticalOptions="Center">
+                                            <Label Text="{Binding StatusText}"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding StatusColor}" />
                                         </Border>
-                                        <Label Grid.Row="1" Grid.Column="0"
-                                               FontSize="13" TextColor="{DynamicResource TextPrimary}">
+                                        <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                               FontSize="18"
+                                               TextColor="{DynamicResource TextPrimary}">
                                             <Label.FormattedText>
                                                 <FormattedString>
-                                                    <Span Text="{Binding Balance, StringFormat='{0:N0}'}"
-                                                          FontAttributes="Bold"/>
+                                                    <Span Text="{Binding Balance, StringFormat='{0:N0}'}" FontAttributes="Bold" />
                                                     <Span Text=" " />
-                                                    <Span Text="{Binding Unit}"/>
-                                                    <Span Text="  (min: "/>
-                                                    <Span Text="{Binding MinStock, StringFormat='{0:N0}'}"/>
-                                                    <Span Text=")"/>
+                                                    <Span Text="{Binding Unit}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                               FontSize="12"
+                                               TextColor="{DynamicResource TextMuted}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Min stok " />
+                                                    <Span Text="{Binding MinStock, StringFormat='{0:N0}'}" />
+                                                    <Span Text=" - " />
+                                                    <Span Text="{Binding Category}" />
                                                 </FormattedString>
                                             </Label.FormattedText>
                                         </Label>
@@ -97,9 +137,10 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
 
-                    <Label x:Name="LblEmpty2" Text="Belum ada data stok." IsVisible="False"
-                           FontSize="14" TextColor="{DynamicResource TextMuted}"
-                           HorizontalOptions="Center" Margin="0,20"/>
+                    <controls:EmptyState x:Name="EmptyView"
+                                         EmptyTitle="Stok belum ditemukan"
+                                         EmptyMessage="Coba ubah gudang, kata kunci, atau filter status."
+                                         IsVisible="False" />
 
                 </VerticalStackLayout>
             </ScrollView>

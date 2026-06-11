@@ -39,8 +39,8 @@ namespace StokBarangMAUI.Services
         public Color GetNavBarColor()
         {
             return IsDark
-                ? Color.FromArgb("#0B1024")   // very dark navy (Stitch Titan dark)
-                : Color.FromArgb("#3D5DDC");  // primary-container blue (Stitch Titan light)
+                ? Color.FromArgb("#07111F")
+                : Color.FromArgb("#0EA5E9");
         }
 
         private void Apply()
@@ -59,34 +59,40 @@ namespace StokBarangMAUI.Services
                 {
                     // ── Dark mode ─ Stitch Titan adapted ─────────────────────
                     // Surface family (deep navy, low-blue tint)
-                    res["PageBg"]      = Color.FromArgb("#0B1024");  // surface
-                    res["CardBg"]      = Color.FromArgb("#141936");  // surface-container
-                    res["CardBg2"]     = Color.FromArgb("#10142E");  // surface-container-low
-                    res["TextPrimary"] = Color.FromArgb("#E6E7FF");  // on-primary-container
-                    res["TextSecond"]  = Color.FromArgb("#B8C3FF");  // inverse-primary
-                    res["TextMuted"]   = Color.FromArgb("#8B91B5");  // muted text
-                    res["BorderClr"]   = Color.FromArgb("#2A3160");  // outline
-                    res["DividerClr"]  = Color.FromArgb("#1A1F40");  // outline-variant
-                    res["SearchBg"]    = Color.FromArgb("#141936");
-                    res["HeaderBg"]    = Color.FromArgb("#0B1024");  // header darker than light
-                    res["SubHeaderBg"] = Color.FromArgb("#0F1430");  // sub-header
+                    res["PageBg"]      = Color.FromArgb("#07111F");
+                    res["CardBg"]      = Color.FromArgb("#0E1A2B");
+                    res["CardBg2"]     = Color.FromArgb("#10243A");
+                    res["TextPrimary"] = Color.FromArgb("#F6FBFF");
+                    res["TextSecond"]  = Color.FromArgb("#B8D7EA");
+                    res["TextMuted"]   = Color.FromArgb("#7FA1B9");
+                    res["BorderClr"]   = Color.FromArgb("#1C3950");
+                    res["DividerClr"]  = Color.FromArgb("#123047");
+                    res["SearchBg"]    = Color.FromArgb("#0B1B2D");
+                    res["HeaderBg"]    = Color.FromArgb("#07111F");
+                    res["SubHeaderBg"] = Color.FromArgb("#0B1B2D");
 
                     // ── Accent colors (dark) — keyed to Stitch Titan primary ──
-                    res["AccentBlueBg"]      = Color.FromArgb("#1F2A6B");  // primary-fixed-dim subtle
-                    res["AccentBlueBorder"]  = Color.FromArgb("#3D5DDC");  // primary-container
-                    res["AccentBlue"]        = Color.FromArgb("#1D42C3");  // primary
-                    res["AccentGreenBg"]     = Color.FromArgb("#064E3B");  // status-ok bg
+                    res["AccentBlueBg"]      = Color.FromArgb("#0B2A4A");
+                    res["AccentBlueBorder"]  = Color.FromArgb("#0EA5E9");
+                    res["AccentBlue"]        = Color.FromArgb("#38BDF8");
+                    res["AccentGreenBg"]     = Color.FromArgb("#073B31");
                     res["AccentGreenBorder"] = Color.FromArgb("#10B981");  // status-ok
-                    res["AccentRedBg"]       = Color.FromArgb("#5B1717");  // status-nok bg
-                    res["AccentRedBorder"]   = Color.FromArgb("#EF4444");  // status-nok
+                    res["AccentRedBg"]       = Color.FromArgb("#4C151D");
+                    res["AccentRedBorder"]   = Color.FromArgb("#F43F5E");
 
                     // ── Stat card text (dark) — readable on tinted bg ────────
-                    res["StatBlueText"]   = Color.FromArgb("#B8C3FF");
+                    res["StatBlueText"]   = Color.FromArgb("#A5F3FC");
                     res["StatGreenText"]  = Color.FromArgb("#6EE7B7");
                     res["StatRedText"]    = Color.FromArgb("#FCA5A5");
-                    res["StatBlueLabel"]  = Color.FromArgb("#8AA0FF");
+                    res["StatBlueLabel"]  = Color.FromArgb("#67E8F9");
                     res["StatGreenLabel"] = Color.FromArgb("#34D399");
                     res["StatRedLabel"]   = Color.FromArgb("#F87171");
+
+                    // ── Stat value colors (dark: bright on dark bg) ──────────
+                    res["StatBlueValue"]   = Color.FromArgb("#22D3EE");
+                    res["StatOrangeValue"] = Color.FromArgb("#FBBF24");  // amber-400
+                    res["StatPurpleValue"] = Color.FromArgb("#C084FC");  // purple-400
+                    res["StatGreenValue"]  = Color.FromArgb("#4ADE80");  // green-400
 
                     // ── Drawer / menu (dark) ────────────────────────────────
                     res["DrawerBg"]         = Color.FromArgb("#0B1024");
@@ -101,19 +107,31 @@ namespace StokBarangMAUI.Services
                     res["ConsoleText"]   = Color.FromArgb("#B8C3FF");
 
                     // ── Header button tints (dark) ──────────────────────────
-                    res["HeaderBtnBg"]     = Color.FromArgb("#1F2A6B");
-                    res["HeaderBtnBorder"] = Color.FromArgb("#3D5DDC");
-                    res["HeaderSubtitle"]  = Color.FromArgb("#B8C3FF");
+                    res["HeaderBtnBg"]     = Color.FromArgb("#0B2A4A");
+                    res["HeaderBtnBorder"] = Color.FromArgb("#0EA5E9");
+                    res["HeaderSubtitle"]  = Color.FromArgb("#A5F3FC");
+                    res["SurfaceRaised"]   = Color.FromArgb("#14243A");
+                    res["FiberCyan"]       = Color.FromArgb("#22D3EE");
+                    res["FiberBlue"]       = Color.FromArgb("#38BDF8");
+                    res["FiberGreen"]      = Color.FromArgb("#34D399");
+                    res["SuccessBg"]       = Color.FromArgb("#073B31");
+                    res["SuccessText"]     = Color.FromArgb("#6EE7B7");
+                    res["WarningBg"]       = Color.FromArgb("#422006");
+                    res["WarningText"]     = Color.FromArgb("#FCD34D");
+                    res["DangerBg"]        = Color.FromArgb("#4C151D");
+                    res["DangerText"]      = Color.FromArgb("#FDA4AF");
+                    res["ChipBg"]          = Color.FromArgb("#10243A");
+                    res["ChipSelectedBg"]  = Color.FromArgb("#0E7490");
 
                     // ── AI bot chip (dark) ──────────────────────────────────
                     res["AiBotBg"]     = Color.FromArgb("#6514D6");  // tertiary
                     res["AiBotBorder"] = Color.FromArgb("#7E3DEF");  // tertiary-container
 
                     // ── Tab bar (dark) ──────────────────────────────────────
-                    res["TabBarBg"]              = Color.FromArgb("#0B1024");
+                    res["TabBarBg"]              = Color.FromArgb("#07111F");
                     res["TabBarText"]            = Color.FromArgb("#FFFFFF");
                     res["TabBarTextUnselected"]  = Color.FromArgb("#8B91B5");
-                    res["TabBarSelected"]        = Color.FromArgb("#B8C3FF");
+                    res["TabBarSelected"]        = Color.FromArgb("#22D3EE");
 
                     System.Diagnostics.Debug.WriteLine("[ThemeService] Dark mode colors applied");
                 }
@@ -121,61 +139,79 @@ namespace StokBarangMAUI.Services
                 {
                     // ── Light mode ─ Stitch Titan ───────────────────────────
                     // Surface family (clean off-white with violet undertone)
-                    res["PageBg"]      = Color.FromArgb("#FBF8FF");  // surface
-                    res["CardBg"]      = Color.FromArgb("#FFFFFF");  // surface-container-lowest
-                    res["CardBg2"]     = Color.FromArgb("#F4F2FE");  // surface-container-low
-                    res["TextPrimary"] = Color.FromArgb("#1A1B23");  // on-surface
-                    res["TextSecond"]  = Color.FromArgb("#444654");  // on-surface-variant
-                    res["TextMuted"]   = Color.FromArgb("#6B7280");  // text-muted
-                    res["BorderClr"]   = Color.FromArgb("#C4C5D6");  // outline-variant
-                    res["DividerClr"]  = Color.FromArgb("#E2E1EC");  // surface-variant
+                    res["PageBg"]      = Color.FromArgb("#F6FAFD");
+                    res["CardBg"]      = Color.FromArgb("#FFFFFF");
+                    res["CardBg2"]     = Color.FromArgb("#EEF7FB");
+                    res["TextPrimary"] = Color.FromArgb("#06121F");
+                    res["TextSecond"]  = Color.FromArgb("#27445A");
+                    res["TextMuted"]   = Color.FromArgb("#64798A");
+                    res["BorderClr"]   = Color.FromArgb("#C8DDE8");
+                    res["DividerClr"]  = Color.FromArgb("#DCEAF1");
                     res["SearchBg"]    = Color.FromArgb("#FFFFFF");
-                    res["HeaderBg"]    = Color.FromArgb("#3D5DDC");  // background-header
-                    res["SubHeaderBg"] = Color.FromArgb("#3D5DDC");
+                    res["HeaderBg"]    = Color.FromArgb("#0EA5E9");
+                    res["SubHeaderBg"] = Color.FromArgb("#E0F7FF");
 
                     // ── Accent colors (light) — Stitch Titan primary ────────
-                    res["AccentBlueBg"]      = Color.FromArgb("#DDE1FF");  // primary-fixed
-                    res["AccentBlueBorder"]  = Color.FromArgb("#3D5DDC");  // primary-container
-                    res["AccentBlue"]        = Color.FromArgb("#1D42C3");  // primary
+                    res["AccentBlueBg"]      = Color.FromArgb("#E0F7FF");
+                    res["AccentBlueBorder"]  = Color.FromArgb("#0EA5E9");
+                    res["AccentBlue"]        = Color.FromArgb("#0369A1");
                     res["AccentGreenBg"]     = Color.FromArgb("#D1FAE5");
                     res["AccentGreenBorder"] = Color.FromArgb("#10B981");  // status-ok
                     res["AccentRedBg"]       = Color.FromArgb("#FEE2E2");
-                    res["AccentRedBorder"]   = Color.FromArgb("#EF4444");  // status-nok
+                    res["AccentRedBorder"]   = Color.FromArgb("#F43F5E");
 
                     // ── Stat card text (light) ── darker than bg ───────────
-                    res["StatBlueText"]   = Color.FromArgb("#0737B9");  // on-primary-fixed-variant
+                    res["StatBlueText"]   = Color.FromArgb("#0369A1");
                     res["StatGreenText"]  = Color.FromArgb("#047857");
                     res["StatRedText"]    = Color.FromArgb("#B91C1C");
-                    res["StatBlueLabel"]  = Color.FromArgb("#1D42C3");
+                    res["StatBlueLabel"]  = Color.FromArgb("#0EA5E9");
                     res["StatGreenLabel"] = Color.FromArgb("#10B981");
                     res["StatRedLabel"]   = Color.FromArgb("#EF4444");
 
+                    // ── Stat value colors (light: darker/saturated for contrast on white bg) ──
+                    res["StatBlueValue"]   = Color.FromArgb("#0891B2");
+                    res["StatOrangeValue"] = Color.FromArgb("#C2410C");  // orange-700
+                    res["StatPurpleValue"] = Color.FromArgb("#7E22CE");  // purple-700
+                    res["StatGreenValue"]  = Color.FromArgb("#15803D");  // green-700
+
                     // ── Drawer / menu (light) ───────────────────────────────
-                    res["DrawerBg"]         = Color.FromArgb("#FBF8FF");
-                    res["DrawerHeaderBg"]   = Color.FromArgb("#3D5DDC");
+                    res["DrawerBg"]         = Color.FromArgb("#F6FAFD");
+                    res["DrawerHeaderBg"]   = Color.FromArgb("#0EA5E9");
                     res["DrawerItemBg"]     = Color.FromArgb("#FFFFFF");
-                    res["DrawerItemBorder"] = Color.FromArgb("#E2E1EC");
-                    res["DrawerBottomBg"]   = Color.FromArgb("#F4F2FE");
+                    res["DrawerItemBorder"] = Color.FromArgb("#DCEAF1");
+                    res["DrawerBottomBg"]   = Color.FromArgb("#EEF7FB");
 
                     // ── Console / Bot (light) ───────────────────────────────
-                    res["ConsoleBg"]     = Color.FromArgb("#F4F2FE");
-                    res["ConsoleBorder"] = Color.FromArgb("#C4C5D6");
-                    res["ConsoleText"]   = Color.FromArgb("#444654");
+                    res["ConsoleBg"]     = Color.FromArgb("#EEF7FB");
+                    res["ConsoleBorder"] = Color.FromArgb("#C8DDE8");
+                    res["ConsoleText"]   = Color.FromArgb("#27445A");
 
                     // ── Header button tints (light) ─────────────────────────
-                    res["HeaderBtnBg"]     = Color.FromArgb("#5470E0");  // lighter than HeaderBg
-                    res["HeaderBtnBorder"] = Color.FromArgb("#B8C3FF");
-                    res["HeaderSubtitle"]  = Color.FromArgb("#DDE1FF");
+                    res["HeaderBtnBg"]     = Color.FromArgb("#0369A1");
+                    res["HeaderBtnBorder"] = Color.FromArgb("#A5F3FC");
+                    res["HeaderSubtitle"]  = Color.FromArgb("#E0F7FF");
+                    res["SurfaceRaised"]   = Color.FromArgb("#EAF6FB");
+                    res["FiberCyan"]       = Color.FromArgb("#0891B2");
+                    res["FiberBlue"]       = Color.FromArgb("#0284C7");
+                    res["FiberGreen"]      = Color.FromArgb("#059669");
+                    res["SuccessBg"]       = Color.FromArgb("#D1FAE5");
+                    res["SuccessText"]     = Color.FromArgb("#047857");
+                    res["WarningBg"]       = Color.FromArgb("#FEF3C7");
+                    res["WarningText"]     = Color.FromArgb("#B45309");
+                    res["DangerBg"]        = Color.FromArgb("#FFE4E6");
+                    res["DangerText"]      = Color.FromArgb("#BE123C");
+                    res["ChipBg"]          = Color.FromArgb("#EAF6FB");
+                    res["ChipSelectedBg"]  = Color.FromArgb("#0EA5E9");
 
                     // ── AI bot chip (light) ─────────────────────────────────
                     res["AiBotBg"]     = Color.FromArgb("#6514D6");  // tertiary (violet)
                     res["AiBotBorder"] = Color.FromArgb("#7E3DEF");
 
                     // ── Tab bar (light) ─────────────────────────────────────
-                    res["TabBarBg"]              = Color.FromArgb("#1A1F3D");  // background-tab
+                    res["TabBarBg"]              = Color.FromArgb("#082F49");
                     res["TabBarText"]            = Color.FromArgb("#FFFFFF");
                     res["TabBarTextUnselected"]  = Color.FromArgb("#B0B5D0");
-                    res["TabBarSelected"]        = Color.FromArgb("#B8C3FF");
+                    res["TabBarSelected"]        = Color.FromArgb("#67E8F9");
 
                     System.Diagnostics.Debug.WriteLine("[ThemeService] Light mode colors applied");
                 }

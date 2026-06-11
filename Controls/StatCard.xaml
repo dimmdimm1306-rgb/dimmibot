@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StokBarangMAUI.Controls.StatCard"
+             x:Name="Root">
+    <Border Style="{StaticResource FiberCard}"
+            BackgroundColor="{Binding CardBackground, Source={x:Reference Root}}">
+        <Grid Padding="14,12" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Label Grid.Row="0" Grid.Column="0"
+                   Text="{Binding CardTitle, Source={x:Reference Root}}"
+                   FontSize="12"
+                   TextColor="{DynamicResource TextMuted}" />
+            <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="3"
+                    BackgroundColor="{Binding AccentBackground, Source={x:Reference Root}}"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 8"
+                    WidthRequest="40"
+                    HeightRequest="40"
+                    VerticalOptions="Start">
+                <Label Text="{Binding IconText, Source={x:Reference Root}}"
+                       TextColor="{Binding AccentColor, Source={x:Reference Root}}"
+                       FontAttributes="Bold"
+                       FontSize="12"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center" />
+            </Border>
+            <Label Grid.Row="1" Grid.Column="0"
+                   Text="{Binding CardValue, Source={x:Reference Root}}"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   TextColor="{Binding AccentColor, Source={x:Reference Root}}" />
+            <Label Grid.Row="2" Grid.Column="0"
+                   Text="{Binding CardCaption, Source={x:Reference Root}}"
+                   FontSize="11"
+                   TextColor="{DynamicResource TextMuted}" />
+        </Grid>
+    </Border>
+</ContentView>

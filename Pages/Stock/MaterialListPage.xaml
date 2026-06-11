@@ -1,57 +1,111 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:StokBarangMAUI.Controls"
              x:Class="StokBarangMAUI.Pages.Stock.MaterialListPage"
-             Title="Master Material"
+             Title="Stok Barang"
              BackgroundColor="{DynamicResource PageBg}">
 
     <Grid RowDefinitions="Auto,*">
-        <Button Grid.Row="0" Text="+ Tambah Material" Clicked="OnTambah"
-                BackgroundColor="#1E40AF" TextColor="White"
-                FontSize="14" FontAttributes="Bold"
-                CornerRadius="8" Margin="12,10"/>
+        <Border Grid.Row="0" BackgroundColor="{DynamicResource HeaderBg}" StrokeThickness="0">
+            <Grid Padding="16,14" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label Text="Stok Barang" Style="{StaticResource FiberPageTitle}" />
+                    <Label x:Name="LblCountSummary"
+                           Text="Master material"
+                           FontSize="12"
+                           TextColor="{DynamicResource TextSecond}" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1"
+                        Text="Tambah"
+                        Clicked="OnTambah"
+                        Style="{StaticResource FiberPrimaryButton}"
+                        WidthRequest="104"
+                        HeightRequest="44" />
+            </Grid>
+        </Border>
 
-        <CollectionView Grid.Row="1" x:Name="MatList" SelectionMode="None" Margin="12,0,12,12">
-            <CollectionView.EmptyView>
-                <Label Text="Belum ada material." FontSize="14"
-                       TextColor="{DynamicResource TextMuted}"
-                       HorizontalOptions="Center" Margin="0,40"/>
-            </CollectionView.EmptyView>
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Border BackgroundColor="{DynamicResource CardBg}"
-                            Stroke="{DynamicResource BorderClr}" StrokeThickness="1"
-                            StrokeShape="RoundRectangle 10" Margin="0,0,0,8">
-                        <Grid Padding="14,12" ColumnDefinitions="*,Auto,Auto">
-                            <VerticalStackLayout Grid.Column="0" Spacing="3">
-                                <Label Text="{Binding Name}" FontSize="15"
-                                       FontAttributes="Bold" TextColor="{DynamicResource TextPrimary}"/>
-                                <Label FontSize="12" TextColor="{DynamicResource TextMuted}">
-                                    <Label.FormattedText>
-                                        <FormattedString>
-                                            <Span Text="{Binding Unit}"/>
-                                            <Span Text="  •  "/>
-                                            <Span Text="{Binding Category}"/>
-                                            <Span Text="  •  Min: "/>
-                                            <Span Text="{Binding MinStock, StringFormat='{0:N0}'}"/>
-                                        </FormattedString>
-                                    </Label.FormattedText>
-                                </Label>
-                            </VerticalStackLayout>
-                            <Button Grid.Column="1" Text="Edit" Clicked="OnEdit"
-                                    BackgroundColor="#1E3A6E" TextColor="#60A5FA"
-                                    FontSize="12" CornerRadius="6"
-                                    WidthRequest="60" HeightRequest="36"
-                                    CommandParameter="{Binding .}"/>
-                            <Button Grid.Column="2" Text="Hapus" Clicked="OnHapus"
-                                    BackgroundColor="#450A0A" TextColor="#F87171"
-                                    FontSize="12" CornerRadius="6" Margin="6,0,0,0"
-                                    WidthRequest="60" HeightRequest="36"
-                                    CommandParameter="{Binding .}"/>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="14">
+                <controls:SearchFilterBar Placeholder="Cari nama barang, satuan, kategori..."
+                                          SearchTextChanged="OnSearchChanged" />
+
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                    <HorizontalStackLayout Spacing="8">
+                        <Button x:Name="BtnAll" Text="Semua" Clicked="OnFilterAll" Style="{StaticResource FiberSecondaryButton}" />
+                        <Button x:Name="BtnKabel" Text="Kabel" Clicked="OnFilterKabel" Style="{StaticResource FiberSecondaryButton}" />
+                        <Button x:Name="BtnAksesori" Text="Aksesori" Clicked="OnFilterAksesori" Style="{StaticResource FiberSecondaryButton}" />
+                        <Button x:Name="BtnTiang" Text="Tiang" Clicked="OnFilterTiang" Style="{StaticResource FiberSecondaryButton}" />
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <controls:SectionHeader HeaderTitle="Daftar Material"
+                                        HeaderSubtitle="Tap edit untuk ubah master, hapus hanya jika yakin tidak dipakai." />
+
+                <CollectionView x:Name="MatList" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource FiberCard}" Margin="0,0,0,8">
+                                <Grid Padding="14,12" RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto" ColumnSpacing="12" RowSpacing="8">
+                                    <VerticalStackLayout Grid.Row="0" Grid.Column="0" Spacing="3">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="15"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource TextPrimary}"
+                                               LineBreakMode="TailTruncation" />
+                                        <Label FontSize="12" TextColor="{DynamicResource TextMuted}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding Category}" />
+                                                    <Span Text=" - " />
+                                                    <Span Text="{Binding Unit}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </VerticalStackLayout>
+
+                                    <Border Grid.Row="0" Grid.Column="1"
+                                            BackgroundColor="{DynamicResource AccentBlueBg}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 8"
+                                            Padding="10,5"
+                                            VerticalOptions="Start">
+                                        <Label FontSize="11"
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource FiberCyan}">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="Min " />
+                                                    <Span Text="{Binding MinStock, StringFormat='{0:N0}'}" />
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Border>
+
+                                    <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                          ColumnDefinitions="*,*" ColumnSpacing="8">
+                                        <Button Grid.Column="0"
+                                                Text="Edit"
+                                                Clicked="OnEdit"
+                                                CommandParameter="{Binding .}"
+                                                Style="{StaticResource FiberSecondaryButton}" />
+                                        <Button Grid.Column="1"
+                                                Text="Hapus"
+                                                Clicked="OnHapus"
+                                                CommandParameter="{Binding .}"
+                                                Style="{StaticResource FiberDangerButton}" />
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <controls:EmptyState x:Name="EmptyView"
+                                     EmptyTitle="Material tidak ditemukan"
+                                     EmptyMessage="Tambah material baru atau ubah kata kunci pencarian."
+                                     IsVisible="False" />
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 </ContentPage>
